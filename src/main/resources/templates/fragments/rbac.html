@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<!-- 
+    RBAC Helper Fragment
+    Usage: th:replace="~{fragments/rbac :: permission('BILLING_CREATE')}"
+-->
+
+<!-- Simple permission check wrapper -->
+<th:block th:fragment="permission(permId)">
+    <th:block th:if="${#authorization.expression('hasAuthority(''PERM_' + permId + ''')') or #authorization.expression('hasRole(''ROLE_SYSTEM_ADMIN'')')}">
+        <th:block th:insert="${content}"></th:block>
+    </th:block>
+</th:block>
+
+<!-- Feature enablement check wrapper -->
+<th:block th:fragment="feature(featureId)">
+    <th:block th:if="${@rbacService.getEnabledFeatures(T(com.supererp.erp.tenant.TenantContext).getTenantId()).contains(featureId) or #authorization.expression('hasRole(''ROLE_SYSTEM_ADMIN'')')}">
+        <th:block th:insert="${content}"></th:block>
+    </th:block>
+</th:block>
+
+</html>

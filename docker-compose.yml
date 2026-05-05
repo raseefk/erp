@@ -1,27 +1,27 @@
 version: '3.9'
 
 services:
-  levanto-app:
+  super-erp-app:
     build: .
-    container_name: levanto-flooring
-    image: docker.io/raseefk/levanto-flooring:latest
+    container_name: super-erp
+    image: docker.io/raseefk/super-erp:latest
     ports:
       - "8085:8085"
     volumes:
       # H2 database file persists across container restarts
-      - levanto_data:/app/data
-      - levanto_uploads:/app/uploads
+      - super_erp_data:/app/data
+      - super_erp_uploads:/app/uploads
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/levanto_db
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/super_erp_db
       - SPRING_DATASOURCE_USERNAME=sa
-      - SPRING_DATASOURCE_PASSWORD=Levanto@2024!
+      - SPRING_DATASOURCE_PASSWORD=SuperErp@2026!
       - APP_ADMIN_USERNAME=admin
       - APP_ADMIN_PASSWORD=Admin@1234
       # ── Update these with your actual company details ──
-      - APP_COMPANY_NAME=Lēvanto Flooring
-      - APP_COMPANY_ADDRESS=Your Shop Address, City, State - PIN
+      - APP_COMPANY_NAME=Super ERP
+      - APP_COMPANY_ADDRESS=Main Business District, City, State - PIN
       - APP_COMPANY_PHONE=+91 XXXXX XXXXX
-      - APP_COMPANY_EMAIL=info@levantoflooring.com
+      - APP_COMPANY_EMAIL=info@supererp.com
       - APP_COMPANY_GSTNUMBER=YOUR_GSTIN_HERE
     restart: unless-stopped
     healthcheck:
@@ -32,7 +32,7 @@ services:
       start_period: 40s
 
 volumes:
-  levanto_data:
+  super_erp_data:
     driver: local
-  levanto_uploads:
+  super_erp_uploads:
     driver: local

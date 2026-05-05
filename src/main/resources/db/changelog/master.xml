@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+    xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+        http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.20.xsd">
+
+  <include file="classpath:db/changelog/V1__multi_tenant_foundation.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V2__existing_tables.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V3__rls_policies.sql" relativeToChangelogFile="false"/>
+
+</databaseChangeLog>

@@ -9,12 +9,12 @@ RUN apk add --no-cache maven && \
 FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
 
-RUN addgroup -S levanto && adduser -S levanto -G levanto
+RUN addgroup -S supererp && adduser -S supererp -G supererp
 
-COPY --from=build /app/target/flooring-1.0.0.jar app.jar
+COPY --from=build /app/target/erp-1.0.0.jar app.jar
 
-RUN mkdir -p /app/data && chown -R levanto:levanto /app
-USER levanto
+RUN mkdir -p /app/data && chown -R supererp:supererp /app
+USER supererp
 
 EXPOSE 8085
 

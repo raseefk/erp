@@ -1,6 +1,6 @@
-# Lēvanto Flooring — Management System
+# Super ERP — Management System
 
-A complete, production-ready Spring Boot 3.x application for billing, inventory, CRM, HR and expense management for Lēvanto Flooring.
+A complete, production-ready Spring Boot 3.x application for billing, inventory, CRM, HR and expense management for Super ERP.
 
 ---
 
@@ -13,7 +13,7 @@ A complete, production-ready Spring Boot 3.x application for billing, inventory,
 ### Run locally
 ```bash
 # 1. Clone / unzip the project
-cd levanto-flooring
+cd super-erp
 
 # 2. Run
 mvn spring-boot:run
@@ -52,7 +52,7 @@ The H2 database file is persisted in a Docker volume (`levanto_data`), so data s
 ## 🏗️ Architecture
 
 ```
-com.levanto.flooring/
+com.super.erp/
 ├── config/
 │   ├── CompanyProperties.java      # app.company.* from application.properties
 │   ├── DataInitializer.java        # Seeds admin + sample data on first run
@@ -154,7 +154,7 @@ app.admin.password=Admin@1234
 - **Console:** http://localhost:8080/h2-console
   - JDBC URL: `jdbc:h2:file:./data/levanto_db`
   - Username: `sa`
-  - Password: `Levanto@2024!`
+  - Password: `SuperErp@2026!`
 
 ---
 
@@ -196,7 +196,7 @@ app.admin.password=Admin@1234
 mvn clean package -DskipTests
 
 # Run JAR
-java -jar target/flooring-1.0.0.jar \
+java -jar target/erp-1.0.0.jar \
   --app.admin.password=YOUR_SECURE_PASSWORD \
   --app.company.gstNumber=YOUR_GSTIN
 ```
