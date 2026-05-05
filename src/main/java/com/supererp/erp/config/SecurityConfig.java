@@ -72,8 +72,23 @@ public class SecurityConfig {
             .formLogin(f -> f
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .defaultSuccessUrl("/admin/dashboard", true)
-                .failureUrl("/login?error=true")
+                .successHandler((request, response, authentication) -> {
+                    boolean isSystemAdmin = authentication.getAuthorities().stream()
+                        .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
+                    if (isSystemAdmin) {
+                        response.sendRedirect("/system/tenants");
+                    } else {
+                        response.sendRedirect("/admin/dashboard");
+                    }
+                })
+                .failureHandler((request, response, exception) -> {
+                    String referer = request.getHeader("Referer");
+                    if (referer != null && referer.contains("/system/login")) {
+                        response.sendRedirect("/system/login?error=true");
+                    } else {
+                        response.sendRedirect("/login?error=true");
+                    }
+                })
                 .permitAll()
             )
             .logout(l -> l

@@ -6,7 +6,7 @@ import lombok.*;
 import java.math.BigDecimal;
 
 @Entity @Table(name = "transaction_items")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class TransactionItem extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

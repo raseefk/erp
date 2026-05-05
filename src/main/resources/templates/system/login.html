@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>System Login | Super ERP Infrastructure</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    :root { --slate-900:#0f172a; --slate-800:#1e293b; --indigo-500:#6366f1; --indigo-600:#4f46e5; }
+    body { font-family:'Inter',sans-serif; background:var(--slate-900); min-height:100vh;
+           display:flex; align-items:center; justify-content:center;
+           background-image: radial-gradient(circle at 50% 50%, rgba(99,102,241,0.05) 0%, transparent 80%); }
+    .login-card { background:var(--slate-800); border:1px solid rgba(255,255,255,0.1);
+                  border-radius:12px; padding:3rem; width:100%; max-width:440px;
+                  box-shadow:0 25px 50px -12px rgba(0,0,0,0.5); }
+    .sys-badge { background:rgba(99,102,241,0.2); color:var(--indigo-500); font-size:0.7rem; 
+                 font-weight:700; text-transform:uppercase; letter-spacing:0.1em;
+                 padding:0.4rem 0.8rem; border-radius:100px; display:inline-block; margin-bottom:1rem; }
+    .brand-name { font-size:1.5rem; font-weight:800; color:#fff; letter-spacing:-0.02em; margin-bottom:0.5rem; }
+    .brand-sub { font-size:0.875rem; color:#94a3b8; margin-bottom:2.5rem; }
+    
+    .form-label { font-size:0.875rem; font-weight:500; color:#e2e8f0; margin-bottom:0.5rem; }
+    .form-control { background:rgba(15,23,42,0.5); border:1px solid #334155;
+                    color:#fff; border-radius:8px; padding:0.75rem 1rem; }
+    .form-control:focus { background:rgba(15,23,42,0.8); border-color:var(--indigo-500);
+                          box-shadow:0 0 0 2px rgba(99,102,241,0.2); color:#fff; }
+    .btn-login { background:var(--indigo-500); color:#fff; border:none; font-weight:600;
+                 padding:0.75rem; border-radius:8px; width:100%; transition:all 0.2s; margin-top:1rem; }
+    .btn-login:hover { background:var(--indigo-600); transform:translateY(-1px); }
+    
+    .alert-err { background:rgba(239,68,68,0.1); border:1px solid rgba(239,68,68,0.2);
+                 color:#f87171; border-radius:8px; font-size:0.875rem; padding:1rem; margin-bottom:1.5rem; }
+    .alert-ok { background:rgba(34,197,94,0.1); border:1px solid rgba(34,197,94,0.2);
+                color:#4ade80; border-radius:8px; font-size:0.875rem; padding:1rem; margin-bottom:1.5rem; }
+  </style>
+</head>
+<body>
+<div class="login-card">
+  <div class="text-center">
+    <div class="sys-badge">Infrastructure Portal</div>
+    <div class="brand-name">Super ERP</div>
+    <div class="brand-sub">System Administrator Login</div>
+  </div>
+
+  <div th:if="${errorMsg}" class="alert-err d-flex align-items-center gap-2">
+    <i class="bi bi-exclamation-circle-fill"></i>
+    <span th:text="${errorMsg}"></span>
+  </div>
+  
+  <div th:if="${logoutMsg}" class="alert-ok d-flex align-items-center gap-2">
+    <i class="bi bi-check-circle-fill"></i>
+    <span th:text="${logoutMsg}"></span>
+  </div>
+
+  <form th:action="@{/login}" method="post">
+    <div class="mb-4">
+      <label class="form-label">System Username</label>
+      <input type="text" name="username" class="form-control" placeholder="superadmin" autofocus required/>
+    </div>
+    <div class="mb-4">
+      <label class="form-label">Master Password</label>
+      <input type="password" name="password" class="form-control" placeholder="••••••••" required/>
+    </div>
+    <button type="submit" class="btn-login">Sign In to Dashboard</button>
+  </form>
+
+  <div class="text-center mt-5">
+    <a href="/login" class="text-decoration-none" style="color:#64748b; font-size:0.875rem;">
+      <i class="bi bi-arrow-left me-1"></i> Switch to Tenant Login
+    </a>
+  </div>
+</div>
+</body>
+</html>

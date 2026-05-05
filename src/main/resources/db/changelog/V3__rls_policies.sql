@@ -142,11 +142,11 @@ DROP POLICY IF EXISTS tenant_isolation ON project_expenses;
 CREATE POLICY tenant_isolation ON project_expenses
     USING (tenant_id = current_tenant_id());
 
--- project_labour
-ALTER TABLE project_labour ENABLE ROW LEVEL SECURITY;
-ALTER TABLE project_labour FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation ON project_labour;
-CREATE POLICY tenant_isolation ON project_labour
+-- project_labours
+ALTER TABLE project_labours ENABLE ROW LEVEL SECURITY;
+ALTER TABLE project_labours FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON project_labours;
+CREATE POLICY tenant_isolation ON project_labours
     USING (tenant_id = current_tenant_id());
 
 -- daily_logs
@@ -163,11 +163,11 @@ DROP POLICY IF EXISTS tenant_isolation ON daily_labour_logs;
 CREATE POLICY tenant_isolation ON daily_labour_logs
     USING (tenant_id = current_tenant_id());
 
--- attendance
-ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
-ALTER TABLE attendance FORCE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS tenant_isolation ON attendance;
-CREATE POLICY tenant_isolation ON attendance
+-- attendance_ledger
+ALTER TABLE attendance_ledger ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance_ledger FORCE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS tenant_isolation ON attendance_ledger;
+CREATE POLICY tenant_isolation ON attendance_ledger
     USING (tenant_id = current_tenant_id());
 
 -- leave_balances

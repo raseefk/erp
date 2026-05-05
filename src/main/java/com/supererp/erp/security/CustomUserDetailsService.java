@@ -3,6 +3,7 @@ package com.supererp.erp.security;
 import com.supererp.erp.entity.AppUser;
 import com.supererp.erp.rbac.entity.Permission;
 import com.supererp.erp.repository.AppUserRepository;
+import com.supererp.erp.repository.SystemUserRepository;
 import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -18,15 +19,28 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final AppUserRepository userRepo;
+    private final AppUserRepository    userRepo;
+    private final SystemUserRepository systemUserRepo;
 
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         UUID tenantId = TenantContext.getTenantId();
+        
+        // 1. If no tenant context, try loading as a System Admin
         if (tenantId == null) {
-            throw new UsernameNotFoundException("No tenant context for user: " + username);
+            return systemUserRepo.findByUsernameAndEnabledTrue(username)
+                .map(sysUser -> new org.springframework.security.core.userdetails.User(
+                    sysUser.getUsername(),
+                    sysUser.getPassword(),
+                    sysUser.isEnabled(),
+                    true, true, true,
+                    List.of(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"))
+                ))
+                .orElseThrow(() -> new UsernameNotFoundException("System admin not found: " + username));
         }
+
+        // 2. Otherwise load as a Tenant User
         AppUser user = userRepo.findByUsernameAndTenantId(username, tenantId)
             .orElseThrow(() -> new UsernameNotFoundException(
                 "User not found: " + username + " in tenant: " + tenantId));

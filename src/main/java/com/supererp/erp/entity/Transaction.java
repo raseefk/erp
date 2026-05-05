@@ -10,7 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity @Table(name = "transactions")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class Transaction extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

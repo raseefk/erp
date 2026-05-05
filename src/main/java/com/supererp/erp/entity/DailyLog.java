@@ -12,7 +12,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "daily_logs")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class DailyLog extends TenantAwareEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

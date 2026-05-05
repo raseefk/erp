@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  */
 @Entity
 @Table(name = "project_expenses")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class ProjectExpense extends TenantAwareEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

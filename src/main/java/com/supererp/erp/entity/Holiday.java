@@ -7,7 +7,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import java.time.LocalDate;
 
 @Entity @Table(name = "holidays")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class Holiday extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

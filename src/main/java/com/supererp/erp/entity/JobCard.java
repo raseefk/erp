@@ -13,7 +13,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "job_cards")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class JobCard extends TenantAwareEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

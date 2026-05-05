@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head}"></head>
+<head th:replace="~{fragments/layout :: head(${pageTitle})}"></head>
 <body>
 
 <div th:replace="~{fragments/layout :: sidebar(activePage='system-tenants')}"></div>

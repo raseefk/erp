@@ -14,7 +14,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "projects")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class Project extends TenantAwareEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
