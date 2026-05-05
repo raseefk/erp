@@ -47,6 +47,7 @@
                             <th>Slug / Subdomain</th>
                             <th>Plan</th>
                             <th>Status</th>
+                            <th>Expires</th>
                             <th>Created At</th>
                             <th class="text-end pe-4">Actions</th>
                         </tr>
@@ -73,6 +74,12 @@
                             <td>
                                 <span th:if="${tenant.active}" class="badge bg-success-subtle text-success border border-success-subtle px-2">ACTIVE</span>
                                 <span th:unless="${tenant.active}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">INACTIVE</span>
+                            </td>
+                            <td>
+                                <span th:if="${tenant.expiresAt == null}" class="text-muted small">No Expiry</span>
+                                <span th:if="${tenant.expiresAt != null}" 
+                                      th:classappend="${tenant.expiresAt.isBefore(T(java.time.OffsetDateTime).now()) ? 'text-danger fw-bold' : 'text-dark'}"
+                                      th:text="${#temporals.format(tenant.expiresAt, 'dd MMM yyyy')}">Date</span>
                             </td>
                             <td class="text-muted small" th:text="${#temporals.format(tenant.createdAt, 'dd MMM yyyy')}">Date</td>
                             <td class="text-end pe-4">

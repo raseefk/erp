@@ -102,59 +102,59 @@
   </div>
   
   <ul class="nav flex-column py-3">
-    <li class="nav-item">
+    <li class="nav-item" sec:authorize="!hasRole('SYSTEM_ADMIN')">
       <a href="/admin/dashboard" class="nav-link" th:classappend="${activePage=='dashboard'}?'active':''">
         <i class="bi bi-speedometer2"></i> Dashboard
       </a>
     </li>
 
     <!-- ── COMMERCE ──────────────────────────────────────────────────────── -->
-    <li class="nav-sec" sec:authorize="hasAuthority('PERM_BILLING_INVOICES_VIEW') or hasAuthority('PERM_CRM_CUSTOMERS_VIEW')">Commerce</li>
-    <li sec:authorize="hasAuthority('PERM_BILLING_INVOICES_VIEW')">
+    <li class="nav-sec" th:if="${@rbacService.isFeatureEnabled('BILLING') or @rbacService.isFeatureEnabled('CRM')}" sec:authorize="hasAuthority('PERM_BILLING_INVOICES_VIEW') or hasAuthority('PERM_CRM_CUSTOMERS_VIEW')">Commerce</li>
+    <li th:if="${@rbacService.isFeatureEnabled('BILLING')}" sec:authorize="hasAuthority('PERM_BILLING_INVOICES_VIEW')">
       <a href="/billing" class="nav-link" th:classappend="${activePage=='billing'}?'active':''">
         <i class="bi bi-receipt"></i> Billing & Invoices
       </a>
     </li>
-    <li sec:authorize="hasAuthority('PERM_CRM_CUSTOMERS_VIEW')">
+    <li th:if="${@rbacService.isFeatureEnabled('CRM')}" sec:authorize="hasAuthority('PERM_CRM_CUSTOMERS_VIEW')">
       <a href="/customer" class="nav-link" th:classappend="${activePage=='customer'}?'active':''">
         <i class="bi bi-people"></i> Customers
       </a>
     </li>
 
     <!-- ── OPERATIONS ─────────────────────────────────────────────────────── -->
-    <li class="nav-sec" sec:authorize="hasAuthority('PERM_PROJ_LIST_VIEW')">Operations</li>
-    <li sec:authorize="hasAuthority('PERM_PROJ_LIST_VIEW')">
+    <li class="nav-sec" th:if="${@rbacService.isFeatureEnabled('PROJECTS')}" sec:authorize="hasAuthority('PERM_PROJ_LIST_VIEW')">Operations</li>
+    <li th:if="${@rbacService.isFeatureEnabled('PROJECTS')}" sec:authorize="hasAuthority('PERM_PROJ_LIST_VIEW')">
       <a href="/project" class="nav-link" th:classappend="${activePage=='project'}?'active':''">
         <i class="bi bi-kanban"></i> Projects
       </a>
     </li>
-    <li sec:authorize="hasAuthority('PERM_PROJ_DAILYLOG_VIEW')">
+    <li th:if="${@rbacService.isFeatureEnabled('PROJECTS')}" sec:authorize="hasAuthority('PERM_PROJ_DAILYLOG_VIEW')">
       <a href="/sitelog" class="nav-link" th:classappend="${activePage=='sitelog'}?'active':''">
         <i class="bi bi-journal-text"></i> Site Logs
       </a>
     </li>
 
     <!-- ── SUPPLY CHAIN ───────────────────────────────────────────────────── -->
-    <li class="nav-sec" sec:authorize="hasAuthority('PERM_INV_ITEMS_VIEW') or hasAuthority('PERM_SCM_PO_VIEW')">Supply Chain</li>
-    <li sec:authorize="hasAuthority('PERM_INV_ITEMS_VIEW')">
+    <li class="nav-sec" th:if="${@rbacService.isFeatureEnabled('INVENTORY') or @rbacService.isFeatureEnabled('SCM')}" sec:authorize="hasAuthority('PERM_INV_ITEMS_VIEW') or hasAuthority('PERM_SCM_PO_VIEW')">Supply Chain</li>
+    <li th:if="${@rbacService.isFeatureEnabled('INVENTORY')}" sec:authorize="hasAuthority('PERM_INV_ITEMS_VIEW')">
       <a href="/inventory" class="nav-link" th:classappend="${activePage=='inventory'}?'active':''">
         <i class="bi bi-box-seam"></i> Inventory
       </a>
     </li>
-    <li sec:authorize="hasAuthority('PERM_SCM_PO_VIEW')">
+    <li th:if="${@rbacService.isFeatureEnabled('SCM')}" sec:authorize="hasAuthority('PERM_SCM_PO_VIEW')">
       <a href="/scm/po" class="nav-link" th:classappend="${activePage=='scm-po'}?'active':''">
         <i class="bi bi-cart-check"></i> Purchase Orders
       </a>
     </li>
 
     <!-- ── CORPORATE ──────────────────────────────────────────────────────── -->
-    <li class="nav-sec" sec:authorize="hasAuthority('PERM_HR_EMPLOYEES_VIEW') or hasAuthority('PERM_FIN_TRANSACTIONS_VIEW')">Corporate</li>
-    <li sec:authorize="hasAuthority('PERM_HR_EMPLOYEES_VIEW')">
+    <li class="nav-sec" th:if="${@rbacService.isFeatureEnabled('HR') or @rbacService.isFeatureEnabled('FINANCE')}" sec:authorize="hasAuthority('PERM_HR_EMPLOYEES_VIEW') or hasAuthority('PERM_FIN_TRANSACTIONS_VIEW')">Corporate</li>
+    <li th:if="${@rbacService.isFeatureEnabled('HR')}" sec:authorize="hasAuthority('PERM_HR_EMPLOYEES_VIEW')">
       <a href="/employee" class="nav-link" th:classappend="${activePage=='employee'}?'active':''">
         <i class="bi bi-person-badge"></i> Employees
       </a>
     </li>
-    <li sec:authorize="hasAuthority('PERM_FIN_TRANSACTIONS_VIEW')">
+    <li th:if="${@rbacService.isFeatureEnabled('FINANCE')}" sec:authorize="hasAuthority('PERM_FIN_TRANSACTIONS_VIEW')">
       <a href="/finance" class="nav-link" th:classappend="${activePage=='finance'}?'active':''">
         <i class="bi bi-bank"></i> Finance Ledger
       </a>
@@ -179,8 +179,13 @@
     </li>
 
     <!-- ── SYSTEM ADMIN (Superuser) ──────────────────────────────────────── -->
-    <li sec:authorize="hasRole('ROLE_SYSTEM_ADMIN')" class="nav-sec">Infrastructure</li>
-    <li sec:authorize="hasRole('ROLE_SYSTEM_ADMIN')">
+    <li sec:authorize="hasRole('SYSTEM_ADMIN')" class="nav-sec">Infrastructure</li>
+    <li sec:authorize="hasRole('SYSTEM_ADMIN')">
+        <a href="/system/dashboard" class="nav-link" th:classappend="${activePage=='system-dashboard'}?'active':''">
+            <i class="bi bi-grid-1x2"></i> System Dashboard
+        </a>
+    </li>
+    <li sec:authorize="hasRole('SYSTEM_ADMIN')">
         <a href="/system/tenants" class="nav-link" th:classappend="${activePage=='system-tenants'}?'active':''">
             <i class="bi bi-building"></i> Tenant Management
         </a>

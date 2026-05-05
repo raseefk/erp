@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head('System Dashboard')}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: sidebar(activePage='system-dashboard')}"></div>
+
+<div id="main-content">
+    <div th:replace="~{fragments/layout :: topbar(pageTitle='System Health Dashboard')}"></div>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="p-4">
+        <div class="row g-4 mb-4">
+            <!-- Total Tenants Card -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-primary-subtle text-primary p-3 rounded-4">
+                            <i class="bi bi-buildings" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Total Organizations</div>
+                            <div class="h3 mb-0 fw-bold" th:text="${totalTenants}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Active Tenants Card -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-success-subtle text-success p-3 rounded-4">
+                            <i class="bi bi-check-circle" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Active Tenants</div>
+                            <div class="h3 mb-0 fw-bold" th:text="${activeTenants}">0</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- OS Resources Card -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-warning-subtle text-warning p-3 rounded-4">
+                            <i class="bi bi-cpu" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div class="w-100">
+                            <div class="text-muted small">Server Load</div>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold small">CPU:</span>
+                                <span class="fw-bold" th:text="${cpuLoad + '%'}">0%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-warning" role="progressbar" th:style="'width: ' + ${cpuLoad} + '%'"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="fw-bold small">RAM:</span>
+                                <span class="fw-bold" th:text="${ramPercent + '%'}">0%</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 4px;">
+                                <div class="progress-bar bg-info" role="progressbar" th:style="'width: ' + ${ramPercent} + '%'"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Global Storage Card -->
+            <div class="col-12 col-md-6 col-lg-3">
+                <div class="card border-0 shadow-sm rounded-4 p-3 h-100">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-info-subtle text-info p-3 rounded-4">
+                            <i class="bi bi-database" style="font-size: 1.5rem;"></i>
+                        </div>
+                        <div>
+                            <div class="text-muted small">Global DB Size</div>
+                            <div class="h3 mb-0 fw-bold" th:text="${dbSizeGb + ' GB'}">0 GB</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Recent Activity / Newest Tenants -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold mb-0">Tenant Storage Metrics</h5>
+                        <a href="/system/tenants" class="btn btn-sm btn-link text-decoration-none">Manage</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light">
+                                    <tr>
+                                        <th class="ps-4">Organization</th>
+                                        <th>Active Users</th>
+                                        <th>Upload Size</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="stat : ${tenantStats}">
+                                        <td class="ps-4">
+                                            <div class="fw-bold text-dark" th:text="${stat.tenant.name}">Tenant Name</div>
+                                            <div class="text-muted x-small" th:text="${stat.tenant.id}">UUID</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary-subtle text-primary border" th:text="${stat.activeUsers}">0</span>
+                                        </td>
+                                        <td>
+                                            <div class="fw-bold text-dark" th:text="${#numbers.formatDecimal(stat.uploadSizeGb, 1, 3)} + ' GB'">0 GB</div>
+                                            <div class="progress mt-1" style="height: 4px; width: 60px;">
+                                                <div class="progress-bar bg-success" role="progressbar" th:style="'width: ' + (${stat.uploadSizeGb} * 10) + '%'"></div>
+                                            </div>
+                                        </td>
+                                        <td class="text-muted small" th:text="${#temporals.format(stat.tenant.createdAt, 'dd MMM yyyy')}">Date</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-navy text-white" style="background: var(--navy-deep);">
+                    <h5 class="fw-bold mb-4">Admin Quick Links</h5>
+                    <div class="d-grid gap-3">
+                        <a href="/system/tenants/new" class="btn btn-primary rounded-3 text-start p-3">
+                            <i class="bi bi-plus-circle me-2"></i> Register New Tenant
+                        </a>
+                        <a href="/system/tenants" class="btn btn-outline-light rounded-3 text-start p-3">
+                            <i class="bi bi-gear-wide-connected me-2"></i> Infrastructure Settings
+                        </a>
+                        <div class="mt-4 p-3 rounded-4 bg-white bg-opacity-10 border border-white border-opacity-10">
+                            <div class="small fw-bold opacity-75 mb-2 uppercase">Platform Notice</div>
+                            <div class="small">The platform is currently running on version 1.2.0-stable. Next database maintenance is scheduled for Sunday.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

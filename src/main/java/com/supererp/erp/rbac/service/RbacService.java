@@ -94,7 +94,7 @@ public class RbacService {
     }
 
     @Transactional
-    @CacheEvict(value = "tenantFeatures", key = "#tenantId")
+    @CacheEvict(value = {"tenantFeatures", "permissionManifest"}, allEntries = true)
     public void toggleFeature(UUID tenantId, String featureId, boolean enabled) {
         TenantFeatureMapping mapping = featureMapRepo
             .findById(new TenantFeatureId(tenantId, featureId))
@@ -104,6 +104,12 @@ public class RbacService {
                 .build());
         mapping.setEnabled(enabled);
         featureMapRepo.save(mapping);
+    }
+
+    public boolean isFeatureEnabled(String featureId) {
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) return true; // Super admins see everything or system context
+        return getEnabledFeatures(tenantId).contains(featureId);
     }
 
     // ── Permission Query ─────────────────────────────────────────────────────

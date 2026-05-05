@@ -15,6 +15,7 @@ public class UserService {
 
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final com.supererp.erp.tenant.TenantService tenantService;
 
     public List<AppUser> getAllUsers() {
         return userRepository.findAll();
@@ -35,6 +36,17 @@ public class UserService {
         if (userRepository.existsByUsername(user.getUsername())) {
             throw new IllegalArgumentException("Username is already taken");
         }
+        
+        java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+        if (tenantId != null) {
+            com.supererp.erp.tenant.Tenant tenant = tenantService.findById(tenantId)
+                .orElseThrow(() -> new IllegalArgumentException("Tenant not found"));
+            long currentUsers = userRepository.countByTenantId(tenantId);
+            if (currentUsers >= tenant.getMaxUsers()) {
+                throw new IllegalArgumentException("User limit exceeded. Maximum allowed users for this organization is " + tenant.getMaxUsers());
+            }
+        }
+        
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         userRepository.save(user);
     }

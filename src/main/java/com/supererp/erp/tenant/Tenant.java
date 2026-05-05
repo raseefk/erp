@@ -39,6 +39,10 @@ public class Tenant {
     @Builder.Default
     private int maxUsers = 10;
 
+    @Column(name = "max_storage_gb")
+    @Builder.Default
+    private Double maxStorageGb = 5.0;
+
     @Column(name = "created_at", updatable = false)
     private OffsetDateTime createdAt;
 
@@ -46,6 +50,7 @@ public class Tenant {
     private OffsetDateTime updatedAt;
 
     @Column(name = "expires_at")
+    @org.springframework.format.annotation.DateTimeFormat(pattern = "yyyy-MM-dd'T'HH:mm")
     private OffsetDateTime expiresAt;
 
     @PrePersist

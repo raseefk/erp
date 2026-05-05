@@ -28,15 +28,10 @@ public class SecurityConfig {
     private final CustomUserDetailsService userDetailsService;
 
     @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public DaoAuthenticationProvider authProvider() {
+    public DaoAuthenticationProvider authProvider(PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider p = new DaoAuthenticationProvider();
         p.setUserDetailsService(userDetailsService);
-        p.setPasswordEncoder(passwordEncoder());
+        p.setPasswordEncoder(passwordEncoder);
         return p;
     }
 
@@ -44,11 +39,11 @@ public class SecurityConfig {
      * Main filter chain — JWT stateless for all /admin/**, /api/**, /settings/**, /hr/**
      */
     @Bean
-    public SecurityFilterChain mainFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain mainFilterChain(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
         http
             .securityMatcher(new AntPathRequestMatcher("/**"))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-            .authenticationProvider(authProvider())
+            .authenticationProvider(authProvider(passwordEncoder))
             .addFilterBefore(tenantResolutionFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
