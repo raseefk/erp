@@ -39,7 +39,9 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label small fw-bold">Expiry Date</label>
-                            <input type="datetime-local" th:field="${tenant.expiresAt}" class="form-control">
+                            <input type="datetime-local" id="expiresAt" name="expiresAt" 
+                                   th:value="${tenant.expiresAt != null ? #temporals.format(tenant.expiresAt, 'yyyy-MM-dd''T''HH:mm') : ''}" 
+                                   class="form-control">
                             <div class="form-text x-small">Leave blank for no expiry.</div>
                         </div>
                         <div class="col-md-6">

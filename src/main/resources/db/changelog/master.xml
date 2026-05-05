@@ -8,5 +8,6 @@
   <include file="classpath:db/changelog/V1__multi_tenant_foundation.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V2__existing_tables.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V3__rls_policies.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V4__add_max_storage.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>
