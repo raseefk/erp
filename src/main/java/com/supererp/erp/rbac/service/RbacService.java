@@ -23,7 +23,15 @@ public class RbacService {
     // ── Role Management ──────────────────────────────────────────────────────
 
     public List<AppRole> getRolesForCurrentTenant() {
-        return roleRepo.findByTenantIdOrderByNameAsc(TenantContext.getTenantId());
+        return getRoles(TenantContext.getTenantId());
+    }
+
+    public List<AppRole> getRoles(UUID tenantId) {
+        return roleRepo.findByTenantIdOrderByNameAsc(tenantId);
+    }
+
+    public Optional<AppRole> getRole(Long roleId) {
+        return roleRepo.findById(roleId);
     }
 
     public Optional<AppRole> getRoleWithPermissions(Long roleId) {

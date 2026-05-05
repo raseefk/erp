@@ -10,6 +10,8 @@ import java.util.UUID;
 @Repository
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
+    Optional<AppUser> findByUsername(String username);
+
     @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions " +
            "WHERE u.username = :username AND u.tenantId = :tenantId")
     Optional<AppUser> findByUsernameAndTenantId(String username, UUID tenantId);
@@ -17,5 +19,6 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByUsernameAndTenantId(String username, UUID tenantId);
     boolean existsByUsername(String username);
 
+    java.util.List<AppUser> findAllByEnabledTrueOrderByFullNameAsc();
     long countByTenantId(UUID tenantId);
 }

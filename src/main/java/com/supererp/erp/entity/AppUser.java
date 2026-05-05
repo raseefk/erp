@@ -6,12 +6,16 @@ import lombok.*;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
+import lombok.experimental.SuperBuilder;
+import java.time.OffsetDateTime;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
 @Table(name = "app_users",
     uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "username"}))
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
 public class AppUser extends TenantAwareEntity {
 
     @Id

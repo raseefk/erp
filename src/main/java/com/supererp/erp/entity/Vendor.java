@@ -2,11 +2,12 @@ package com.supererp.erp.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity @Table(name = "vendors")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
 public class Vendor extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -31,6 +32,15 @@ public class Vendor extends TenantAwareEntity {
 
     @Column(name = "material_supplied", length = 200)
     private String materialSupplied;
+
+    @Column(name = "bank_name", length = 100)
+    private String bankName;
+
+    @Column(name = "bank_account_number", length = 50)
+    private String bankAccountNumber;
+
+    @Column(name = "ifsc_code", length = 20)
+    private String ifscCode;
 
     @Column(nullable = false)
     @Builder.Default

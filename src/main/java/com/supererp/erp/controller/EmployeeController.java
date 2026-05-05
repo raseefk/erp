@@ -20,6 +20,7 @@ public class EmployeeController {
     private final EmployeeService service;
     private final com.supererp.erp.service.SalaryService salaryService;
     private final com.supererp.erp.repository.AppUserRepository userRepo;
+    private final com.supererp.erp.rbac.service.RbacService rbacService;
     private final org.springframework.security.crypto.password.PasswordEncoder passwordEncoder;
 
     @GetMapping
@@ -39,7 +40,7 @@ public class EmployeeController {
     public String newForm(Model m) {
         m.addAttribute("employee", new Employee());
         m.addAttribute("users", userRepo.findAllByEnabledTrueOrderByFullNameAsc());
-        m.addAttribute("roles", com.supererp.erp.enums.Role.values());
+        m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.tenant.TenantContext.getTenantId()));
         return "employee/form";
     }
 
@@ -47,7 +48,7 @@ public class EmployeeController {
     public String edit(@PathVariable Long id, Model m) {
         m.addAttribute("employee", service.getById(id));
         m.addAttribute("users", userRepo.findAllByEnabledTrueOrderByFullNameAsc());
-        m.addAttribute("roles", com.supererp.erp.enums.Role.values());
+        m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.tenant.TenantContext.getTenantId()));
         return "employee/form";
     }
 
@@ -57,7 +58,7 @@ public class EmployeeController {
                        @RequestParam(required = false) Boolean createUser,
                        @RequestParam(required = false) String username,
                        @RequestParam(required = false) String password,
-                       @RequestParam(required = false) com.supererp.erp.enums.Role role,
+                       @RequestParam(required = false) Long roleId,
                        RedirectAttributes ra) {
         
         if (Boolean.TRUE.equals(createUser) && username != null && !username.isBlank()) {
@@ -65,11 +66,18 @@ public class EmployeeController {
                 ra.addFlashAttribute("error", "Username already exists.");
                 return "redirect:/admin/employees/new";
             }
+            
+            java.util.Set<com.supererp.erp.rbac.entity.AppRole> roles = new java.util.HashSet<>();
+            if (roleId != null) {
+                rbacService.getRole(roleId).ifPresent(roles::add);
+            }
+
             com.supererp.erp.entity.AppUser newUser = com.supererp.erp.entity.AppUser.builder()
+                .tenantId(com.supererp.erp.tenant.TenantContext.getTenantId())
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .fullName(emp.getName())
-                .role(role != null ? role : com.supererp.erp.enums.Role.ROLE_EMPLOYEE)
+                .roles(roles)
                 .enabled(true)
                 .build();
             newUser = userRepo.save(newUser);

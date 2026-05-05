@@ -3,16 +3,24 @@ package com.supererp.erp.entity;
 import jakarta.persistence.*;
 import org.springframework.format.annotation.DateTimeFormat;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Entity @Table(name = "employees")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
 public class Employee extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "app_user_id")
+    private AppUser appUser;
+
+    @Column(name = "employee_code", unique = true, length = 50)
+    private String employeeCode;
 
     @Column(nullable = false, length = 150)
     private String name;

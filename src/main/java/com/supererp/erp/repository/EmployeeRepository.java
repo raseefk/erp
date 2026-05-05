@@ -1,8 +1,14 @@
 package com.supererp.erp.repository;
 import com.supererp.erp.entity.Employee;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.UUID;
+
+@Repository
 public interface EmployeeRepository extends JpaRepository<Employee, Long> {
+    long countByTenantId(UUID tenantId);
+
     org.springframework.data.domain.Page<com.supererp.erp.projection.EmployeeSummary> findByActiveTrueOrderByNameAsc(org.springframework.data.domain.Pageable p);
 
     @org.springframework.data.jpa.repository.Query("SELECT e.id as id, e.employeeCode as employeeCode, e.name as name, e.email as email, e.phone as phone, e.designation as designation, e.monthlySalary as monthlySalary, e.joiningDate as joiningDate FROM Employee e " +

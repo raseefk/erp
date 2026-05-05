@@ -5,8 +5,14 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.UUID;
+
+@Repository
 public interface VendorRepository extends JpaRepository<Vendor, Long> {
+    long countByTenantId(UUID tenantId);
+
     Page<com.supererp.erp.projection.VendorSummary> findByActiveTrueOrderByNameAsc(Pageable p);
 
     @Query("SELECT v.id as id, v.name as name, v.email as email, v.phone as phone, " +

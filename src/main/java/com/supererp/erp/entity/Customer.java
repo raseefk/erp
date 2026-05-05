@@ -4,10 +4,11 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
 import lombok.*;
 import java.time.OffsetDateTime;
+import lombok.experimental.SuperBuilder;
 import java.util.UUID;
 
 @Entity @Table(name = "customers")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
 public class Customer extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

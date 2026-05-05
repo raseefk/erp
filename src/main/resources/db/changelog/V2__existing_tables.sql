@@ -268,11 +268,14 @@ CREATE TABLE IF NOT EXISTS leave_balances (
     id              BIGSERIAL PRIMARY KEY,
     tenant_id       UUID NOT NULL REFERENCES tenants(id),
     employee_id     BIGINT NOT NULL REFERENCES employees(id),
-    year            INT NOT NULL,
-    leave_type      VARCHAR(30) NOT NULL,
-    total_days      INT NOT NULL DEFAULT 0,
-    used_days       INT NOT NULL DEFAULT 0,
-    UNIQUE(tenant_id, employee_id, year, leave_type)
+    year_val        INT NOT NULL,
+    allocated_sick_leaves   INT NOT NULL DEFAULT 0,
+    used_sick_leaves        INT NOT NULL DEFAULT 0,
+    allocated_casual_leaves INT NOT NULL DEFAULT 0,
+    used_casual_leaves      INT NOT NULL DEFAULT 0,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id, employee_id, year_val)
 );
 
 -- ── LEAVE APPLICATIONS ────────────────────────────────────────

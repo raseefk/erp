@@ -1,8 +1,10 @@
 package com.supererp.erp.rbac.entity;
 
 import com.supererp.erp.entity.AppUser;
+import com.supererp.erp.entity.TenantAwareEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -11,8 +13,8 @@ import java.util.UUID;
 @Entity
 @Table(name = "roles",
     uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "name"}))
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
-public class AppRole {
+@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+public class AppRole extends TenantAwareEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

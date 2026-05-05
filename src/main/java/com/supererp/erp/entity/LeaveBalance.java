@@ -5,9 +5,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity @Table(name = "leave_balances", uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"employee_id", "year"})
+        @UniqueConstraint(columnNames = {"employee_id", "year_val"})
 })
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class LeaveBalance extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
