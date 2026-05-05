@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: sidebar(activePage='system-tenants')}"></div>
+
+<div id="main-content">
+    <div th:replace="~{fragments/layout :: topbar(pageTitle=${pageTitle})}"></div>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="p-4">
+        <div class="mx-auto" style="max-width: 800px;">
+            <form th:action="${isNew} ? @{/system/tenants/new} : @{/system/tenants/{id}/edit(id=${tenant.id})}"
+                  method="POST" class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0" th:text="${isNew ? 'Register New Organization' : 'Edit Organization Settings'}">Form</h5>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label small fw-bold">Organization Name</label>
+                            <input type="text" th:field="${tenant.name}" class="form-control" required placeholder="e.g. Levanto Flooring Pvt Ltd">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Slug (Subdomain)</label>
+                            <div class="input-group">
+                                <input type="text" th:field="${tenant.slug}" class="form-control" required placeholder="levanto"
+                                       th:readonly="${!isNew}">
+                                <span class="input-group-text">.erp.com</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Subscription Plan</label>
+                            <select th:field="${tenant.plan}" class="form-select">
+                                <option th:each="p : ${plans}" th:value="${p}" th:text="${p}">PLAN</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Max Users</label>
+                            <input type="number" th:field="${tenant.maxUsers}" class="form-control" required min="1">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-bold">Brand Color</label>
+                            <input type="color" th:field="${tenant.primaryColor}" class="form-control form-control-color w-100" title="Choose brand color">
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" th:field="${tenant.active}" id="activeSwitch">
+                                <label class="form-check-label fw-bold" for="activeSwitch">Active Status</label>
+                            </div>
+                            <p class="text-muted small">Inactive tenants cannot log in and their subdomains will return 403.</p>
+                        </div>
+                    </div>
+
+                    <div th:if="${!isNew}" class="mt-5 border-top pt-4">
+                        <h6 class="fw-bold mb-3 text-secondary">Feature Access Control</h6>
+                        <div class="row g-2">
+                            <!-- Feature toggling would normally be handled by a separate API or included here -->
+                            <div class="col-12 text-muted small">
+                                Feature toggling is managed via the <code>TenantFeatureMapping</code> entity.
+                                Use the RBAC Service to enable/disable modules for this tenant.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-light border-0 p-4 d-flex justify-content-end gap-2">
+                    <a href="/system/tenants" class="btn btn-link text-muted text-decoration-none">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-5 shadow-sm" th:text="${isNew ? 'Register Tenant' : 'Save Changes'}">Submit</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<style>
+    .perm-card { transition: all 0.2s; border: 1px solid #e2e8f0; }
+    .perm-card:hover { border-color: var(--navy-deep); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .perm-group-header { background: #f8fafc; border-bottom: 1px solid #e2e8f0; padding: 12px 16px; }
+    .perm-item { padding: 8px 16px; border-bottom: 1px solid #f1f5f9; }
+    .perm-item:last-child { border-bottom: none; }
+    .form-check-input:checked { background-color: var(--navy-deep); border-color: var(--navy-deep); }
+</style>
+<body>
+
+<div th:replace="~{fragments/layout :: sidebar(activePage='roles')}"></div>
+
+<div id="main-content">
+    <div th:replace="~{fragments/layout :: topbar(pageTitle=${pageTitle})}"></div>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="p-4">
+        <form th:action="@{/settings/roles/{id}/permissions(id=${role.id})}" method="POST">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1">
+                            <li class="breadcrumb-item"><a href="/settings/roles" class="text-decoration-none">Roles</a></li>
+                            <li class="breadcrumb-item active" th:text="${role.name}">ADMIN</li>
+                        </ol>
+                    </nav>
+                    <h4 class="mb-0 fw-bold" style="color: var(--navy-deep);">Edit Permissions</h4>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-outline-secondary" onclick="selectAll(true)">Select All</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="selectAll(false)">Deselect All</button>
+                    <button type="submit" class="btn btn-lv shadow-sm px-4"
+                            sec:authorize="hasAuthority('PERM_SETTINGS_ROLES_MANAGE')">
+                        <i class="bi bi-save me-2"></i> Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div th:each="feature : ${features}" class="col-12 col-md-6 col-xl-4">
+                    <div class="card h-100 perm-card overflow-hidden rounded-3 border-0 shadow-sm">
+                        <div class="perm-group-header d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-2">
+                                <i th:class="${feature.icon} + ' text-primary'" style="font-size: 1.2rem;"></i>
+                                <span class="fw-bold text-dark" th:text="${feature.displayName}">Feature</span>
+                            </div>
+                            <div class="form-check form-switch mb-0">
+                                <input class="form-switch-input feature-toggle" type="checkbox"
+                                       th:data-feature-id="${feature.id}" onclick="toggleFeatureGroup(this)">
+                            </div>
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:each="menu : ${feature.menus}" class="menu-section">
+                                <div class="bg-light px-3 py-1 small fw-semibold text-muted border-bottom" th:text="${menu.displayName}">Menu</div>
+                                <div th:each="perm : ${menu.permissions}" class="perm-item d-flex align-items-center justify-content-between">
+                                    <label class="form-check-label small" th:for="${perm.id}" style="cursor:pointer;">
+                                        <div class="fw-medium text-dark" th:text="${perm.displayName}">Action</div>
+                                        <div class="text-muted" style="font-size: 0.75rem;" th:text="${perm.description}">Details...</div>
+                                    </label>
+                                    <div class="form-check mb-0">
+                                        <input class="form-check-input perm-checkbox" type="checkbox"
+                                               name="permissions" th:value="${perm.id}" th:id="${perm.id}"
+                                               th:checked="${assignedPerms.contains(perm.id)}"
+                                               th:data-feature-id="${feature.id}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 p-4 bg-light rounded-3 text-center" sec:authorize="hasAuthority('PERM_SETTINGS_ROLES_MANAGE')">
+                <p class="text-muted mb-3">Make sure to review changes before saving. Permissions take effect on next login or token refresh.</p>
+                <button type="submit" class="btn btn-lv btn-lg px-5 shadow-sm">Save Permissions</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script>
+    function toggleFeatureGroup(toggle) {
+        const featureId = toggle.getAttribute('data-feature-id');
+        const checkboxes = document.querySelectorAll('.perm-checkbox[data-feature-id="' + featureId + '"]');
+        checkboxes.forEach(cb => cb.checked = toggle.checked);
+    }
+
+    function selectAll(checked) {
+        document.querySelectorAll('.perm-checkbox').forEach(cb => cb.checked = checked);
+        document.querySelectorAll('.feature-toggle').forEach(cb => cb.checked = checked);
+    }
+
+    // Initialize feature toggles based on child checkboxes
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.feature-toggle').forEach(toggle => {
+            const featureId = toggle.getAttribute('data-feature-id');
+            const checkboxes = document.querySelectorAll('.perm-checkbox[data-feature-id="' + featureId + '"]');
+            const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+            toggle.checked = allChecked && checkboxes.length > 0;
+        });
+    });
+</script>
+</body>
+</html>

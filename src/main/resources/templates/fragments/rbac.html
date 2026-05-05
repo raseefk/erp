@@ -3,21 +3,24 @@
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <!-- 
-    RBAC Helper Fragment
-    Usage: th:replace="~{fragments/rbac :: permission('BILLING_CREATE')}"
+    RBAC Helper Fragments
+    Usage for permissions: 
+    <div th:replace="~{fragments/rbac :: hasPerm('BILLING_CREATE', ~{::content})}">
+        <button th:fragment="content">Create Invoice</button>
+    </div>
 -->
 
-<!-- Simple permission check wrapper -->
-<th:block th:fragment="permission(permId)">
+<!-- Permission check wrapper -->
+<th:block th:fragment="hasPerm(permId, content)">
     <th:block th:if="${#authorization.expression('hasAuthority(''PERM_' + permId + ''')') or #authorization.expression('hasRole(''ROLE_SYSTEM_ADMIN'')')}">
-        <th:block th:insert="${content}"></th:block>
+        <th:block th:replace="${content}"></th:block>
     </th:block>
 </th:block>
 
-<!-- Feature enablement check wrapper -->
-<th:block th:fragment="feature(featureId)">
+<!-- Feature enablement check wrapper (Tenant-wide) -->
+<th:block th:fragment="hasFeature(featureId, content)">
     <th:block th:if="${@rbacService.getEnabledFeatures(T(com.supererp.erp.tenant.TenantContext).getTenantId()).contains(featureId) or #authorization.expression('hasRole(''ROLE_SYSTEM_ADMIN'')')}">
-        <th:block th:insert="${content}"></th:block>
+        <th:block th:replace="${content}"></th:block>
     </th:block>
 </th:block>
 

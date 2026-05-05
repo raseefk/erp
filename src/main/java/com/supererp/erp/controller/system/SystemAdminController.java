@@ -1,5 +1,6 @@
 package com.supererp.erp.controller.system;
 
+import com.supererp.erp.rbac.annotation.AuditAction;
 import com.supererp.erp.tenant.Tenant;
 import com.supererp.erp.tenant.TenantService;
 import jakarta.validation.Valid;
@@ -41,6 +42,7 @@ public class SystemAdminController {
     }
 
     @PostMapping("/tenants/new")
+    @AuditAction(value = "TENANT_CREATE", entityType = "Tenant")
     public String createTenant(@ModelAttribute Tenant tenant,
                                 RedirectAttributes ra) {
         try {
@@ -66,6 +68,7 @@ public class SystemAdminController {
     }
 
     @PostMapping("/tenants/{id}/edit")
+    @AuditAction(value = "TENANT_UPDATE", entityType = "Tenant")
     public String updateTenant(@PathVariable UUID id,
                                 @ModelAttribute Tenant tenant,
                                 RedirectAttributes ra) {
@@ -80,6 +83,7 @@ public class SystemAdminController {
 
     // ── Deactivate Tenant ────────────────────────────────────────────────────
     @PostMapping("/tenants/{id}/deactivate")
+    @AuditAction(value = "TENANT_DEACTIVATE", entityType = "Tenant")
     public String deactivateTenant(@PathVariable UUID id, RedirectAttributes ra) {
         tenantService.deactivate(id);
         ra.addFlashAttribute("success", "Tenant deactivated.");

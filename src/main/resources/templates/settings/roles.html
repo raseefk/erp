@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/layout :: head}"></head>
+<body>
+
+<div th:replace="~{fragments/layout :: sidebar(activePage='roles')}"></div>
+
+<div id="main-content">
+    <div th:replace="~{fragments/layout :: topbar(pageTitle=${pageTitle})}"></div>
+    <div th:replace="~{fragments/layout :: alerts}"></div>
+
+    <div class="p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1 fw-bold" style="color: var(--navy-deep);">Roles & Permissions</h4>
+                <p class="text-muted small mb-0">Define user access levels and granular permissions for your tenant.</p>
+            </div>
+            <button class="btn btn-lv shadow-sm" data-bs-toggle="modal" data-bs-target="#newRoleModal"
+                    sec:authorize="hasAuthority('PERM_SETTINGS_ROLES_MANAGE')">
+                <i class="bi bi-plus-lg me-2"></i> Create New Role
+            </button>
+        </div>
+
+        <div class="card border-0 shadow-sm overflow-hidden" style="border-radius: 12px;">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                        <tr>
+                            <th class="ps-4" style="width: 250px;">Role Name</th>
+                            <th>Description</th>
+                            <th style="width: 120px;">Type</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="role : ${roles}">
+                            <td class="ps-4">
+                                <div class="fw-semibold text-dark" th:text="${role.name}">ADMIN</div>
+                            </td>
+                            <td class="text-muted small" th:text="${role.description}">Full access administrator</td>
+                            <td>
+                                <span th:if="${role.system}" class="badge bg-secondary-subtle text-secondary border px-2 py-1">SYSTEM</span>
+                                <span th:unless="${role.system}" class="badge bg-info-subtle text-info border px-2 py-1">CUSTOM</span>
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="d-flex justify-content-end gap-2">
+                                    <a th:href="@{/settings/roles/{id}/permissions(id=${role.id})}"
+                                       class="btn btn-sm btn-outline-secondary" title="Manage Permissions">
+                                        <i class="bi bi-shield-lock"></i> Permissions
+                                    </a>
+                                    <button th:if="${!role.system}" class="btn btn-sm btn-outline-danger"
+                                            th:onclick="'deleteRole(' + ${role.id} + ', \'' + ${role.name} + '\')'"
+                                            sec:authorize="hasAuthority('PERM_SETTINGS_ROLES_MANAGE')">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(roles)}">
+                            <td colspan="4" class="text-center py-5">
+                                <div class="text-muted">No roles defined yet.</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Role Modal -->
+<div class="modal fade" id="newRoleModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <form th:action="@{/settings/roles/new}" method="POST" class="modal-content border-0 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold">Create New Role</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div class="mb-3">
+                    <label class="form-label small fw-semibold">Role Name</label>
+                    <input type="text" name="name" class="form-control" required placeholder="e.g. Sales Manager">
+                </div>
+                <div class="mb-0">
+                    <label class="form-label small fw-semibold">Description</label>
+                    <textarea name="description" class="form-control" rows="2" placeholder="Describe what this role can do..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-link text-muted text-decoration-none" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-lv px-4">Create Role</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Confirmation Form (Hidden) -->
+<form id="deleteRoleForm" method="POST" style="display:none;"></form>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+<script>
+    function deleteRole(id, name) {
+        if (confirm('Are you sure you want to delete the role "' + name + '"? This will unassign it from all users.')) {
+            const form = document.getElementById('deleteRoleForm');
+            form.action = '/settings/roles/' + id + '/delete';
+            form.submit();
+        }
+    }
+</script>
+</body>
+</html>

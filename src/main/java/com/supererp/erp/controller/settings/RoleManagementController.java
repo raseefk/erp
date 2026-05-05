@@ -1,5 +1,6 @@
 package com.supererp.erp.controller.settings;
 
+import com.supererp.erp.rbac.annotation.AuditAction;
 import com.supererp.erp.rbac.entity.AppRole;
 import com.supererp.erp.rbac.entity.Feature;
 import com.supererp.erp.rbac.repository.FeatureRepository;
@@ -40,6 +41,7 @@ public class RoleManagementController {
 
     @PostMapping("/new")
     @PreAuthorize("hasAuthority('PERM_SETTINGS_ROLES_MANAGE')")
+    @AuditAction(value = "ROLE_CREATE", entityType = "AppRole")
     public String createRole(@RequestParam String name,
                               @RequestParam(required = false) String description,
                               RedirectAttributes ra) {
@@ -73,6 +75,7 @@ public class RoleManagementController {
 
     @PostMapping("/{id}/permissions")
     @PreAuthorize("hasAuthority('PERM_SETTINGS_ROLES_MANAGE')")
+    @AuditAction(value = "ROLE_PERMISSIONS_UPDATE", entityType = "AppRole")
     public String savePermissions(@PathVariable Long id,
                                    @RequestParam(value = "permissions", required = false)
                                    Set<String> permissions,
@@ -85,6 +88,7 @@ public class RoleManagementController {
     // ── Delete Role ───────────────────────────────────────────────────────────
     @PostMapping("/{id}/delete")
     @PreAuthorize("hasAuthority('PERM_SETTINGS_ROLES_MANAGE')")
+    @AuditAction(value = "ROLE_DELETE", entityType = "AppRole")
     public String deleteRole(@PathVariable Long id, RedirectAttributes ra) {
         try {
             rbacService.deleteRole(id);
