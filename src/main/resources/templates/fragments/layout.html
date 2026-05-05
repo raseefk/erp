@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(pageTitle)">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title th:text="${pageTitle} + ' | Lēvanto Flooring'">Lēvanto Flooring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    :root{--navy:#1A3A5C;--navy-deep:#0F2338;--navy-mid:#183252;--gold:#C8972A;--gold-lt:#E5B84A;--muted:#7A9FBF;--border:rgba(200,151,42,0.2);--sw:260px;}
+    body{font-family:'Jost',sans-serif;background:#f0f4f8;color:#1a2636;margin:0;}
+    #sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sw);background:var(--navy-deep);display:flex;flex-direction:column;z-index:1040;overflow-y:auto;transition:transform .25s;}
+    .sb-brand{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;text-decoration:none;min-height:64px;}
+    .nav-sec{padding:.7rem 1rem .2rem;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:.3rem;}
+    .sb-nav{list-style:none;padding:0;margin:0;flex:1;padding-bottom:1rem;}
+    .sb-nav li a{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.4rem;color:rgba(255,255,255,.65);text-decoration:none;font-size:.83rem;font-weight:500;border-left:3px solid transparent;transition:all .18s;}
+    .sb-nav li a:hover,.sb-nav li a.active{color:#fff;background:rgba(200,151,42,.1);border-left-color:var(--gold);}
+    .sb-nav li a i{font-size:.95rem;width:18px;text-align:center;flex-shrink:0;}
+    .nav-sec[aria-expanded="true"] .collapse-icon { transform: rotate(180deg); }
+    .sb-foot{padding:.9rem 1.2rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted);}
+    .sb-foot a{color:var(--gold);text-decoration:none;}
+    #main{margin-left:var(--sw);min-height:100vh;display:flex;flex-direction:column;}
+    #topbar{background:#fff;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.6rem;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+    .tb-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--navy-deep);}
+    .tb-user{display:flex;align-items:center;gap:.6rem;font-size:.82rem;color:#4a6080;}
+    .badge-role{background:var(--gold);color:var(--navy-deep);font-size:.6rem;padding:.2rem .55rem;font-weight:700;border-radius:2px;}
+    .pb{padding:1.5rem 1.8rem;flex:1;}
+    .card-lv{border:none;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+    .card-lv .card-header{background:var(--navy-deep);color:#fff;border-radius:8px 8px 0 0;padding:.8rem 1.2rem;font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;border:none;}
+    .stat-card{background:#fff;border-radius:8px;padding:1.2rem 1.3rem;box-shadow:0 2px 12px rgba(0,0,0,.07);border-left:4px solid var(--gold);display:flex;align-items:center;gap:1rem;}
+    .stat-icon{width:46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+    .stat-num{font-family:'Cormorant Garamond',serif;font-size:1.85rem;font-weight:700;line-height:1;}
+    .stat-lbl{font-size:.7rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;margin-top:.12rem;}
+    .table-lv thead th{background:var(--navy-deep);color:#fff;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;border:none;font-weight:600;padding:.65rem .75rem;}
+    .table-lv tbody tr:hover td{background:#f5f9ff;}
+    .table-lv td{vertical-align:middle;font-size:.86rem;border-color:#e8eef5;padding:.55rem .75rem;}
+    .badge-gold{background:var(--gold);color:var(--navy-deep);}
+    .badge-navy{background:var(--navy);color:#fff;}
+    .badge-success{background:#16a34a;color:#fff;}
+    .badge-warn{background:#d97706;color:#fff;}
+    .badge-danger{background:#dc2626;color:#fff;}
+    .btn-gold{background:var(--gold);color:var(--navy-deep);border:none;font-weight:600;}
+    .btn-gold:hover{background:var(--gold-lt);color:var(--navy-deep);}
+    .btn-navy{background:var(--navy-deep);color:#fff;border:none;}
+    .btn-navy:hover{background:var(--navy-mid);color:#fff;}
+    .alert-lv{border-left:4px solid var(--gold);background:rgba(200,151,42,.08);color:var(--navy-deep);border-radius:0 6px 6px 0;}
+    .approval-badge{background:#dc2626;color:#fff;font-size:.6rem;padding:.12rem .4rem;border-radius:8px;margin-left:.35rem;vertical-align:middle;display:none;}
+    @media(max-width:991px){#sidebar{transform:translateX(-100%);}#sidebar.open{transform:translateX(0);}#main{margin-left:0;}.pb{padding:1rem;}}
+  </style>
+</head>
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────────────────────── -->
+<nav th:fragment="sidebar(activePage)" id="sidebar">
+  <a href="/admin/dashboard" class="sb-brand d-flex flex-column align-items-start justify-content-center">
+    <div style="font-family:'Cormorant Garamond', serif; font-size: 1.25rem; font-weight: 700; color: #fff; line-height: 1.1;">
+      <span th:text="${companyName}">Levanto Flooring</span>
+    </div>
+    <div style="font-size: 0.58rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.12em; margin-top: 3px; font-weight: 600;">
+      <span th:text="${companyTagline}">Premium Flooring Solutions</span>
+    </div>
+  </a>
+
+  <ul class="sb-nav">
+
+    <!-- ── MAIN ────────────────────────────────────────────────────── -->
+    <li class="nav-sec">Main</li>
+    <li><a href="/admin/dashboard"
+           th:classappend="${activePage=='dashboard'}?' active':''">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a></li>
+
+    <!-- ── SALES ────────────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseSales" th:attr="aria-expanded=${#lists.contains({'enquiries', 'billing', 'customers'}, activePage) ? 'true' : 'false'}">
+      <span>Sales</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseSales" th:classappend="${#lists.contains({'enquiries', 'billing', 'customers'}, activePage)} ? 'show' : ''">
+      <li><a href="/admin/enquiries"
+             th:classappend="${activePage=='enquiries'}?' active':''">
+        <i class="bi bi-chat-left-text"></i> Enquiries
+      </a></li>
+      <li><a href="/admin/billing"
+             th:classappend="${activePage=='billing'}?' active':''">
+        <i class="bi bi-receipt-cutoff"></i> Billing &amp; Quotations
+      </a></li>
+      <li><a href="/admin/customers"
+             th:classappend="${activePage=='customers'}?' active':''">
+        <i class="bi bi-people"></i> Customers
+      </a></li>
+    </div>
+
+    <!-- ── OPERATIONS ───────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseOperations" th:attr="aria-expanded=${#lists.contains({'inventory'}, activePage) ? 'true' : 'false'}">
+      <span>Operations</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseOperations" th:classappend="${#lists.contains({'inventory'}, activePage)} ? 'show' : ''">
+      <li><a href="/admin/inventory"
+             th:classappend="${activePage=='inventory'}?' active':''">
+        <i class="bi bi-boxes"></i> Inventory
+      </a></li>
+    </div>
+
+    <!-- ── SUPPLY CHAIN (SCM) ────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" sec:authorize="hasRole('ADMIN')" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseScm" th:attr="aria-expanded=${#lists.contains({'vendors', 'scm-po'}, activePage) ? 'true' : 'false'}">
+      <span>Supply Chain</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseScm" th:classappend="${#lists.contains({'vendors', 'scm-po'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/vendors"
+           th:classappend="${activePage=='vendors'}?' active':''">
+          <i class="bi bi-truck"></i> Vendor Directory
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/scm/po"
+           th:classappend="${activePage=='scm-po'}?' active':''">
+          <i class="bi bi-cart"></i> Purchase Orders
+        </a>
+      </li>
+    </div>
+
+    <!-- ── PROJECTS ──────────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseProjects" th:attr="aria-expanded=${#lists.contains({'projects', 'sitelogs', 'approval'}, activePage) ? 'true' : 'false'}">
+      <span>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseProjects" th:classappend="${#lists.contains({'projects', 'sitelogs', 'approval'}, activePage)} ? 'show' : ''">
+      <li><a href="/admin/projects"
+             th:classappend="${activePage=='projects'}?' active':''">
+        <i class="bi bi-kanban"></i> Projects
+      </a></li>
+      <li><a href="/admin/sitelogs/all"
+             th:classappend="${activePage=='sitelogs'}?' active':''">
+        <i class="bi bi-journal-text"></i> Daily Logs
+      </a></li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/approval"
+           th:classappend="${activePage=='approval'}?' active':''">
+          <i class="bi bi-check2-square"></i> Approval Queue
+          <span class="approval-badge" id="approvalBadge">0</span>
+        </a>
+      </li>
+    </div>
+
+    <!-- ── HR ──────────────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" sec:authorize="hasRole('ADMIN')" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseHr" th:attr="aria-expanded=${#lists.contains({'employees', 'salaries', 'attendance', 'attendance-report', 'leaves'}, activePage) ? 'true' : 'false'}">
+      <span>HR</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseHr" th:classappend="${#lists.contains({'employees', 'salaries', 'attendance', 'attendance-report', 'leaves'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/employees"
+           th:classappend="${activePage=='employees'}?' active':''">
+          <i class="bi bi-person-badge"></i> Employees
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/salaries"
+           th:classappend="${activePage=='salaries'}?' active':''">
+          <i class="bi bi-cash-stack"></i> Salaries
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/hr/attendance"
+           th:classappend="${activePage=='attendance'}?' active':''">
+          <i class="bi bi-clock-history"></i> Daily Ledger
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/hr/attendance/report"
+           th:classappend="${activePage=='attendance-report'}?' active':''">
+          <i class="bi bi-calendar3"></i> Attendance Report
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/hr/leaves"
+           th:classappend="${activePage=='leaves'}?' active':''">
+          <i class="bi bi-calendar2-minus"></i> Leaves
+        </a>
+      </li>
+    </div>
+
+    <!-- ── FINANCE ─────────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" sec:authorize="hasRole('ADMIN')" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseFinance" th:attr="aria-expanded=${#lists.contains({'expenses', 'payments', 'finance'}, activePage) ? 'true' : 'false'}">
+      <span>Finance</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseFinance" th:classappend="${#lists.contains({'expenses', 'payments', 'finance'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/expenses"
+           th:classappend="${activePage=='expenses'}?' active':''">
+          <i class="bi bi-wallet2"></i> Expenses
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/payments"
+           th:classappend="${activePage=='payments'}?' active':''">
+          <i class="bi bi-cash-coin"></i> Payments
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/finance"
+           th:classappend="${activePage=='finance'}?' active':''">
+          <i class="bi bi-graph-up-arrow"></i> P&amp;L Report
+        </a>
+      </li>
+    </div>
+
+    <!-- ── ADMINISTRATION ────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" sec:authorize="hasRole('ADMIN')" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseAdmin" th:attr="aria-expanded=${#lists.contains({'users'}, activePage) ? 'true' : 'false'}">
+      <span>Administration</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseAdmin" th:classappend="${#lists.contains({'users'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/admin/users"
+           th:classappend="${activePage=='users'}?' active':''">
+          <i class="bi bi-shield-lock"></i> User Management
+        </a>
+      </li>
+    </div>
+
+
+
+    <!-- ── SYSTEM ────────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center" sec:authorize="hasRole('ADMIN')" style="cursor:pointer;" data-bs-toggle="collapse" data-bs-target="#collapseSystem" th:attr="aria-expanded=${#lists.contains({'settings', 'holidays'}, activePage) ? 'true' : 'false'}">
+      <span>System</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseSystem" th:classappend="${#lists.contains({'settings', 'holidays'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/settings"
+           th:classappend="${activePage=='settings'}?' active':''">
+          <i class="bi bi-gear"></i> Settings
+        </a>
+      </li>
+      <li sec:authorize="hasRole('ADMIN')">
+        <a href="/settings/holidays"
+           th:classappend="${activePage=='holidays'}?' active':''">
+          <i class="bi bi-calendar-event"></i> Annual Holidays
+        </a>
+      </li>
+    </div>
+
+  </ul>
+
+  <!-- Sidebar Footer Removed -->
+</nav>
+
+<!-- ── TOPBAR ────────────────────────────────────────────────────────────────── -->
+<div th:fragment="topbar(pageTitle)">
+  <div id="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-sm d-lg-none"
+              onclick="event.stopPropagation(); document.getElementById('sidebar').classList.toggle('open')"
+              style="border:1px solid #cbd5e1;">
+        <i class="bi bi-list" style="font-size:1.2rem;"></i>
+      </button>
+      <span class="tb-title" th:text="${pageTitle}">Page</span>
+    </div>
+
+    <!-- ── Center Branding ── -->
+    <div class="d-none d-md-block text-center">
+      <div style="font-family:'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 700; color: var(--navy-deep); line-height: 1;">
+        <span th:text="${companyName}">Levanto Flooring</span>
+      </div>
+      <div style="font-size: 0.6rem; color: var(--gold); text-transform: uppercase; letter-spacing: 0.15em; margin-top: 1px; font-weight: 600;">
+        <span th:text="${companyTagline}">Premium Flooring Solutions</span>
+      </div>
+    </div>
+    <div class="tb-user d-flex align-items-center gap-3">
+      <div class="text-end d-none d-sm-block">
+        <div style="font-weight:600; line-height: 1.1; font-size: 0.85rem;" sec:authentication="name">user</div>
+        <div style="font-size: 0.65rem; color: #64748b;">
+          <span sec:authorize="hasRole('ADMIN')">Administrator</span>
+          <span sec:authorize="hasRole('EMPLOYEE')">Employee</span>
+        </div>
+      </div>
+      <div class="d-flex gap-2 border-start ps-3">
+        <a href="/admin/profile" title="My Profile" style="color:var(--navy-deep); font-size:1.25rem;">
+          <i class="bi bi-person-circle"></i>
+        </a>
+        <a href="/logout" title="Logout" style="color:#dc2626; font-size:1.25rem;">
+          <i class="bi bi-box-arrow-right"></i>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FLASH ALERTS ──────────────────────────────────────────────────────────── -->
+<div th:fragment="alerts">
+  <div th:if="${success}"
+       class="alert alert-lv alert-dismissible fade show mb-0 mx-0 mt-0" role="alert">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${error}"
+       class="alert alert-danger alert-dismissible fade show mb-0 mx-0 mt-0" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+</div>
+
+<!-- ── SCRIPTS ───────────────────────────────────────────────────────────────── -->
+<div th:fragment="scripts">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Global CSRF fetch interceptor
+    (function() {
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (options && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method?.toUpperCase())) {
+          const token = document.querySelector('meta[name="_csrf"]')?.content;
+          const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+          if (token && header) {
+            options.headers = options.headers || {};
+            if (!(options.headers instanceof Headers)) {
+              options.headers[header] = token;
+            } else {
+              options.headers.set(header, token);
+            }
+          }
+        }
+        return originalFetch(url, options);
+      };
+    })();
+
+    // Mobile sidebar close on outside click
+    document.addEventListener('click', e => {
+      const sb = document.getElementById('sidebar');
+      if (sb && window.innerWidth < 992 && sb.classList.contains('open')) {
+        if (!sb.contains(e.target)) {
+          sb.classList.remove('open');
+        }
+      }
+    });
+
+    // Live approval badge counter (Admin only)
+    (function() {
+      const badge = document.getElementById('approvalBadge');
+      if (!badge) return;
+      fetch('/admin/approval/count')
+        .then(r => r.json())
+        .then(d => {
+          const n = parseInt(d.data) || 0;
+          if (n > 0) {
+            badge.textContent = n;
+            badge.style.display = 'inline';
+          }
+        })
+        .catch(() => {});
+    })();
+    // Bootstrap Popover initialization
+    const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
+    const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
+  </script>
+</div>
+
+</html>

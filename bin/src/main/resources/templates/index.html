@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Lēvanto — Positors · Exterminators · Hermetic</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --navy:      #1A3A5C;
+      --navy-deep: #0F2338;
+      --navy-mid:  #183252;
+      --navy-card: #152d49;
+      --gold:      #C8972A;
+      --gold-lt:   #E5B84A;
+      --gold-pale: #F0D898;
+      --white:     #FFFFFF;
+      --muted:     #7A9FBF;
+      --border:    rgba(200,151,42,0.18);
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: 'Jost', sans-serif; background: var(--navy-deep); color: var(--white); overflow-x: hidden; }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 5vw;
+      background: rgba(10,26,45,0.96); backdrop-filter: blur(18px);
+      border-bottom: 1px solid var(--border);
+      transition: box-shadow .3s;
+    }
+    .nav-logo { display: flex; align-items: center; gap: .9rem; text-decoration: none; }
+    .nav-logo-img { height: 48px; width: 48px; object-fit: contain; }
+    .nav-logo-info { display: flex; flex-direction: column; }
+    .nav-logo-name { font-family: 'Cormorant Garamond', serif; font-size: 1.55rem; font-weight: 600; color: var(--white); letter-spacing: .06em; line-height: 1; }
+    .nav-logo-name span { color: var(--gold); }
+    .nav-logo-sub { font-size: .58rem; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-top: .18rem; }
+    .nav-links { display: flex; gap: 2rem; list-style: none; }
+    .nav-links a { font-size: .78rem; font-weight: 500; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.55); text-decoration: none; transition: color .2s; }
+    .nav-links a:hover { color: var(--gold-lt); }
+    .nav-cta { border: 1px solid var(--gold); color: var(--gold); padding: .55rem 1.4rem; font-family: 'Jost', sans-serif; font-size: .76rem; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; transition: background .2s, color .2s; }
+    .nav-cta:hover { background: var(--gold); color: var(--navy-deep); }
+
+    /* ── HERO ── */
+    #hero {
+      min-height: 100vh; background: var(--navy-deep);
+      display: grid; grid-template-columns: 1fr 1fr;
+      padding-top: 76px; position: relative; overflow: hidden;
+    }
+    /* Gold grid pattern */
+    #hero::before {
+      content: ''; position: absolute; inset: 0;
+      background-image: linear-gradient(rgba(200,151,42,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(200,151,42,.05) 1px, transparent 1px);
+      background-size: 64px 64px; pointer-events: none;
+    }
+    /* Gold glow bottom-left */
+    #hero::after {
+      content: ''; position: absolute; bottom: -100px; left: -100px;
+      width: 500px; height: 500px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(200,151,42,.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    .hero-left { display: flex; flex-direction: column; justify-content: center; padding: 6vw 4vw 6vw 6vw; position: relative; z-index: 1; }
+    .hero-eyebrow { display: inline-flex; align-items: center; gap: .7rem; font-size: .68rem; letter-spacing: .24em; text-transform: uppercase; color: var(--gold); font-weight: 500; margin-bottom: 1.5rem; opacity: 0; animation: fadeUp .6s .1s forwards; }
+    .hero-eyebrow::before { content: ''; width: 28px; height: 1px; background: var(--gold); flex-shrink: 0; }
+    .hero-title { font-family: 'Cormorant Garamond', serif; font-size: clamp(2.8rem, 5vw, 4.8rem); font-weight: 600; line-height: 1.1; color: var(--white); margin-bottom: 1.6rem; opacity: 0; animation: fadeUp .6s .25s forwards; }
+    .hero-title em { font-style: italic; color: var(--gold-lt); }
+    .hero-sub { font-size: .92rem; line-height: 1.82; color: var(--muted); max-width: 400px; margin-bottom: 2.6rem; font-weight: 300; opacity: 0; animation: fadeUp .6s .4s forwards; }
+    .hero-btns { display: flex; gap: 1.1rem; flex-wrap: wrap; opacity: 0; animation: fadeUp .6s .55s forwards; }
+    .btn-gold { background: var(--gold); color: var(--navy-deep); padding: .88rem 2.2rem; font-size: .8rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; text-decoration: none; transition: background .2s, transform .15s; display: inline-block; }
+    .btn-gold:hover { background: var(--gold-lt); transform: translateY(-2px); }
+    .btn-outline { border: 1px solid rgba(200,151,42,.4); color: var(--gold-lt); padding: .88rem 2.2rem; font-size: .8rem; font-weight: 400; letter-spacing: .12em; text-transform: uppercase; text-decoration: none; transition: border-color .2s, background .2s, transform .15s; display: inline-block; }
+    .btn-outline:hover { border-color: var(--gold); background: rgba(200,151,42,.08); transform: translateY(-2px); }
+    .hero-stats { display: flex; gap: 2.4rem; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid rgba(200,151,42,.2); opacity: 0; animation: fadeUp .6s .7s forwards; }
+    .stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2.3rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .stat-label { font-size: .66rem; color: var(--muted); margin-top: .28rem; letter-spacing: .1em; text-transform: uppercase; }
+    .hero-right { position: relative; overflow: hidden; opacity: 0; animation: fadeIn .9s .3s forwards; }
+    .hero-right::after { content: ''; position: absolute; inset: 0; background: linear-gradient(to right, var(--navy-deep) 0%, rgba(15,35,56,.3) 40%, transparent 70%); pointer-events: none; }
+    .hero-img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.75); }
+    .hero-badge { position: absolute; bottom: 2.5rem; right: 2rem; z-index: 2; background: var(--gold); padding: 1.3rem 1.8rem; text-align: center; animation: fadeUp .6s .9s both; }
+    .badge-num { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 700; color: var(--navy-deep); line-height: 1; }
+    .badge-lbl { font-size: .6rem; color: var(--navy-deep); letter-spacing: .14em; text-transform: uppercase; margin-top: .2rem; font-weight: 600; }
+
+    /* ── GOLD CHEVRON DIVIDER ── */
+    .chevron-strip {
+      background: var(--navy-mid);
+      padding: 1.4rem 6vw;
+      display: flex; align-items: center; justify-content: space-between;
+      border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+      gap: 1rem; flex-wrap: wrap;
+    }
+    .chevron-svg { flex-shrink: 0; opacity: .9; }
+    .chevron-tags { display: flex; align-items: center; gap: 2rem; flex-wrap: wrap; }
+    .ctag { font-size: .68rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); font-weight: 500; display: flex; align-items: center; gap: .8rem; }
+    .ctag::before { content: '◆'; font-size: .45rem; }
+    .insta-link { display: flex; align-items: center; gap: .6rem; text-decoration: none; font-size: .75rem; color: var(--muted); letter-spacing: .06em; transition: color .2s; border: 1px solid var(--border); padding: .45rem 1rem; }
+    .insta-link:hover { color: var(--gold-lt); border-color: var(--gold); }
+    .insta-link svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* ── SECTION COMMONS ── */
+    section { padding: 7rem 6vw; }
+    .s-tag { display: inline-flex; align-items: center; gap: .6rem; font-size: .66rem; letter-spacing: .22em; text-transform: uppercase; color: var(--gold); font-weight: 600; margin-bottom: .9rem; }
+    .s-tag::before { content: ''; width: 20px; height: 1px; background: var(--gold); flex-shrink: 0; }
+    .s-title { font-family: 'Cormorant Garamond', serif; font-weight: 600; font-size: clamp(2rem, 3.6vw, 3.2rem); letter-spacing: -.01em; line-height: 1.1; color: var(--white); }
+    .s-title-dark { color: var(--navy-deep); }
+    .s-sub { font-size: .88rem; line-height: 1.82; max-width: 480px; margin-top: .8rem; font-weight: 300; color: var(--muted); }
+    .s-sub-dark { color: #5a7a95; }
+    .s-header { margin-bottom: 3.5rem; }
+
+    /* ── SERVICES ── */
+    #services { background: var(--navy-deep); }
+    /* Chevron watermark */
+    #services { position: relative; overflow: hidden; }
+    #services .bg-chevron { position: absolute; right: -80px; top: 50%; transform: translateY(-50%); opacity: .04; pointer-events: none; }
+    .services-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; background: rgba(200,151,42,.12); position: relative; z-index: 1; }
+    .svc-card { background: var(--navy-card); padding: 2.5rem 2rem; position: relative; overflow: hidden; transition: background .25s; }
+    .svc-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--gold), var(--gold-lt)); transform: scaleX(0); transition: transform .35s; }
+    .svc-card:hover { background: #1a3a5e; }
+    .svc-card:hover::before { transform: scaleX(1); }
+    .svc-num { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700; color: rgba(200,151,42,.1); line-height: 1; margin-bottom: .9rem; }
+    .svc-icon { font-size: 1.7rem; margin-bottom: .9rem; display: block; }
+    .svc-name { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 600; color: var(--white); margin-bottom: .55rem; }
+    .svc-desc { font-size: .83rem; color: var(--muted); line-height: 1.72; font-weight: 300; }
+    .svc-arrow { display: inline-block; color: var(--gold); font-size: .7rem; letter-spacing: .12em; text-transform: uppercase; margin-top: 1.1rem; text-decoration: none; opacity: 0; transition: opacity .3s, gap .2s; }
+    .svc-card:hover .svc-arrow { opacity: 1; }
+
+    /* ── ABOUT ── */
+    #about { display: grid; grid-template-columns: 1fr 1fr; gap: 6vw; align-items: center; background: #0c1e30; }
+    .about-visual { position: relative; }
+    .about-img { width: 100%; aspect-ratio: 4/5; object-fit: cover; display: block; filter: brightness(.85); }
+    .about-gold-bar { position: absolute; top: 2rem; left: -1.5rem; width: 4px; height: 90px; background: linear-gradient(to bottom, var(--gold), transparent); }
+    .about-stat-box { position: absolute; bottom: -2rem; right: -2rem; background: var(--navy-deep); padding: 1.8rem 2.2rem; border-left: 3px solid var(--gold); }
+    .about-stat-num { font-family: 'Cormorant Garamond', serif; font-size: 2.8rem; font-weight: 700; color: var(--gold); line-height: 1; }
+    .about-stat-lbl { font-size: .66rem; color: var(--muted); margin-top: .25rem; letter-spacing: .12em; text-transform: uppercase; }
+    .about-body { font-size: .9rem; color: var(--muted); line-height: 1.85; margin-bottom: 1.1rem; font-weight: 300; }
+    .about-list { list-style: none; margin: 1.6rem 0 2.4rem; }
+    .about-list li { display: flex; align-items: center; gap: .8rem; padding: .65rem 0; border-bottom: 1px solid rgba(200,151,42,.12); font-size: .86rem; color: rgba(255,255,255,.8); }
+    .about-list li::before { content: ''; width: 6px; height: 6px; background: var(--gold); transform: rotate(45deg); flex-shrink: 0; }
+
+    /* ── GALLERY ── */
+    #gallery { background: var(--navy-deep); }
+    .gallery-grid { display: grid; grid-template-columns: repeat(12,1fr); gap: 4px; }
+    .gal { overflow: hidden; position: relative; }
+    .gal img { width: 100%; height: 100%; object-fit: cover; display: block; filter: brightness(.75); transition: transform .6s, filter .4s; }
+    .gal:hover img { transform: scale(1.06); filter: brightness(.95); }
+    .gal-ov { position: absolute; inset: 0; background: rgba(15,35,56,0); transition: background .3s; display: flex; align-items: flex-end; padding: 1.2rem; }
+    .gal:hover .gal-ov { background: rgba(15,35,56,.5); }
+    .gal-lbl { font-size: .68rem; letter-spacing: .14em; text-transform: uppercase; color: var(--white); opacity: 0; transition: opacity .3s; border-left: 2px solid var(--gold); padding-left: .6rem; }
+    .gal:hover .gal-lbl { opacity: 1; }
+    .g1 { grid-column: span 7; height: 340px; }
+    .g2 { grid-column: span 5; height: 340px; }
+    .g3 { grid-column: span 4; height: 260px; }
+    .g4 { grid-column: span 4; height: 260px; }
+    .g5 { grid-column: span 4; height: 260px; }
+
+    /* ── TESTIMONIALS ── */
+    #testimonials { background: #0c1e30; }
+    .testi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px,1fr)); gap: 1.5rem; }
+    .testi-card { background: var(--navy-card); border: 1px solid var(--border); padding: 2.4rem; position: relative; transition: border-color .3s, transform .3s; }
+    .testi-card::before { content: '"'; font-family: 'Cormorant Garamond', serif; font-size: 5rem; line-height: .7; color: rgba(200,151,42,.15); position: absolute; top: 1.2rem; left: 1.8rem; }
+    .testi-card:hover { border-color: rgba(200,151,42,.5); transform: translateY(-4px); }
+    .testi-stars { color: var(--gold); font-size: .82rem; letter-spacing: .15em; margin-bottom: 1.3rem; }
+    .testi-text { font-size: .88rem; color: var(--muted); line-height: 1.8; margin-bottom: 1.5rem; font-style: italic; font-weight: 300; position: relative; z-index: 1; }
+    .testi-author { display: flex; align-items: center; gap: 1rem; }
+    .testi-av { width: 42px; height: 42px; background: var(--navy-deep); border: 1px solid var(--gold); display: flex; align-items: center; justify-content: center; font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 1rem; color: var(--gold); flex-shrink: 0; }
+    .testi-name { font-weight: 600; font-size: .86rem; color: var(--white); }
+    .testi-role { font-size: .72rem; color: var(--muted); margin-top: .1rem; }
+
+    /* ── CONTACT ── */
+    #contact { background: var(--navy-deep); position: relative; overflow: hidden; }
+    #contact .bg-chevron { position: absolute; left: -60px; bottom: -60px; opacity: .04; pointer-events: none; }
+    .contact-grid { display: grid; grid-template-columns: 1fr 1.4fr; gap: 5vw; align-items: start; position: relative; z-index: 1; }
+    .c-item { display: flex; gap: 1.2rem; margin-bottom: 2rem; align-items: flex-start; }
+    .c-dot { width: 42px; height: 42px; flex-shrink: 0; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 1rem; }
+    .c-lbl { font-size: .63rem; color: var(--gold); letter-spacing: .18em; text-transform: uppercase; margin-bottom: .2rem; }
+    .c-val { font-size: .88rem; color: rgba(255,255,255,.7); line-height: 1.5; }
+    .c-val a { color: var(--gold-lt); text-decoration: none; }
+    .c-val a:hover { color: var(--gold); }
+    .contact-form { display: flex; flex-direction: column; gap: 1rem; }
+    .f-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+    .f-group { display: flex; flex-direction: column; gap: .38rem; }
+    .f-group label { font-size: .62rem; color: var(--gold); letter-spacing: .18em; text-transform: uppercase; }
+    .f-group input, .f-group textarea, .f-group select { background: rgba(255,255,255,.04); border: 1px solid rgba(200,151,42,.2); padding: .85rem 1rem; font-family: 'Jost', sans-serif; font-size: .88rem; color: var(--white); outline: none; transition: border-color .2s; }
+    .f-group input::placeholder, .f-group textarea::placeholder { color: rgba(255,255,255,.18); }
+    .f-group input:focus, .f-group textarea:focus, .f-group select:focus { border-color: var(--gold); }
+    .f-group select { color: rgba(255,255,255,.45); }
+    .f-group select option { background: var(--navy-deep); color: white; }
+    .f-group textarea { resize: vertical; min-height: 130px; }
+    .f-submit { background: var(--gold); color: var(--navy-deep); border: none; padding: 1rem 2.4rem; font-family: 'Jost', sans-serif; font-size: .8rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; transition: background .2s, transform .15s; align-self: flex-start; }
+    .f-submit:hover { background: var(--gold-lt); transform: translateY(-2px); }
+
+    /* ── INSTAGRAM SECTION ── */
+    #insta { background: var(--navy-mid); padding: 4rem 6vw; text-align: center; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .insta-inner { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; }
+    .insta-logo-row { display: flex; align-items: center; gap: 1rem; }
+    .insta-logo-row svg { width: 28px; height: 28px; fill: var(--gold); }
+    .insta-handle { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--white); }
+    .insta-handle span { color: var(--gold); }
+    .insta-desc { font-size: .85rem; color: var(--muted); font-weight: 300; max-width: 420px; line-height: 1.7; }
+    .insta-btn { display: inline-flex; align-items: center; gap: .6rem; background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: .75rem 2rem; font-family: 'Jost', sans-serif; font-size: .78rem; letter-spacing: .14em; text-transform: uppercase; text-decoration: none; transition: background .2s, color .2s; margin-top: .4rem; }
+    .insta-btn:hover { background: var(--gold); color: var(--navy-deep); }
+    .insta-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+    /* ── FOOTER ── */
+    footer { background: #070e18; padding: 2.5rem 6vw; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1.2rem; border-top: 1px solid rgba(200,151,42,.12); }
+    .footer-brand { display: flex; align-items: center; gap: .8rem; text-decoration: none; }
+    .footer-brand img { height: 36px; width: 36px; object-fit: contain; }
+    .footer-brand-name { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; font-weight: 600; color: rgba(255,255,255,.6); }
+    .footer-brand-name span { color: var(--gold); }
+    .footer-copy { font-size: .72rem; color: rgba(255,255,255,.22); }
+    .footer-links { display: flex; gap: 2rem; list-style: none; }
+    .footer-links a { font-size: .72rem; color: rgba(255,255,255,.3); text-decoration: none; letter-spacing: .06em; transition: color .2s; }
+    .footer-links a:hover { color: var(--gold); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+
+    /* ── TESTIMONIAL CAROUSEL ── */
+    .testi-carousel-wrap { position: relative; }
+    .testi-track-outer { overflow: hidden; }
+    .testi-track {
+      display: flex; gap: 1.5rem;
+      transition: transform .45s cubic-bezier(.4,0,.2,1);
+    }
+    .testi-track .testi-card {
+      flex: 0 0 calc(33.333% - 1rem);
+      min-width: 0;
+    }
+    .testi-arrow {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      z-index: 10; background: var(--navy-mid); border: 1px solid var(--border);
+      color: var(--gold); width: 44px; height: 44px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; transition: background .2s, box-shadow .2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,.35);
+    }
+    .testi-arrow:hover { background: var(--gold); color: var(--navy-deep); }
+    .testi-prev { left: -22px; }
+    .testi-next { right: -22px; }
+    .testi-dots { display: flex; justify-content: center; gap: .55rem; margin-top: 2rem; }
+    .testi-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(200,151,42,.3); border: none; cursor: pointer;
+      transition: background .25s, transform .2s;
+    }
+    .testi-dot.active { background: var(--gold); transform: scale(1.3); }
+    @media (max-width: 960px) {
+      .testi-track .testi-card { flex: 0 0 calc(50% - .75rem); }
+      .testi-prev { left: -12px; }
+      .testi-next { right: -12px; }
+    }
+    @media (max-width: 640px) {
+      .testi-track .testi-card { flex: 0 0 100%; }
+    }
+    /* ── RESPONSIVE ── */
+    @media (max-width: 960px) {
+      #hero { grid-template-columns: 1fr; }
+      .hero-right { height: 380px; }
+      #about { grid-template-columns: 1fr; }
+      .about-visual { max-width: 480px; }
+      .about-stat-box { right: 0; }
+      .services-grid { grid-template-columns: 1fr 1fr; }
+      .contact-grid { grid-template-columns: 1fr; }
+      .g1,.g2,.g3,.g4,.g5 { grid-column: span 12; height: 210px; }
+      .f-row { grid-template-columns: 1fr; }
+      nav .nav-links { display: none; }
+      .chevron-strip { gap: 1rem; }
+    }
+    @media (max-width: 640px) {
+      .services-grid { grid-template-columns: 1fr; }
+      .chevron-tags { gap: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav id="main-nav">
+  <a href="#hero" class="nav-logo">
+    <img class="nav-logo-img" src="/images/logo-horizontal.png" alt="Lēvanto Logo" style="height:48px;width:auto;object-fit:contain;"/>
+  </a>
+  <ul class="nav-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#gallery">Projects</a></li>
+    <li><a href="#testimonials">Reviews</a></li>
+    <li><a href="#insta">Instagram</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Get a Quote</a>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-left">
+    <p class="hero-eyebrow">Flooring · Waterproofing · Hermetic Solutions</p>
+    <h1 class="hero-title">
+      Surfaces built<br/>to <em>endure.</em><br/>Spaces made<br/>to inspire.
+    </h1>
+    <p class="hero-sub">
+      Lēvanto delivers precision flooring, advanced waterproofing systems, and hermetic finishes — crafted for homes and commercial spaces across Kerala.
+    </p>
+    <div class="hero-btns">
+      <a href="#services" class="btn-gold">Explore Services</a>
+      <a href="#gallery" class="btn-outline">View Projects</a>
+    </div>
+    <div class="hero-stats">
+      <div>
+        <div class="stat-num">50+</div>
+        <div class="stat-label">Projects Done</div>
+      </div>
+      <div>
+        <div class="stat-num">03+</div>
+        <div class="stat-label">Years Expert</div>
+      </div>
+      <div>
+        <div class="stat-num">100%</div>
+        <div class="stat-label">Satisfaction</div>
+      </div>
+    </div>
+  </div>
+  <div class="hero-right">
+    <img class="hero-img"
+      src="https://images.unsplash.com/photo-1600585154526-990dced4db0d?w=1000&auto=format&fit=crop"
+      alt="Premium flooring interior"/>
+    <div class="hero-badge">
+      <div class="badge-num">03+</div>
+      <div class="badge-lbl">Years Trusted</div>
+    </div>
+  </div>
+</section>
+
+<!-- CHEVRON STRIP (Gold logo chevrons as divider) -->
+<div class="chevron-strip">
+  <!-- Inline chevron SVG matching logo style -->
+  <svg class="chevron-svg" width="42" height="52" viewBox="0 0 42 52" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path d="M2 4L21 22L40 4" stroke="#C8972A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 17L21 35L40 17" stroke="#C8972A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+    <path d="M2 30L21 48L40 30" stroke="#C8972A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+  </svg>
+  <div class="chevron-tags">
+    <div class="ctag">Positors</div>
+    <div class="ctag">Exterminators</div>
+    <div class="ctag">Hermetic</div>
+    <div class="ctag">Excellence in Every Surface</div>
+  </div>
+  <a href="https://www.instagram.com/levanto_flooring/" target="_blank" class="insta-link">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+    @levanto_flooring
+  </a>
+</div>
+
+<!-- SERVICES -->
+<section id="services">
+  <!-- Chevron watermark -->
+  <svg class="bg-chevron" width="500" height="600" viewBox="0 0 42 52" fill="none">
+    <path d="M2 4L21 22L40 4" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 17L21 35L40 17" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 30L21 48L40 30" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="s-header">
+    <span class="s-tag">Our Expertise</span>
+    <h2 class="s-title">What We Deliver</h2>
+    <p class="s-sub">From tile laying to advanced waterproofing — Lēvanto brings precision and permanence to every surface.</p>
+  </div>
+  <div class="services-grid">
+    <div class="svc-card">
+      <div class="svc-num">01</div>
+      <span class="svc-icon">🪵</span>
+      <div class="svc-name">Hardwood & Laminate Flooring</div>
+      <div class="svc-desc">Premium wood and laminate installation with flawless finishing for warmth and elegance in any interior.</div>
+      <a href="#contact" class="svc-arrow">Enquire →</a>
+    </div>
+    <div class="svc-card">
+      <div class="svc-num">02</div>
+      <span class="svc-icon">🧱</span>
+      <div class="svc-name">Tile & Stone Positing</div>
+      <div class="svc-desc">Expert laying of ceramic, porcelain, marble and granite tiles for interiors, exteriors and wet areas.</div>
+      <a href="#contact" class="svc-arrow">Enquire →</a>
+    </div>
+    <div class="svc-card">
+      <div class="svc-num">03</div>
+      <span class="svc-icon">💧</span>
+      <div class="svc-name">Waterproofing Systems</div>
+      <div class="svc-desc">Comprehensive terrace, bathroom and basement waterproofing using industry-grade hermetic coatings.</div>
+      <a href="#contact" class="svc-arrow">Enquire →</a>
+    </div>
+    <div class="svc-card">
+      <div class="svc-num">04</div>
+      <span class="svc-icon">🪣</span>
+      <div class="svc-name">Epoxy & PU Coating</div>
+      <div class="svc-desc">Durable polyurethane and epoxy systems for industrial floors, garages and commercial spaces.</div>
+      <a href="#contact" class="svc-arrow">Enquire →</a>
+    </div>
+    <div class="svc-card">
+      <div class="svc-num">05</div>
+      <span class="svc-icon">🛠️</span>
+      <div class="svc-name">Pest & Termite Control</div>
+      <div class="svc-desc">Professional extermination and prevention treatments to protect your property from within the foundation.</div>
+      <a href="#contact" class="svc-arrow">Enquire →</a>
+    </div>
+    <div class="svc-card">
+      <div class="svc-num">06</div>
+      <span class="svc-icon">🏢</span>
+      <div class="svc-name">Commercial Projects</div>
+      <div class="svc-desc">Large-scale flooring, waterproofing and hermetic solutions for offices, retail spaces and institutions.</div>
+      <a href="#contact" class="svc-arrow">Enquire →</a>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about">
+  <div class="about-visual">
+    <div class="about-gold-bar"></div>
+    <img class="about-img"
+      src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?w=800&auto=format&fit=crop"
+      alt="Lēvanto team"/>
+    <div class="about-stat-box">
+      <div class="about-stat-num">200+</div>
+      <div class="about-stat-lbl">Satisfied Clients</div>
+    </div>
+  </div>
+  <div class="about-content">
+    <div class="s-header">
+      <span class="s-tag">About Lēvanto</span>
+      <h2 class="s-title">Built on trust,<br/>finished with craft.</h2>
+    </div>
+    <p class="about-body">Lēvanto is a specialist in flooring solutions, waterproofing systems and hermetic treatments. For over a decade, we have transformed spaces across Kerala — delivering surfaces that last and finishes that impress.</p>
+    <p class="about-body">Whether it's a family home or a large commercial complex, our certified team brings the same dedication, precision and transparency to every project.</p>
+    <ul class="about-list">
+      <li>Certified installation and treatment experts</li>
+      <li>Premium-grade materials with warranty coverage</li>
+      <li>On-time delivery and transparent pricing</li>
+      <li>Free site inspection and consultation</li>
+      <li>After-service support and maintenance</li>
+    </ul>
+    <a href="#contact" class="btn-gold">Book Free Consultation</a>
+  </div>
+</section>
+
+<!-- GALLERY -->
+<section id="gallery">
+  <div class="s-header">
+    <span class="s-tag">Our Work</span>
+    <h2 class="s-title">Recent Projects</h2>
+    <p class="s-sub">A selection of spaces we have transformed across Kerala and beyond.</p>
+  </div>
+  <div class="gallery-grid">
+    <div class="gal g1">
+      <img src="https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=900&auto=format&fit=crop" alt="Living room flooring"/>
+      <div class="gal-ov"><span class="gal-lbl">Living Room Flooring</span></div>
+    </div>
+    <div class="gal g2">
+      <img src="https://images.unsplash.com/photo-1560185007-c5ca9d2c014d?w=700&auto=format&fit=crop" alt="Waterproofing"/>
+      <div class="gal-ov"><span class="gal-lbl">Bathroom Waterproofing</span></div>
+    </div>
+    <div class="gal g3">
+      <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop" alt="Tile"/>
+      <div class="gal-ov"><span class="gal-lbl">Marble Tile Laying</span></div>
+    </div>
+    <div class="gal g4">
+      <img src="https://images.unsplash.com/photo-1572120360610-d971b9d7767c?w=600&auto=format&fit=crop" alt="Epoxy"/>
+      <div class="gal-ov"><span class="gal-lbl">Epoxy Coating</span></div>
+    </div>
+    <div class="gal g5">
+      <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=600&auto=format&fit=crop" alt="Commercial"/>
+      <div class="gal-ov"><span class="gal-lbl">Commercial Space</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section id="testimonials">
+  <div class="s-header">
+    <span class="s-tag">Client Reviews</span>
+    <h2 class="s-title">What our clients say</h2>
+    <p class="s-sub">Real words from real clients who trusted Lēvanto with their spaces.</p>
+  </div>
+  <!-- Testimonial Carousel -->
+  <div class="testi-carousel-wrap" style="position:relative;">
+    <!-- Left Arrow -->
+    <button class="testi-arrow testi-prev" onclick="testiSlide(-1)" aria-label="Previous">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+    </button>
+
+    <div class="testi-track-outer">
+      <div class="testi-track" id="testiTrack">
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-text">Lēvanto transformed our entire ground floor with stunning marble tiles. The workmanship was immaculate and they finished two days ahead of schedule. Absolutely recommended!</p>
+          <div class="testi-author">
+            <div class="testi-av">SR</div>
+            <div><div class="testi-name">Sitra Resort</div><div class="testi-role">Kakkadampoyil, Calicut</div></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-text">We hired Lēvanto for our terrace and bathroom waterproofing. Not a single leak through the monsoon. Their team was professional, clean and efficient throughout.</p>
+          <div class="testi-author">
+            <div class="testi-av">CC</div>
+            <div><div class="testi-name">Capkon City</div><div class="testi-role">Pantheeramkavu, Calicut</div></div>
+          </div>
+        </div>
+        <div class="testi-card">
+          <div class="testi-stars">★★★★★</div>
+          <p class="testi-text">Excellent epoxy flooring for our warehouse. Transparent pricing, the team understood our requirements perfectly and the finish has held up brilliantly.</p>
+          <div class="testi-author">
+            <div class="testi-av">CK</div>
+            <div><div class="testi-name">Capkon</div><div class="testi-role">Pantheeramkavu, Calicut</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Arrow -->
+    <button class="testi-arrow testi-next" onclick="testiSlide(1)" aria-label="Next">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+    </button>
+
+    <!-- Dots -->
+    <div class="testi-dots" id="testiDots"></div>
+  </div>
+</section>
+
+<!-- INSTAGRAM -->
+<section id="insta">
+  <div class="insta-inner">
+    <div class="insta-logo-row">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      <div class="insta-handle">Follow us on <span>Instagram</span></div>
+    </div>
+    <p class="insta-desc">See our latest projects, before-and-afters, and flooring inspirations on our Instagram page.</p>
+    <a href="https://www.instagram.com/levanto_flooring/" target="_blank" class="insta-btn">
+      <svg viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+      @levanto_flooring
+    </a>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact">
+  <svg class="bg-chevron" width="400" height="480" viewBox="0 0 42 52" fill="none">
+    <path d="M2 4L21 22L40 4" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 17L21 35L40 17" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M2 30L21 48L40 30" stroke="white" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <div class="s-header">
+    <span class="s-tag">Contact Us</span>
+    <h2 class="s-title">Start your project today</h2>
+    <p class="s-sub">Request a free site visit and custom quote. We respond within 24 hours.</p>
+  </div>
+  <div class="contact-grid">
+    <div>
+      <div class="c-item">
+        <div class="c-dot">📍</div>
+        <div><div class="c-lbl">Location</div><div class="c-val">Manjeri, Malappuram, Kerala, India</div></div>
+      </div>
+      <div class="c-item">
+        <div class="c-dot">📞</div>
+        <div><div class="c-lbl">Phone</div><div class="c-val">+91 9633 640 055</div><div class="c-val">+91 9633 640 063</div><div class="c-val">+91 9633 640 064</div></div>
+      </div>
+      <div class="c-item">
+  <div class="c-dot">✉️</div>
+  <div>
+    <div class="c-lbl">Email</div>
+    <div class="c-val">
+      <a href="mailto:levantoflooring@gmail.com">
+        levantoflooring@gmail.com
+      </a>
+    </div>
+  </div>
+</div>
+      <div class="c-item">
+        <div class="c-dot">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="#C8972A"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
+        </div>
+        <div><div class="c-lbl">Instagram</div><div class="c-val"><a href="https://www.instagram.com/levanto_flooring/" target="_blank">@levanto_flooring</a></div></div>
+      </div>
+      <div class="c-item">
+        <div class="c-dot">🕐</div>
+        <div><div class="c-lbl">Working Hours</div><div class="c-val">Mon – Sat: 9 AM – 6 PM</div></div>
+      </div>
+    </div>
+    <form class="contact-form" id="enquiryForm" onsubmit="handleSubmit(event)">
+      <div class="f-row">
+        <div class="f-group"><label>Your Name</label><input type="text" name="name" placeholder="e.g. Rahul Nair"/></div>
+        <div class="f-group"><label>Phone Number</label><input type="tel" name="phone" placeholder="+91 98000 00000"/></div>
+      </div>
+      <div class="f-group">
+        <label>Service Required</label>
+        <select name="service">
+          <option value="" disabled selected>Select a service...</option>
+          <option>Hardwood / Laminate Flooring</option>
+          <option>Tile & Stone Positing</option>
+          <option>Waterproofing</option>
+          <option>Epoxy / PU Coating</option>
+          <option>Pest & Termite Control</option>
+          <option>Commercial Project</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="f-group"><label>Message</label><textarea name="message" placeholder="Describe your project or space..."></textarea></div>
+      <button type="submit" class="f-submit">Send Enquiry →</button>
+    </form>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#hero" class="footer-brand">
+    <img src="/images/logo-horizontal.png" alt="Lēvanto" style="height:36px;width:auto;object-fit:contain;"/>
+  </a>
+  <p class="footer-copy">© 2026 Lēvanto. All rights reserved.</p>
+  <ul class="footer-links">
+    <li><a href="#services">Services</a></li>
+    <li><a href="#about">About</a></li>
+    <li><a href="#gallery">Projects</a></li>
+    <li><a href="https://www.instagram.com/levanto_flooring/" target="_blank">Instagram</a></li>
+    <li><a href="#contact">Contact</a></li>
+  </ul>
+</footer>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzoE_DdBdTwDluwFt0IcqTw9Nbxk-9-GXPE1AIYV0OUxGLFaW3kh4W64FY4mT8qGHi1tg/exec";
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('.f-submit');
+    btn.textContent = "Sending...";
+
+    const formData = {
+      name: document.querySelector("input[name='name']").value,
+      phone: document.querySelector("input[name='phone']").value,
+      service: document.querySelector("select[name='service']").value,
+      message: document.querySelector("textarea[name='message']").value
+    };
+
+    fetch(scriptURL, { method: "POST", body: JSON.stringify(formData) })
+      .then(res => res.json())
+      .then(() => {
+        btn.textContent = '✓ Enquiry Sent!';
+        btn.style.background = '#2d7a4f'; btn.style.color = '#fff';
+        setTimeout(() => { btn.textContent = 'Send Enquiry →'; btn.style.background = ''; btn.style.color = ''; e.target.reset(); }, 3000);
+      })
+      .catch(() => { btn.textContent = "Error! Try again"; });
+  }
+
+  // ── SCROLL REVEAL ──
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.style.opacity='1'; e.target.style.transform='translateY(0)'; } });
+  }, { threshold: 0.08 });
+  document.querySelectorAll('.svc-card, .testi-card, .gal, .c-item').forEach(el => {
+    el.style.opacity = '0'; el.style.transform = 'translateY(18px)';
+    el.style.transition = 'opacity .5s ease, transform .5s ease';
+    obs.observe(el);
+  });
+
+  // ── NAV SHADOW ──
+  window.addEventListener('scroll', () => {
+    const nav = document.getElementById('main-nav');
+    if (nav) nav.style.boxShadow = window.scrollY > 40 ? '0 4px 30px rgba(0,0,0,.5)' : 'none';
+  });
+
+  // ══════════════════════════════════════
+  //  ADMIN LOGIN + ENQUIRIES VIEWER
+  // ══════════════════════════════════════
+  const ADMIN_USER = 'levantoadmin';
+  const ADMIN_PASS = 'admin123';
+
+  // Column headers matching your Google Sheet columns
+  const COLUMNS = ['Name', 'Phone', 'Service', 'Message', 'Date', 'Status'];
+
+  function openAdminLogin() {
+    document.getElementById('adminOverlay').style.display = 'flex';
+    setTimeout(() => document.getElementById('adminOverlay').classList.add('visible'), 10);
+    document.getElementById('loginError').textContent = '';
+    document.getElementById('adminUser').value = '';
+    document.getElementById('adminPass').value = '';
+  }
+
+  function closeAdminPanel() {
+    const ov = document.getElementById('adminOverlay');
+    ov.classList.remove('visible');
+    setTimeout(() => { ov.style.display = 'none'; }, 300);
+  }
+
+  function doAdminLogin() {
+    const u = document.getElementById('adminUser').value.trim();
+    const p = document.getElementById('adminPass').value;
+    if (u === ADMIN_USER && p === ADMIN_PASS) {
+      document.getElementById('loginBox').style.display = 'none';
+      document.getElementById('enquiriesBox').style.display = 'block';
+      loadEnquiries();
+    } else {
+      document.getElementById('loginError').textContent = 'Incorrect username or password.';
+      document.getElementById('adminPass').value = '';
+      document.getElementById('adminUser').focus();
+    }
+  }
+
+  function loadEnquiries() {
+    const status = document.getElementById('sheetStatus');
+    const wrap = document.getElementById('sheetTableWrap');
+    status.innerHTML = '<span style="color:#8EA8C0;">⏳ Loading enquiries…</span>';
+    wrap.innerHTML = '';
+
+    // JSONP approach — works natively with Google Apps Script without CORS issues
+    // Requires doGet to support ?callback= parameter (see updated script below)
+    const callbackName = 'levantoCallback_' + Date.now();
+    const timeout = setTimeout(() => {
+      delete window[callbackName];
+      const tag = document.getElementById('jsonp_tag');
+      if (tag) tag.remove();
+      status.innerHTML = '<span style="color:#e05;">⚠ Timed out. Make sure your Apps Script is deployed with "Anyone" access and includes the callback support.</span>';
+    }, 10000);
+
+    window[callbackName] = function(rows) {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      const tag = document.getElementById('jsonp_tag');
+      if (tag) tag.remove();
+
+      if (!rows || rows.length === 0) {
+        status.innerHTML = '<span style="color:#8EA8C0;">No enquiries yet.</span>';
+        return;
+      }
+      const count = rows.length;
+      status.innerHTML = '<span style="color:#C8972A;">✓ ' + count + ' enquir' + (count === 1 ? 'y' : 'ies') + ' loaded — newest first</span>';
+      wrap.innerHTML = buildTable(rows.slice().reverse());
+    };
+
+    const script = document.createElement('script');
+    script.id = 'jsonp_tag';
+    script.src = scriptURL + '?callback=' + callbackName;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      status.innerHTML = '<span style="color:#e05;">⚠ Could not reach Apps Script. Check deployment access is set to "Anyone".</span>';
+    };
+    document.body.appendChild(script);
+  }
+
+  function buildTable(rows) {
+    let html = '<div style="overflow-x:auto"><table class="enq-table"><thead><tr><th>#</th>';
+    COLUMNS.forEach(h => { html += '<th>' + h + '</th>'; });
+    html += '<th>Action</th></tr></thead><tbody>';
+    rows.forEach((row, i) => {
+      // originalIndex = position in the non-reversed sheet (1-based, skipping header row if any)
+      // rows here are already reversed, so the sheet row index = rows.length - i (in reversed list)
+      const sheetRowIndex = rows.length - i; // actual row number in sheet (1-based)
+      const status = (row[5] !== undefined && String(row[5]).trim() !== '') ? String(row[5]).trim() : 'Unresolved';
+      const isResolved = status.toLowerCase() === 'resolved';
+      const rowClass = isResolved ? ' style="opacity:.55;"' : '';
+      html += '<tr' + rowClass + '><td style="color:var(--muted);font-size:.75rem;">' + (rows.length - i) + '</td>';
+      COLUMNS.forEach((_, ci) => {
+        let val = row[ci] !== undefined ? row[ci] : '';
+        if (ci === 4 && val) {
+          try { val = new Date(val).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short' }); } catch(e) {}
+        }
+        if (ci === 5) {
+          // Status column — render a badge
+          const resolved = String(val).toLowerCase() === 'resolved';
+          const badge = resolved
+            ? '<span class="enq-badge enq-badge-resolved">Resolved</span>'
+            : '<span class="enq-badge enq-badge-unresolved">Unresolved</span>';
+          html += '<td>' + badge + '</td>';
+        } else {
+          html += '<td>' + escHtml(String(val)) + '</td>';
+        }
+      });
+      // Action column
+      if (!isResolved) {
+        html += '<td><button class="enq-resolve-btn" onclick="markResolved(' + sheetRowIndex + ', this)">Mark Resolved</button></td>';
+      } else {
+        html += '<td></td>';
+      }
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    return html;
+  }
+
+  function markResolved(rowIndex, btn) {
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    const url = scriptURL + '?action=resolve&row=' + rowIndex + '&callback=levantoResolveCallback_' + rowIndex;
+    const callbackName = 'levantoResolveCallback_' + rowIndex;
+    const timeout = setTimeout(() => {
+      delete window[callbackName];
+      const tag = document.getElementById('resolve_tag_' + rowIndex);
+      if (tag) tag.remove();
+      btn.textContent = '⚠ Timeout';
+    }, 10000);
+
+    window[callbackName] = function(result) {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      const tag = document.getElementById('resolve_tag_' + rowIndex);
+      if (tag) tag.remove();
+      if (result && result.status === 'success') {
+        loadEnquiries(); // Refresh the table
+      } else {
+        btn.disabled = false;
+        btn.textContent = '⚠ Failed';
+      }
+    };
+
+    const script = document.createElement('script');
+    script.id = 'resolve_tag_' + rowIndex;
+    script.src = url;
+    script.onerror = () => {
+      clearTimeout(timeout);
+      delete window[callbackName];
+      btn.disabled = false;
+      btn.textContent = '⚠ Error';
+    };
+    document.body.appendChild(script);
+  }
+
+  function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+
+  // ── TESTIMONIAL CAROUSEL ──────────────────────────────────────
+  (function() {
+    var track    = document.getElementById('testiTrack');
+    var dotsWrap = document.getElementById('testiDots');
+    if (!track) return;
+
+    var cards     = track.querySelectorAll('.testi-card');
+    var total     = cards.length;
+    var current   = 0;
+    var perView   = 3; // updated on resize
+    var autoTimer = null;
+
+    function getPerView() {
+      if (window.innerWidth <= 640)  return 1;
+      if (window.innerWidth <= 960)  return 2;
+      return 3;
+    }
+
+    function maxIndex() { return Math.max(0, total - perView); }
+
+    // Build dots
+    function buildDots() {
+      dotsWrap.innerHTML = '';
+      var count = maxIndex() + 1;
+      for (var i = 0; i < count; i++) {
+        var d = document.createElement('button');
+        d.className = 'testi-dot' + (i === current ? ' active' : '');
+        d.setAttribute('aria-label', 'Go to slide ' + (i+1));
+        d.setAttribute('data-idx', i);
+        d.addEventListener('click', function() { goTo(parseInt(this.dataset.idx)); });
+        dotsWrap.appendChild(d);
+      }
+    }
+
+    function goTo(idx) {
+      perView  = getPerView();
+      current  = Math.min(Math.max(idx, 0), maxIndex());
+      var cardW = track.parentElement.offsetWidth / perView;
+      var gap   = 24; // 1.5rem gap
+      var shift = current * (cardW + gap / perView);
+      track.style.transform = 'translateX(-' + shift + 'px)';
+      // Update dots
+      dotsWrap.querySelectorAll('.testi-dot').forEach(function(d, i) {
+        d.classList.toggle('active', i === current);
+      });
+    }
+
+    function startAuto() {
+      clearInterval(autoTimer);
+      autoTimer = setInterval(function() {
+        goTo(current >= maxIndex() ? 0 : current + 1);
+      }, 5000);
+    }
+
+    window.testiSlide = function(dir) {
+      clearInterval(autoTimer);
+      goTo(current + dir);
+      startAuto();
+    };
+
+    window.addEventListener('resize', function() {
+      perView = getPerView();
+      buildDots();
+      goTo(Math.min(current, maxIndex()));
+    });
+
+    perView = getPerView();
+    buildDots();
+    goTo(0);
+    startAuto();
+
+    // Pause on hover
+    track.parentElement.addEventListener('mouseenter', function() { clearInterval(autoTimer); });
+    track.parentElement.addEventListener('mouseleave', startAuto);
+  })();
+
+  // Enter key triggers login
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' &&
+        document.getElementById('adminOverlay').classList.contains('visible') &&
+        document.getElementById('loginBox').style.display !== 'none') {
+      doAdminLogin();
+    }
+  });
+
+</script>
+
+<!-- ── ADMIN TRIGGER BUTTON ── -->
+<button onclick="openAdminLogin()" id="adminTriggerBtn" title="Admin Login">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+    <circle cx="12" cy="7" r="4"/>
+  </svg>
+  Admin
+</button>
+
+<!-- ── ADMIN OVERLAY ── -->
+<div id="adminOverlay">
+  <div id="adminModal">
+    <button class="modal-close" onclick="closeAdminPanel()">✕</button>
+
+    <!-- LOGIN -->
+    <div id="loginBox">
+      <div class="modal-logo">
+        <img src="/images/logo-icon.png" alt="Lēvanto" style="height:56px;width:auto;"/>
+      </div>
+      <h2 class="modal-title">Admin Login</h2>
+      <p class="modal-sub">Lēvanto Dashboard</p>
+      <div class="modal-field">
+        <label>Username</label>
+        <input type="text" id="adminUser" placeholder="Enter username" autocomplete="off"/>
+      </div>
+      <div class="modal-field">
+        <label>Password</label>
+        <input type="password" id="adminPass" placeholder="Enter password"/>
+      </div>
+      <p id="loginError" class="login-error"></p>
+      <button class="modal-btn" onclick="doAdminLogin()">Login →</button>
+    </div>
+
+    <!-- ENQUIRIES -->
+    <div id="enquiriesBox" style="display:none;">
+      <div class="enq-header">
+        <div>
+          <h2 class="modal-title" style="margin-bottom:.3rem;">Enquiries</h2>
+          <div id="sheetStatus"></div>
+        </div>
+        <button class="enq-refresh" onclick="loadEnquiries()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Refresh
+        </button>
+      </div>
+      <div id="sheetTableWrap"></div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ── ADMIN TRIGGER ── */
+#adminTriggerBtn {
+  position: fixed; bottom: 2rem; right: 2rem; z-index: 200;
+  display: flex; align-items: center; gap: .5rem;
+  background: var(--navy-deep); color: var(--gold);
+  border: 1px solid var(--border); padding: .65rem 1.2rem;
+  font-family: 'Jost', sans-serif; font-size: .75rem;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  transition: background .2s, transform .15s, box-shadow .2s;
+}
+#adminTriggerBtn:hover { background: var(--navy-mid); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,.5); }
+
+/* ── OVERLAY ── */
+#adminOverlay {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(7,14,24,0.88); backdrop-filter: blur(10px);
+  align-items: center; justify-content: center; padding: 1.5rem;
+  opacity: 0; transition: opacity .3s;
+}
+#adminOverlay.visible { opacity: 1; }
+
+/* ── MODAL ── */
+#adminModal {
+  background: var(--navy-mid); border: 1px solid var(--border);
+  width: 100%; max-width: 980px; max-height: 88vh; overflow-y: auto;
+  position: relative; padding: 2.8rem 2.4rem;
+  box-shadow: 0 30px 80px rgba(0,0,0,.65);
+  animation: slideUp .3s ease;
+}
+@keyframes slideUp { from { transform:translateY(24px); opacity:0; } to { transform:translateY(0); opacity:1; } }
+
+.modal-close {
+  position: absolute; top: 1.2rem; right: 1.4rem;
+  background: transparent; border: none; color: var(--muted);
+  font-size: 1.1rem; cursor: pointer; padding: .3rem .6rem; transition: color .2s;
+}
+.modal-close:hover { color: var(--gold); }
+
+.modal-logo { margin-bottom: 1.2rem; }
+.modal-title { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 600; color: var(--white); margin-bottom: .4rem; }
+.modal-sub { font-size: .76rem; color: var(--muted); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 2rem; }
+
+.modal-field { display: flex; flex-direction: column; gap: .35rem; margin-bottom: 1rem; }
+.modal-field label { font-size: .63rem; color: var(--gold); letter-spacing: .18em; text-transform: uppercase; }
+.modal-field input {
+  background: rgba(255,255,255,.05); border: 1px solid rgba(200,151,42,.2);
+  padding: .82rem 1rem; font-family: 'Jost', sans-serif; font-size: .9rem;
+  color: var(--white); outline: none; transition: border-color .2s; max-width: 380px;
+}
+.modal-field input::placeholder { color: rgba(255,255,255,.2); }
+.modal-field input:focus { border-color: var(--gold); }
+.login-error { font-size: .82rem; color: #e05555; min-height: 1.1rem; margin: .2rem 0 .5rem; }
+.modal-btn {
+  background: var(--gold); color: var(--navy-deep); border: none;
+  padding: .88rem 2.4rem; font-family: 'Jost', sans-serif;
+  font-size: .82rem; font-weight: 600; letter-spacing: .12em;
+  text-transform: uppercase; cursor: pointer; margin-top: .4rem;
+  transition: background .2s, transform .15s;
+}
+.modal-btn:hover { background: var(--gold-lt); transform: translateY(-1px); }
+
+/* ── ENQUIRIES ── */
+.enq-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 1.6rem; flex-wrap: wrap; gap: 1rem; }
+.enq-refresh {
+  display: flex; align-items: center; gap: .45rem;
+  background: transparent; border: 1px solid var(--border);
+  color: var(--muted); padding: .5rem 1rem;
+  font-family: 'Jost', sans-serif; font-size: .74rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; transition: color .2s, border-color .2s;
+}
+.enq-refresh:hover { color: var(--gold); border-color: var(--gold); }
+
+/* ── TABLE ── */
+.enq-table { width: 100%; border-collapse: collapse; font-size: .83rem; min-width: 540px; }
+.enq-table thead tr { background: var(--navy-deep); border-bottom: 2px solid var(--gold); }
+.enq-table th { padding: .78rem 1rem; text-align: left; font-size: .64rem; letter-spacing: .14em; text-transform: uppercase; color: var(--gold); font-weight: 600; white-space: nowrap; }
+.enq-table td { padding: .72rem 1rem; color: rgba(255,255,255,.82); border-bottom: 1px solid rgba(200,151,42,.1); vertical-align: top; line-height: 1.5; }
+.enq-table tbody tr:hover td { background: rgba(200,151,42,.05); }
+
+.enq-badge { display: inline-block; padding: .22rem .7rem; font-size: .64rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; border-radius: 0; }
+.enq-badge-unresolved { background: rgba(224,85,85,.15); color: #e05555; border: 1px solid rgba(224,85,85,.3); }
+.enq-badge-resolved   { background: rgba(80,200,120,.12); color: #50c878; border: 1px solid rgba(80,200,120,.25); }
+
+.enq-resolve-btn {
+  background: transparent; border: 1px solid var(--gold);
+  color: var(--gold); padding: .32rem .85rem;
+  font-family: 'Jost', sans-serif; font-size: .7rem;
+  font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+  cursor: pointer; white-space: nowrap;
+  transition: background .2s, color .2s;
+}
+.enq-resolve-btn:hover:not(:disabled) { background: var(--gold); color: var(--navy-deep); }
+.enq-resolve-btn:disabled { opacity: .5; cursor: not-allowed; }

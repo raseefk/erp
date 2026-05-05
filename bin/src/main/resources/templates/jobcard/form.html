@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Job Card')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('projects')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Job Card')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="mb-3">
+        <a th:href="'/admin/projects/'+${project.id}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Back to <span th:text="${project.name}">Project</span>
+        </a>
+      </div>
+      <div class="card card-lv" style="max-width:620px;">
+        <div class="card-header">
+          <i class="bi bi-card-list me-2"></i>
+          <span th:text="${jobCard.id != null ? 'Edit Job Card' : 'New Job Card'}">Job Card</span>
+          <small class="text-muted ms-2" th:text="'— '+${project.name}">-</small>
+        </div>
+        <div class="card-body">
+          <form th:action="@{/admin/projects/jobcards/save}" method="post">
+            <input type="hidden" name="id"        th:value="${jobCard.id}"/>
+            <input type="hidden" name="projectId" th:value="${project.id}"/>
+            <div class="row g-3">
+              <div class="col-12">
+                <label class="form-label fw-bold">Phase / Work Type <span class="text-danger">*</span></label>
+                <input type="text" name="phase" class="form-control"
+                       th:value="${jobCard.phase}" required
+                       placeholder="e.g. Tile Laying, Skirting, Waterproofing…"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Assign Engineer</label>
+                <select name="engineerId" class="form-select">
+                  <option value="">-- Unassigned --</option>
+                  <option th:each="eng : ${engineers}"
+                          th:value="${eng.id}"
+                          th:text="${eng.fullName} + ' (' + ${eng.username} + ')'"
+                          th:selected="${jobCard.assignedEngineer != null && jobCard.assignedEngineer.id == eng.id}">
+                  </option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Status</label>
+                <select name="status" class="form-select">
+                  <option th:each="s : ${JobCardStatus}" th:value="${s}" th:text="${s}"
+                          th:selected="${s == jobCard.status}"></option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Target Completion Date</label>
+                <input type="date" name="targetDate" class="form-control"
+                       th:value="${jobCard.targetDate}"/>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Description / Scope</label>
+                <textarea name="description" class="form-control" rows="3"
+                          th:text="${jobCard.description}"
+                          placeholder="Details about this phase…"></textarea>
+              </div>
+              <div class="col-12 d-flex gap-2">
+                <button type="submit" class="btn btn-gold fw-bold">
+                  <i class="bi bi-check-lg me-1"></i>Save Job Card
+                </button>
+                <a th:href="'/admin/projects/'+${project.id}"
+                   class="btn btn-outline-secondary">Cancel</a>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

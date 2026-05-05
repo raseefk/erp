@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Purchase Orders')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-po')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Purchase Orders')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <form th:action="@{/admin/scm/po}" method="get" class="d-flex gap-2">
+          <input type="text" name="q" class="form-control form-control-sm" placeholder="Search POs or Vendors…" th:value="${q}" style="width:250px;"/>
+          <button type="submit" class="btn btn-sm btn-gold">Search</button>
+        </form>
+        <a th:href="@{/admin/scm/po/new}" class="btn btn-sm btn-gold"><i class="bi bi-plus-lg me-1"></i>New PO</a>
+      </div>
+
+      <div class="card card-levanto">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-cart me-2"></i>Purchase Order History</span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-levanto mb-0">
+              <thead>
+                <tr>
+                  <th>PO Number</th>
+                  <th>Vendor</th>
+                  <th>Date</th>
+                  <th>Expected</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="p : ${poPage.content}">
+                  <td><strong th:text="${p.poNumber}">-</strong></td>
+                  <td th:text="${p.vendorName ?: 'N/A'}">-</td>
+                  <td th:text="${p.orderDate}">-</td>
+                  <td th:text="${p.expectedDeliveryDate}">-</td>
+                  <td>
+                    <strong th:text="${p.totalAmount != null ? '₹ ' + #numbers.formatDecimal(p.totalAmount, 1, 2) : '₹ 0.00'}">0.00</strong>
+                  </td>
+                  <td>
+                    <span th:if="${p.status != null}" class="badge" 
+                          th:classappend="${p.status.name() == 'DRAFT' ? 'bg-secondary' : (p.status.name() == 'ORDERED' ? 'bg-info' : (p.status.name() == 'RECEIVED' ? 'bg-success' : 'bg-danger'))}" 
+                          th:text="${p.status}">-</span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a th:href="@{/admin/scm/po/{id}(id=${p.id})}" class="btn btn-outline-navy" title="View Details"><i class="bi bi-eye"></i></a>
+                      <a th:if="${p.status != null && p.status.name() == 'DRAFT'}" th:href="@{/admin/scm/po/{id}/edit(id=${p.id})}" class="btn btn-navy" title="Edit"><i class="bi bi-pencil"></i></a>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${poPage.totalElements == 0}">
+                  <td colspan="7" class="text-center py-4 text-muted">No Purchase Orders found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

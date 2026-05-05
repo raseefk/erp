@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Projects')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('projects')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Project Management')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <form action="/admin/projects" method="get" class="d-flex gap-2">
+          <input type="text" name="search" class="form-control form-control-sm"
+                 placeholder="Search projects…" th:value="${search}" style="width:220px;"/>
+          <button type="submit" class="btn btn-sm btn-gold">Search</button>
+          <a href="/admin/projects" class="btn btn-sm btn-outline-secondary">Clear</a>
+        </form>
+        <a href="/admin/projects/new" class="btn btn-sm btn-gold">
+          <i class="bi bi-plus-lg me-1"></i>New Project
+        </a>
+      </div>
+
+      <div class="row g-3">
+        <div th:each="p : ${projectsPage.content}" class="col-md-6 col-xl-4">
+          <div class="card card-lv h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span th:text="${p.name}" style="font-size:.95rem;font-weight:700;">-</span>
+              <span class="badge"
+                    th:text="${p.status}"
+                    th:style="${p.status.name()=='ACTIVE'}?'background:#16a34a;color:#fff;':
+                               (${p.status.name()=='COMPLETED'}?'background:#C8972A;color:#0F2338;':
+                               'background:#6b7280;color:#fff;')">
+              </span>
+            </div>
+            <div class="card-body">
+              <div class="d-flex flex-column gap-1">
+                <div><i class="bi bi-person-circle me-2" style="color:#C8972A;"></i>
+                  <span th:text="${p.clientName ?: '—'}">-</span></div>
+                <div><i class="bi bi-geo-alt me-2" style="color:#C8972A;"></i>
+                  <span th:text="${p.location ?: '—'}">-</span></div>
+                <div><i class="bi bi-currency-rupee me-2" style="color:#C8972A;"></i>
+                  <span class="fw-bold"
+                        th:text="'₹ '+${#numbers.formatDecimal(p.totalContractValue,1,'COMMA',0,'POINT')}">-</span>
+                  <small class="text-muted">contract value</small></div>
+                <div th:if="${p.startDate != null}">
+                  <i class="bi bi-calendar me-2" style="color:#C8972A;"></i>
+                  <small th:text="${#temporals.format(p.startDate,'dd MMM yyyy')}
+                                  +' → '+(${p.endDate != null ? #temporals.format(p.endDate,'dd MMM yyyy') : 'Ongoing'})">-</small>
+                </div>
+                <div>
+                  <i class="bi bi-kanban me-2" style="color:#C8972A;"></i>
+                  <span th:text="${#lists.size(p.jobCards)}">0</span>
+                  <small class="text-muted">job card(s)</small>
+                </div>
+              </div>
+            </div>
+            <div class="card-footer bg-white border-0 pt-0">
+              <div class="d-flex gap-2">
+                <a th:href="'/admin/projects/'+${p.id}" class="btn btn-sm btn-navy flex-fill">
+                  <i class="bi bi-eye me-1"></i>View
+                </a>
+                <a th:href="'/admin/projects/'+${p.id}+'/edit'" class="btn btn-sm btn-outline-secondary">
+                  <i class="bi bi-pencil"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger"
+                        th:onclick="'delProject('+${p.id}+')'">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-12" th:if="${projectsPage.totalElements == 0}">
+          <div class="card card-lv">
+            <div class="card-body text-center text-muted py-5">
+              <i class="bi bi-kanban" style="font-size:3rem;display:block;margin-bottom:.8rem;"></i>
+              No projects yet. <a href="/admin/projects/new" style="color:#C8972A;">Create your first project →</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Pagination -->
+      <div class="d-flex justify-content-between align-items-center mt-3"
+           th:if="${projectsPage.totalPages > 1}">
+        <small class="text-muted"
+               th:text="'Page '+(${currentPage}+1)+' of '+${projectsPage.totalPages}"></small>
+        <div class="btn-group btn-group-sm">
+          <a th:if="${currentPage > 0}"
+             th:href="'/admin/projects?page='+(${currentPage}-1)+'&amp;search='+${search}"
+             class="btn btn-outline-secondary">‹</a>
+          <a th:if="${currentPage < projectsPage.totalPages-1}"
+             th:href="'/admin/projects?page='+(${currentPage}+1)+'&amp;search='+${search}"
+             class="btn btn-outline-secondary">›</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function delProject(id) {
+  if (!confirm('Delete this project and all its data?')) return;
+  fetch('/admin/projects/'+id,{method:'DELETE'})
+    .then(r=>r.json()).then(d=>{if(d.success)location.href='/admin/projects';else alert(d.message);});
+}
+</script>
+</body>
+</html>

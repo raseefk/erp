@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Employees')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('employees')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Employees')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <span class="badge badge-navy" th:text="${#lists.size(employees)} + ' Active Employees'"></span>
+  <a th:href="@{/admin/employees/new}" class="btn btn-sm btn-gold"><i class="bi bi-person-plus me-1"></i>Add Employee</a>
+</div>
+<div class="card card-levanto">
+  <div class="card-header"><i class="bi bi-person-badge me-2"></i>Employee Directory</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-levanto mb-0">
+        <thead><tr><th>#</th><th>Name</th><th>Designation</th><th>Phone</th><th>Salary ₹</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr th:each="emp, idx : ${employees}">
+            <td th:text="${idx.count}">1</td>
+            <td><strong th:text="${emp.name}">-</strong><br/><small class="text-muted" th:text="${emp.email ?: ''}">-</small></td>
+            <td th:text="${emp.designation ?: '-'}">-</td>
+            <td th:text="${emp.phone ?: '-'}">-</td>
+            <td class="fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(emp.monthlySalary,1,'COMMA',2,'POINT')}">-</td>
+            <td><small th:text="${emp.joiningDate != null ? #temporals.format(emp.joiningDate,'dd MMM yyyy') : '-'}">-</small></td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a th:href="@{/admin/employees/{id}/edit(id=${emp.id})}" class="btn btn-navy"><i class="bi bi-pencil"></i></a>
+                <button class="btn btn-gold" onclick="payModal(this)" th:data-id="${emp.id}" th:data-name="${emp.name}" th:data-salary="${emp.monthlySalary}" title="Pay Salary"><i class="bi bi-cash"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${#lists.isEmpty(employees)}"><td colspan="7" class="text-center text-muted py-4">No employees yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- Pay Salary Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header" style="background:#0F2338;color:#fff;">
+      <h5 class="modal-title">Pay Salary — <span id="empNameSpan"></span></h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <div class="mb-3"><label class="form-label fw-bold">Amount ₹</label><input type="number" step="0.01" id="payAmt" class="form-control"/></div>
+      <div class="mb-3"><label class="form-label fw-bold">Pay Date</label><input type="date" id="payDate" class="form-control"/></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button class="btn btn-gold" onclick="submitPay()">Pay &amp; Record</button>
+    </div>
+  </div></div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+let empId=null;
+const payMdl=new bootstrap.Modal(document.getElementById('payModal'));
+function payModal(btn){empId=btn.dataset.id;document.getElementById('empNameSpan').textContent=btn.dataset.name;document.getElementById('payAmt').value=btn.dataset.salary;document.getElementById('payDate').value=new Date().toISOString().split('T')[0];payMdl.show();}
+function submitPay(){
+  const amt=document.getElementById('payAmt').value;const dt=document.getElementById('payDate').value;
+  fetch('/admin/employees/'+empId+'/pay?amount='+amt+'&payDate='+dt,{method:'POST'})
+  .then(r=>r.json()).then(d=>{if(d.success){payMdl.hide();alert('Salary paid and expense recorded.');}else alert(d.message);});
+}
+</script>
+</body></html>

@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(pageTitle)">
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title th:text="${pageTitle} + ' | Lēvanto Flooring'">Lēvanto Flooring</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
+  <style>
+    :root{--navy:#1A3A5C;--navy-deep:#0F2338;--navy-mid:#183252;--gold:#C8972A;--gold-lt:#E5B84A;--muted:#7A9FBF;--border:rgba(200,151,42,0.2);--sw:260px;}
+    body{font-family:'Jost',sans-serif;background:#f0f4f8;color:#1a2636;margin:0;}
+    #sidebar{position:fixed;top:0;left:0;bottom:0;width:var(--sw);background:var(--navy-deep);display:flex;flex-direction:column;z-index:1040;overflow-y:auto;transition:transform .25s;}
+    .sb-brand{padding:1rem 1.2rem;border-bottom:1px solid var(--border);display:flex;align-items:center;text-decoration:none;min-height:64px;}
+    .nav-sec{padding:.7rem 1rem .2rem;font-size:.58rem;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);font-weight:600;margin-top:.3rem;}
+    .sb-nav{list-style:none;padding:0;margin:0;flex:1;padding-bottom:1rem;}
+    .sb-nav li a{display:flex;align-items:center;gap:.75rem;padding:.65rem 1.4rem;color:rgba(255,255,255,.65);text-decoration:none;font-size:.83rem;font-weight:500;border-left:3px solid transparent;transition:all .18s;}
+    .sb-nav li a:hover,.sb-nav li a.active{color:#fff;background:rgba(200,151,42,.1);border-left-color:var(--gold);}
+    .sb-nav li a i{font-size:.95rem;width:18px;text-align:center;flex-shrink:0;}
+    .sb-foot{padding:.9rem 1.2rem;border-top:1px solid var(--border);font-size:.78rem;color:var(--muted);}
+    .sb-foot a{color:var(--gold);text-decoration:none;}
+    #main{margin-left:var(--sw);min-height:100vh;display:flex;flex-direction:column;}
+    #topbar{background:#fff;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 1.6rem;border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:100;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+    .tb-title{font-family:'Cormorant Garamond',serif;font-size:1.3rem;font-weight:700;color:var(--navy-deep);}
+    .tb-user{display:flex;align-items:center;gap:.6rem;font-size:.82rem;color:#4a6080;}
+    .badge-role{background:var(--gold);color:var(--navy-deep);font-size:.6rem;padding:.2rem .55rem;font-weight:700;border-radius:2px;}
+    .pb{padding:1.5rem 1.8rem;flex:1;}
+    .card-lv{border:none;border-radius:8px;box-shadow:0 2px 12px rgba(0,0,0,.07);}
+    .card-lv .card-header{background:var(--navy-deep);color:#fff;border-radius:8px 8px 0 0;padding:.8rem 1.2rem;font-family:'Cormorant Garamond',serif;font-size:1rem;font-weight:600;border:none;}
+    .stat-card{background:#fff;border-radius:8px;padding:1.2rem 1.3rem;box-shadow:0 2px 12px rgba(0,0,0,.07);border-left:4px solid var(--gold);display:flex;align-items:center;gap:1rem;}
+    .stat-icon{width:46px;height:46px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;flex-shrink:0;}
+    .stat-num{font-family:'Cormorant Garamond',serif;font-size:1.85rem;font-weight:700;line-height:1;}
+    .stat-lbl{font-size:.7rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;margin-top:.12rem;}
+    .table-lv thead th{background:var(--navy-deep);color:#fff;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;border:none;font-weight:600;padding:.65rem .75rem;}
+    .table-lv tbody tr:hover td{background:#f5f9ff;}
+    .table-lv td{vertical-align:middle;font-size:.86rem;border-color:#e8eef5;padding:.55rem .75rem;}
+    .badge-gold{background:var(--gold);color:var(--navy-deep);}
+    .badge-navy{background:var(--navy);color:#fff;}
+    .badge-success{background:#16a34a;color:#fff;}
+    .badge-warn{background:#d97706;color:#fff;}
+    .badge-danger{background:#dc2626;color:#fff;}
+    .btn-gold{background:var(--gold);color:var(--navy-deep);border:none;font-weight:600;}
+    .btn-gold:hover{background:var(--gold-lt);color:var(--navy-deep);}
+    .btn-navy{background:var(--navy-deep);color:#fff;border:none;}
+    .btn-navy:hover{background:var(--navy-mid);color:#fff;}
+    .alert-lv{border-left:4px solid var(--gold);background:rgba(200,151,42,.08);color:var(--navy-deep);border-radius:0 6px 6px 0;}
+    .approval-badge{background:#dc2626;color:#fff;font-size:.6rem;padding:.12rem .4rem;border-radius:8px;margin-left:.35rem;vertical-align:middle;display:none;}
+    @media(max-width:991px){#sidebar{transform:translateX(-100%);}#sidebar.open{transform:translateX(0);}#main{margin-left:0;}.pb{padding:1rem;}}
+  </style>
+</head>
+
+<!-- ── SIDEBAR ──────────────────────────────────────────────────────────────── -->
+<nav th:fragment="sidebar(activePage)" id="sidebar">
+  <a href="/admin/dashboard" class="sb-brand">
+    <img src="/images/logo-horizontal.png" alt="Lēvanto Flooring"
+         style="height:38px;width:auto;object-fit:contain;filter:brightness(0) invert(1);opacity:.9;max-width:210px;"/>
+  </a>
+
+  <ul class="sb-nav">
+
+    <!-- ── MAIN ────────────────────────────────────────────────────── -->
+    <li class="nav-sec">Main</li>
+    <li><a href="/admin/dashboard"
+           th:classappend="${activePage=='dashboard'}?' active':''">
+      <i class="bi bi-speedometer2"></i> Dashboard
+    </a></li>
+
+    <!-- ── SALES ────────────────────────────────────────────────────── -->
+    <li class="nav-sec">Sales</li>
+    <li><a href="/admin/enquiries"
+           th:classappend="${activePage=='enquiries'}?' active':''">
+      <i class="bi bi-chat-left-text"></i> Enquiries
+    </a></li>
+    <li><a href="/admin/billing"
+           th:classappend="${activePage=='billing'}?' active':''">
+      <i class="bi bi-receipt-cutoff"></i> Billing &amp; Quotations
+    </a></li>
+    <li><a href="/admin/customers"
+           th:classappend="${activePage=='customers'}?' active':''">
+      <i class="bi bi-people"></i> Customers
+    </a></li>
+
+    <!-- ── OPERATIONS ───────────────────────────────────────────────── -->
+    <li class="nav-sec">Operations</li>
+    <li><a href="/admin/inventory"
+           th:classappend="${activePage=='inventory'}?' active':''">
+      <i class="bi bi-boxes"></i> Inventory
+    </a></li>
+    <li sec:authorize="hasRole('ADMIN')">
+      <a href="/admin/vendors"
+         th:classappend="${activePage=='vendors'}?' active':''">
+        <i class="bi bi-truck"></i> Vendors
+      </a>
+    </li>
+
+    <!-- ── PROJECTS ──────────────────────────────────────────────────── -->
+    <li class="nav-sec">Projects</li>
+    <li><a href="/admin/projects"
+           th:classappend="${activePage=='projects'}?' active':''">
+      <i class="bi bi-kanban"></i> Projects
+    </a></li>
+    <li><a href="/admin/sitelogs/all"
+           th:classappend="${activePage=='sitelogs'}?' active':''">
+      <i class="bi bi-journal-text"></i> Daily Logs
+    </a></li>
+    <li sec:authorize="hasRole('ADMIN')">
+      <a href="/admin/approval"
+         th:classappend="${activePage=='approval'}?' active':''">
+        <i class="bi bi-check2-square"></i> Approval Queue
+        <span class="approval-badge" id="approvalBadge">0</span>
+      </a>
+    </li>
+
+    <!-- ── HR &amp; FINANCE ─────────────────────────────────────────── -->
+    <li class="nav-sec" sec:authorize="hasRole('ADMIN')">HR &amp; Finance</li>
+    <li sec:authorize="hasRole('ADMIN')">
+      <a href="/admin/employees"
+         th:classappend="${activePage=='employees'}?' active':''">
+        <i class="bi bi-person-badge"></i> Employees
+      </a>
+    </li>
+    <li sec:authorize="hasRole('ADMIN')">
+      <a href="/admin/salaries"
+         th:classappend="${activePage=='salaries'}?' active':''">
+        <i class="bi bi-cash-stack"></i> Salaries
+      </a>
+    </li>
+    <li sec:authorize="hasRole('ADMIN')">
+      <a href="/admin/expenses"
+         th:classappend="${activePage=='expenses'}?' active':''">
+        <i class="bi bi-wallet2"></i> Expenses
+      </a>
+    </li>
+    <li>
+      <a href="/admin/payments"
+         th:classappend="${activePage=='payments'}?' active':''">
+        <i class="bi bi-cash-coin"></i> Payments
+      </a>
+    </li>
+    <li sec:authorize="hasRole('ADMIN')">
+      <a href="/admin/finance"
+         th:classappend="${activePage=='finance'}?' active':''">
+        <i class="bi bi-graph-up-arrow"></i> P&amp;L Report
+      </a>
+    </li>
+
+  </ul>
+
+  <!-- Footer: user info + logout -->
+  <div class="sb-foot">
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <div style="font-weight:600;color:#fff;" sec:authentication="name">User</div>
+        <div style="font-size:.68rem;color:var(--muted);">
+          <span sec:authorize="hasRole('ADMIN')">Administrator</span>
+          <span sec:authorize="hasRole('EMPLOYEE')">Employee</span>
+        </div>
+      </div>
+      <a href="/logout" title="Logout" style="color:var(--gold);font-size:1.15rem;">
+        <i class="bi bi-box-arrow-right"></i>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ── TOPBAR ────────────────────────────────────────────────────────────────── -->
+<div th:fragment="topbar(pageTitle)">
+  <div id="topbar">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-sm d-lg-none"
+              onclick="document.getElementById('sidebar').classList.toggle('open')"
+              style="border:1px solid #cbd5e1;">
+        <i class="bi bi-list" style="font-size:1.2rem;"></i>
+      </button>
+      <span class="tb-title" th:text="${pageTitle}">Page</span>
+    </div>
+    <div class="tb-user">
+      <i class="bi bi-person-circle" style="font-size:1.2rem;"></i>
+      <span sec:authentication="name">user</span>
+      <span class="badge-role" sec:authorize="hasRole('ADMIN')">ADMIN</span>
+      <span class="badge-role" style="background:#1A3A5C;color:#fff;"
+            sec:authorize="hasRole('EMPLOYEE')">EMPLOYEE</span>
+    </div>
+  </div>
+</div>
+
+<!-- ── FLASH ALERTS ──────────────────────────────────────────────────────────── -->
+<div th:fragment="alerts">
+  <div th:if="${success}"
+       class="alert alert-lv alert-dismissible fade show mb-0 mx-0 mt-0" role="alert">
+    <i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${error}"
+       class="alert alert-danger alert-dismissible fade show mb-0 mx-0 mt-0" role="alert">
+    <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+</div>
+
+<!-- ── SCRIPTS ───────────────────────────────────────────────────────────────── -->
+<div th:fragment="scripts">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Mobile sidebar close on outside click
+    document.addEventListener('click', e => {
+      const sb = document.getElementById('sidebar');
+      if (sb && window.innerWidth < 992 && sb.classList.contains('open') && !sb.contains(e.target)) {
+        sb.classList.remove('open');
+      }
+    });
+
+    // Live approval badge counter (Admin only)
+    (function() {
+      const badge = document.getElementById('approvalBadge');
+      if (!badge) return;
+      fetch('/admin/approval/count')
+        .then(r => r.json())
+        .then(d => {
+          const n = parseInt(d.data) || 0;
+          if (n > 0) {
+            badge.textContent = n;
+            badge.style.display = 'inline';
+          }
+        })
+        .catch(() => {});
+    })();
+  </script>
+</div>
+
+</html>

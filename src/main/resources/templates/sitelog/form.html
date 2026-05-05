@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('New Daily Log')}">
+</head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('sitelogs')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('New Daily Log')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <div class="mb-3">
+        <a th:href="'/admin/projects/'+${project.id}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Back to <span th:text="${project.name}">Project</span>
+        </a>
+      </div>
+
+      <!-- Context banner -->
+      <div class="alert-lv p-3 mb-3 rounded d-flex align-items-center gap-3">
+        <i class="bi bi-kanban" style="font-size:1.4rem;color:#C8972A;"></i>
+        <div>
+          <div class="fw-bold" th:text="${project.name}">-</div>
+          <small class="text-muted">Job Card: <strong th:text="${jobCard.phase}">-</strong></small>
+        </div>
+      </div>
+
+      <form th:action="@{/admin/sitelogs/save}" method="post" enctype="multipart/form-data">
+        <input type="hidden" name="jobCardId" th:value="${jobCard.id}"/>
+
+        <div class="row g-3">
+          <!-- Left: log details -->
+          <div class="col-lg-8">
+
+            <!-- Date + Progress -->
+            <div class="card card-lv mb-3">
+              <div class="card-header"><i class="bi bi-calendar-check me-2"></i>Daily Progress</div>
+              <div class="card-body">
+                <div class="row g-3">
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">Log Date <span class="text-danger">*</span></label>
+                    <input type="date" name="logDate" class="form-control" required
+                           th:value="${#temporals.format(#temporals.createNow(),'yyyy-MM-dd')}"/>
+                  </div>
+                  <div class="col-md-4">
+                    <label class="form-label fw-bold">Work Value ₹</label>
+                    <input type="number" step="0.01" min="0" name="workValue"
+                           class="form-control" placeholder="Revenue value of today's work"
+                           th:value="${log.workValue}"/>
+                    <small class="text-muted">Estimated market value of completed work</small>
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-bold">Progress Description</label>
+                    <textarea name="progressDescription" class="form-control" rows="4"
+                              th:text="${log.progressDescription}"
+                              placeholder="Describe today's work, area covered, materials used…"></textarea>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Labour -->
+            <div class="card card-lv mb-3">
+              <div class="card-header">
+                <i class="bi bi-people me-2"></i>Labour
+                <small class="text-muted ms-2">Select labours and specify their daily wage</small>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-sm table-lv mb-0" id="labourTable">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+                        <th>Today's Wage (₹)</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr th:each="labour : ${projectLabours}">
+                        <td class="align-middle fw-bold">
+                          <input type="hidden" name="selectedLabourIds" th:value="${labour.id}">
+                          <span th:text="${labour.name}">-</span>
+                        </td>
+                        <td>
+                          <input type="number" step="0.01" min="0" th:name="'wage_' + ${labour.id}" class="form-control form-control-sm labour-wage" th:value="${labour.defaultWage}" oninput="calcLabour()">
+                        </td>
+                        <td class="align-middle">
+                          <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLabourRow(this)">Remove</button>
+                        </td>
+                      </tr>
+                      <tr th:if="${#lists.isEmpty(projectLabours)}">
+                        <td colspan="3" class="text-center text-muted py-3">No labours registered for this project yet. Please add them in the Project Details page first.</td>
+                      </tr>
+                    </tbody>
+                    <tfoot th:if="${not #lists.isEmpty(projectLabours)}">
+                      <tr>
+                        <td colspan="2" class="text-end fw-bold align-middle">Total Labour Cost ₹</td>
+                        <td>
+                          <div class="form-control form-control-sm fw-bold text-danger bg-light" id="labourTotal">₹ 0.00</div>
+                        </td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+
+                <!-- Auto-trigger notice -->
+                <div id="labourNotice" class="mt-2 p-2 rounded" style="display:none;
+                     background:#fef9c3;border:1px solid #fbbf24;font-size:.82rem;">
+                  <i class="bi bi-lightning-charge me-1" style="color:#d97706;"></i>
+                  A <strong>LABOUR</strong> expense of <strong id="noticeAmt">₹0</strong>
+                  will be auto-added to the <strong>Approval Queue</strong> on save.
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Right: save panel -->
+          <div class="col-lg-4">
+            <div class="card card-lv">
+              <div class="card-header"><i class="bi bi-floppy me-2"></i>Save Log</div>
+              <div class="card-body d-grid gap-2">
+                <button type="submit" class="btn btn-gold fw-bold">
+                  <i class="bi bi-check-lg me-1"></i>Save Daily Log
+                </button>
+                <a th:href="'/admin/projects/'+${project.id}" class="btn btn-outline-secondary">
+                  Cancel
+                </a>
+              </div>
+              <div class="card-body pt-0">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle me-1"></i>
+                  After saving, you can add misc site expenses (fuel, tools, etc.) from the log detail page.
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function calcLabour() {
+  let tot = 0;
+  const table = document.getElementById('labourTable');
+  if (table) {
+    const rows = table.querySelectorAll('tbody tr');
+    rows.forEach(row => {
+      const wageInput = row.querySelector('.labour-wage');
+      if (wageInput) {
+        const w = parseFloat(wageInput.value) || 0;
+        tot += w;
+      }
+    });
+  }
+
+  const lblTotal = document.getElementById('labourTotal');
+  if (lblTotal) {
+    lblTotal.textContent = '₹ ' + parseFloat(tot).toLocaleString('en-IN', {minimumFractionDigits:2});
+  }
+  
+  const notice  = document.getElementById('labourNotice');
+  const noticAmt = document.getElementById('noticeAmt');
+  if (tot > 0) {
+    if (notice) notice.style.display = 'block';
+    if (noticAmt) noticAmt.textContent = '₹ ' + parseFloat(tot).toLocaleString('en-IN', {minimumFractionDigits:2});
+  } else {
+    if (notice) notice.style.display = 'none';
+  }
+}
+
+function removeLabourRow(btn) {
+  const row = btn.closest('tr');
+  row.remove();
+  calcLabour();
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  calcLabour();
+});
+</script>
+</body>
+</html>

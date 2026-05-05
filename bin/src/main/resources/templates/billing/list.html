@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Billing &amp; Quotations')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('billing')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Billing &amp; Quotations')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 mt-1">
+      <div class="btn-group">
+        <a href="/admin/billing" class="btn btn-sm" th:classappend="${statusFilter==null}?' btn-navy':' btn-outline-secondary'">All</a>
+        <a href="/admin/billing?status=QUOTATION" class="btn btn-sm" th:classappend="${statusFilter=='QUOTATION'}?' btn-navy':' btn-outline-secondary'">Quotations</a>
+        <a href="/admin/billing?status=FINAL_BILL" class="btn btn-sm" th:classappend="${statusFilter=='FINAL_BILL'}?' btn-gold':' btn-outline-secondary'">Final Bills</a>
+      </div>
+      <div class="d-flex gap-2 flex-wrap">
+        <form action="/admin/billing" method="get" class="d-flex gap-2">
+          <input type="hidden" name="status" th:value="${statusFilter}"/>
+          <input type="text" name="search" class="form-control form-control-sm" placeholder="Search…" th:value="${search}" style="width:200px;"/>
+          <button type="submit" class="btn btn-sm btn-gold">Go</button>
+        </form>
+        <a href="/admin/billing/new?type=QUOTATION" class="btn btn-sm btn-navy"><i class="bi bi-file-text me-1"></i>Quotation</a>
+        <a href="/admin/billing/new?type=FINAL_BILL" class="btn btn-sm btn-gold"><i class="bi bi-receipt me-1"></i>Final Bill</a>
+      </div>
+    </div>
+    <div class="card card-lv">
+      <div class="card-header"><i class="bi bi-receipt-cutoff me-2"></i>Transactions</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-lv mb-0">
+            <thead><tr><th>#</th><th>Number</th><th>Customer</th><th>Type</th><th>Total ₹</th><th>Payment</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr th:each="tx, idx : ${txPage.content}">
+                <td th:text="${idx.count}">1</td>
+                <td><a th:href="'/admin/billing/'+${tx.id}" style="color:#C8972A;font-weight:600;"
+                       th:text="${tx.status.name()=='FINAL_BILL'?tx.invoiceNumber:tx.quotationNumber}">-</a></td>
+                <td th:text="${tx.customer.name}">-</td>
+                <td><span class="badge" th:text="${tx.status}"
+                  th:classappend="${tx.status.name()=='FINAL_BILL'}?' badge-gold':' badge-navy'">-</span></td>
+                <td class="fw-bold" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal,1,'COMMA',2,'POINT')}">-</td>
+                <td><span class="badge" th:text="${tx.paymentStatus}"
+                  th:classappend="${tx.paymentStatus.name()=='PAID'}?' badge-success':(${tx.paymentStatus.name()=='PENDING'}?' badge-danger':' badge-warn')">-</span></td>
+                <td><small th:text="${#temporals.format(tx.createdAt,'dd MMM yy')}">-</small></td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a th:href="'/admin/billing/'+${tx.id}" class="btn btn-navy" title="View"><i class="bi bi-eye"></i></a>
+                    <a th:href="'/admin/billing/'+${tx.id}+'/pdf'" class="btn btn-outline-secondary" title="PDF"><i class="bi bi-file-pdf"></i></a>
+                    <button th:if="${tx.status.name()=='QUOTATION'}" class="btn btn-gold"
+                            th:onclick="'convertBill('+${tx.id}+')'" title="Convert"><i class="bi bi-arrow-up-circle"></i></button>
+                    <button th:if="${tx.status.name()=='QUOTATION'}" class="btn btn-outline-danger"
+                            th:onclick="'deleteTx('+${tx.id}+')'"><i class="bi bi-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr th:if="${txPage.totalElements==0}">
+                <td colspan="8" class="text-center text-muted py-4">No transactions found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center px-3 py-2" th:if="${txPage.totalPages>1}">
+          <small class="text-muted" th:text="'Page '+(${currentPage}+1)+' of '+${txPage.totalPages}"></small>
+          <div class="btn-group btn-group-sm">
+            <a th:if="${currentPage>0}" th:href="'/admin/billing?page='+(${currentPage}-1)+'&amp;status='+${statusFilter}+'&amp;search='+${search}" class="btn btn-outline-secondary">‹</a>
+            <a th:if="${currentPage<txPage.totalPages-1}" th:href="'/admin/billing?page='+(${currentPage}+1)+'&amp;status='+${statusFilter}+'&amp;search='+${search}" class="btn btn-outline-secondary">›</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function convertBill(id){if(!confirm('Convert to Final Bill? Stock will be deducted.'))return;fetch('/admin/billing/'+id+'/convert',{method:'POST'}).then(()=>location.reload());}
+function deleteTx(id){if(!confirm('Delete this quotation?'))return;fetch('/admin/billing/'+id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message);});}
+</script>
+</body></html>

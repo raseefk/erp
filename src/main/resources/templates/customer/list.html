@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Customers')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('customers')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Customers')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <form th:action="@{/admin/customers}" method="get" class="d-flex gap-2">
+    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search…" th:value="${search}" style="width:220px;"/>
+    <button type="submit" class="btn btn-sm btn-gold">Search</button>
+    <a th:href="@{/admin/customers}" class="btn btn-sm btn-outline-secondary">Clear</a>
+  </form>
+  <a th:href="@{/admin/customers/new}" class="btn btn-sm btn-gold"><i class="bi bi-person-plus me-1"></i>New Customer</a>
+</div>
+<div class="card card-levanto">
+  <div class="card-header"><i class="bi bi-people me-2"></i>Customers</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-levanto mb-0">
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th><th>GSTIN</th><th>Actions</th></tr></thead>
+        <tbody>
+          <tr th:each="c, idx : ${customersPage.content}">
+            <td th:text="${idx.count}">1</td>
+            <td><strong th:text="${c.name}">-</strong></td>
+            <td><a th:href="'tel:'+${c.phone}" th:text="${c.phone}" style="color:#C8972A;">-</a></td>
+            <td><small th:text="${c.email ?: '-'}">-</small></td>
+            <td><small th:text="${c.gstNumber ?: '-'}">-</small></td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a th:href="@{/admin/customers/{id}/edit(id=${c.id})}" class="btn btn-navy"><i class="bi bi-pencil"></i></a>
+                <a th:href="@{/admin/billing/new(customerId=${c.id})}" class="btn btn-gold" title="New Bill"><i class="bi bi-receipt"></i></a>
+                <button class="btn btn-outline-danger" onclick="delCust(this)" th:data-id="${c.id}"><i class="bi bi-trash"></i></button>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${customersPage.totalElements==0}"><td colspan="6" class="text-center text-muted py-4">No customers found.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function delCust(btn){if(!confirm('Delete customer?'))return;fetch('/admin/customers/'+btn.dataset.id,{method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});}
+</script>
+</body></html>

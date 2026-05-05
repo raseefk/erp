@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Enquiry Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('enquiries')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Enquiry Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="mb-3"><a th:href="@{/admin/enquiries}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card card-levanto">
+      <div class="card-header"><i class="bi bi-person me-2"></i>Enquiry Details</div>
+      <div class="card-body">
+        <dl class="row mb-0">
+          <dt class="col-4" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Name</dt>
+          <dd class="col-8 fw-bold" th:text="${enquiry.name}">-</dd>
+          <dt class="col-4" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Phone</dt>
+          <dd class="col-8"><a th:href="'tel:'+${enquiry.phone}" th:text="${enquiry.phone}" style="color:#1A3A5C;">-</a></dd>
+          <dt class="col-4" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Email</dt>
+          <dd class="col-8" th:text="${enquiry.email ?: 'Not provided'}">-</dd>
+          <dt class="col-4" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Service</dt>
+          <dd class="col-8" th:text="${enquiry.service ?: 'Not specified'}">-</dd>
+          <dt class="col-4" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Submitted</dt>
+          <dd class="col-8"><small th:text="${#temporals.format(enquiry.submittedAt,'dd MMM yyyy, hh:mm a')}">-</small></dd>
+          <dt class="col-4" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Status</dt>
+          <dd class="col-8">
+            <span class="badge" th:text="${enquiry.status}"
+              th:classappend="${enquiry.status.name()=='NEW'}?'badge-warn':(${enquiry.status.name()=='CONTACTED'}?'badge-navy':'badge-success')">-</span>
+          </dd>
+          <dt class="col-4 mt-2" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Message</dt>
+          <dd class="col-8 mt-2" th:text="${enquiry.message ?: 'No message'}">-</dd>
+          <th:block th:if="${enquiry.adminNotes != null}">
+            <dt class="col-4 mt-2" style="color:#C8972A;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;">Notes</dt>
+            <dd class="col-8 mt-2" th:text="${enquiry.adminNotes}">-</dd>
+          
+        </dl>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card card-levanto">
+      <div class="card-header"><i class="bi bi-pencil me-2"></i>Update Status</div>
+      <div class="card-body">
+        <form th:action="@{/admin/enquiries/{id}/status(id=${enquiry.id})}" method="post">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Status</label>
+            <select name="status" class="form-select">
+              <option th:each="s : ${EnquiryStatus}" th:value="${s}" th:text="${s}"
+                      th:selected="${s == enquiry.status}"></option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Admin Notes</label>
+            <textarea name="notes" class="form-control" rows="4"
+                      th:text="${enquiry.adminNotes}" placeholder="Add notes about this enquiry…"></textarea>
+          </div>
+          <button type="submit" class="btn btn-gold w-100">Update</button>
+        </form>
+      </div>
+    </div>
+    <div class="mt-3">
+      <a th:href="@{/admin/billing/new(customerId=)}" class="btn btn-navy w-100">
+        <i class="bi bi-receipt me-2"></i>Create Quotation for this Lead
+      </a>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+
+</body></html>

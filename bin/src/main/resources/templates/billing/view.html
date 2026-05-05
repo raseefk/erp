@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Invoice Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('billing')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Invoice Detail')}"></th:block>
+  <div class="pb">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 mt-1">
+      <a href="/admin/billing" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+      <div class="d-flex gap-2 flex-wrap">
+        <a th:href="'/admin/billing/'+${tx.id}+'/pdf'" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-file-pdf me-1"></i>Download PDF
+        </a>
+        <form th:if="${tx.status.name()=='QUOTATION'}" th:action="'/admin/billing/'+${tx.id}+'/convert'" method="post" class="d-inline">
+          <button type="submit" class="btn btn-sm btn-gold" onclick="return confirm('Convert to Final Bill? Stock will be deducted.')">
+            <i class="bi bi-arrow-up-circle me-1"></i>Convert to Final Bill
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <div th:if="${success}" class="alert alert-lv alert-dismissible fade show">
+      <i class="bi bi-check-circle me-2"></i><span th:text="${success}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${error}" class="alert alert-danger alert-dismissible fade show">
+      <i class="bi bi-exclamation-triangle me-2"></i><span th:text="${error}"></span>
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-lg-8">
+        <!-- Header card -->
+        <div class="card card-lv mb-3">
+          <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <span>
+              <span class="badge me-2" th:text="${tx.status}" th:classappend="${tx.status.name()=='FINAL_BILL'}?' badge-gold':' badge-navy'"></span>
+              <span th:text="${tx.status.name()=='FINAL_BILL'?tx.invoiceNumber:tx.quotationNumber}" style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;">-</span>
+            </span>
+            <span class="badge fs-6 px-3 py-2" th:text="${tx.paymentStatus}"
+              th:classappend="${tx.paymentStatus.name()=='PAID'}?' badge-success':(${tx.paymentStatus.name()=='PARTIALLY_PAID'}?' badge-warn':' badge-danger')">-</span>
+          </div>
+          <div class="card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <small style="color:#C8972A;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;">Bill To</small>
+                <div class="fw-bold fs-6" th:text="${tx.customer.name}">-</div>
+                <div th:text="${tx.customer.phone}">-</div>
+                <div class="text-muted small" th:if="${tx.customer.address}" th:text="${tx.customer.address}">-</div>
+                <div class="small fw-bold" th:if="${tx.customer.gstNumber}" th:text="'GSTIN: '+${tx.customer.gstNumber}">-</div>
+              </div>
+              <div class="col-md-6">
+                <small style="color:#C8972A;font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;">Document Info</small>
+                <div><small class="text-muted">Date: </small><span th:text="${#temporals.format(tx.createdAt,'dd MMM yyyy, hh:mm a')}">-</span></div>
+                <div th:if="${tx.convertedAt}"><small class="text-muted">Converted: </small><span th:text="${#temporals.format(tx.convertedAt,'dd MMM yyyy')}">-</span></div>
+                <div><small class="text-muted">GST: </small><span th:text="${tx.gstEnabled?'Enabled':'Disabled'}">-</span></div>
+                <div th:if="${tx.notes}"><small class="text-muted">Notes: </small><em th:text="${tx.notes}">-</em></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Items -->
+        <div class="card card-lv mb-3">
+          <div class="card-header"><i class="bi bi-list-ul me-2"></i>Line Items</div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-lv mb-0">
+                <thead><tr><th>#</th><th>Description</th><th>Type</th><th>Sqft/Qty</th><th>Rate ₹</th><th>GST%</th><th>GST ₹</th><th>Total ₹</th></tr></thead>
+                <tbody>
+                  <tr th:each="item, idx : ${tx.items}">
+                    <td th:text="${idx.count}">1</td>
+                    <td>
+                      <strong th:text="${item.description}">-</strong>
+                      <small class="text-muted d-block" th:if="${item.hsnSacCode}" th:text="'HSN/SAC: '+${item.hsnSacCode}">-</small>
+                    </td>
+                    <td><span class="badge" th:text="${item.itemType}" th:classappend="${item.itemType.name()=='SERVICE'}?' badge-navy':' badge-gold'"></span></td>
+                    <td th:text="${item.squareFeet!=null&&item.squareFeet>0?item.squareFeet+' sqf':item.quantity}">-</td>
+                    <td th:text="'₹ '+${#numbers.formatDecimal(item.ratePerUnit,1,'COMMA',2,'POINT')}">-</td>
+                    <td th:text="${item.gstPercent}+'%'">-</td>
+                    <td th:text="'₹ '+${#numbers.formatDecimal(item.cgstAmount.add(item.sgstAmount),1,'COMMA',2,'POINT')}">-</td>
+                    <td class="fw-bold" th:text="'₹ '+${#numbers.formatDecimal(item.totalAmount,1,'COMMA',2,'POINT')}">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Totals -->
+        <div class="card card-lv">
+          <div class="card-body">
+            <div class="row justify-content-end">
+              <div class="col-md-6">
+                <table class="table table-sm mb-0">
+                  <tr><td class="text-muted">Subtotal</td><td class="text-end fw-bold" th:text="'₹ '+${#numbers.formatDecimal(tx.subtotal,1,'COMMA',2,'POINT')}">-</td></tr>
+                  <tr><td class="text-muted">CGST</td><td class="text-end" th:text="'₹ '+${#numbers.formatDecimal(tx.totalCgst,1,'COMMA',2,'POINT')}">-</td></tr>
+                  <tr><td class="text-muted">SGST</td><td class="text-end" th:text="'₹ '+${#numbers.formatDecimal(tx.totalSgst,1,'COMMA',2,'POINT')}">-</td></tr>
+                  <tr style="background:#0F2338;color:#fff;">
+                    <td class="fw-bold py-2 px-3">GRAND TOTAL</td>
+                    <td class="text-end fw-bold py-2 px-3" style="color:#C8972A;" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal,1,'COMMA',2,'POINT')}">-</td>
+                  </tr>
+                  <tr><td class="text-muted">Amount Paid</td><td class="text-end text-success fw-bold" th:text="'₹ '+${#numbers.formatDecimal(tx.amountPaid,1,'COMMA',2,'POINT')}">-</td></tr>
+                  <tr><td class="text-danger fw-bold">Balance Due</td>
+                    <td class="text-end text-danger fw-bold" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal.subtract(tx.amountPaid),1,'COMMA',2,'POINT')}">-</td></tr>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Payment actions -->
+      <div class="col-lg-4" th:if="${tx.status.name()=='FINAL_BILL'}">
+        <div class="card card-lv mb-3">
+          <div class="card-header"><i class="bi bi-cash-coin me-2"></i>Payment Actions</div>
+          <div class="card-body">
+            <!-- PAID -->
+            <div th:if="${tx.paymentStatus.name()=='PAID'}" class="text-center py-3">
+              <div style="font-size:3rem;color:#16a34a;"><i class="bi bi-check-circle-fill"></i></div>
+              <div class="fw-bold mt-2 text-success fs-6">Fully Paid</div>
+              <small class="text-muted">No further payments required.</small>
+            </div>
+            <!-- PENDING: both buttons -->
+            <div th:if="${tx.paymentStatus.name()=='PENDING'}">
+              <p class="text-muted small mb-3">Full amount of <strong th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal,1,'COMMA',2,'POINT')}">₹0</strong> is pending.</p>
+              <div class="d-grid gap-2">
+                <button class="btn btn-success fw-bold" onclick="payFull()"><i class="bi bi-check2-all me-2"></i>Mark Fully Paid</button>
+                <button class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#partialModal"><i class="bi bi-cash me-2"></i>Record Partial Payment</button>
+              </div>
+            </div>
+            <!-- PARTIALLY_PAID: only partial -->
+            <div th:if="${tx.paymentStatus.name()=='PARTIALLY_PAID'}">
+              <div class="mb-3 p-3 rounded" style="background:#fffbeb;border:1px solid #fbbf24;">
+                <div class="row g-2 text-center">
+                  <div class="col-6">
+                    <small class="text-muted d-block">Paid So Far</small>
+                    <strong class="text-success" th:text="'₹ '+${#numbers.formatDecimal(tx.amountPaid,1,'COMMA',2,'POINT')}">-</strong>
+                  </div>
+                  <div class="col-6">
+                    <small class="text-muted d-block">Balance</small>
+                    <strong class="text-danger" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal.subtract(tx.amountPaid),1,'COMMA',2,'POINT')}">-</strong>
+                  </div>
+                </div>
+              </div>
+              <div class="d-grid">
+                <button class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#partialModal"><i class="bi bi-cash me-2"></i>Record Next Payment</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Payment history -->
+        <div class="card card-lv">
+          <div class="card-header"><i class="bi bi-clock-history me-2"></i>Payment History</div>
+          <div class="card-body p-0">
+            <div class="list-group list-group-flush" id="payHistoryList">
+              <div class="text-center text-muted py-3 small">Loading…</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Partial Payment Modal -->
+<div class="modal fade" id="partialModal" tabindex="-1">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header" style="background:#0F2338;color:#fff;border:none;">
+      <h5 class="modal-title"><i class="bi bi-cash me-2"></i>Record Partial Payment</h5>
+      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+    </div>
+    <div class="modal-body">
+      <div class="mb-3 p-3 rounded" style="background:#f8f9fa;border:1px solid #e2e8f0;">
+        <div class="row g-2 text-center">
+          <div class="col-4"><small class="text-muted d-block">Bill Total</small><strong id="mBillTotal">-</strong></div>
+          <div class="col-4"><small class="text-muted d-block">Already Paid</small><strong class="text-success" id="mPaid">-</strong></div>
+          <div class="col-4"><small class="text-muted d-block">Balance</small><strong class="text-danger" id="mBalance">-</strong></div>
+        </div>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold">Payment Title</label>
+        <input type="text" id="partialTitle" class="form-control" placeholder="e.g. Advance, 2nd Instalment…"/>
+      </div>
+      <div class="mb-3">
+        <label class="form-label fw-bold">Amount ₹ <span class="text-danger">*</span></label>
+        <input type="number" id="partialAmt" class="form-control" step="0.01" min="1" placeholder="0.00" oninput="calcRem()"/>
+      </div>
+      <div id="afterDiv" class="mb-2 p-2 rounded" style="display:none;background:#dcfce7;border:1px solid #86efac;">
+        <small>After this payment → Remaining: <strong id="afterRem">-</strong></small>
+      </div>
+      <div id="partialErr" class="text-danger small" style="display:none;"></div>
+    </div>
+    <div class="modal-footer" style="border-color:#e2e8f0;">
+      <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      <button class="btn btn-gold fw-bold" onclick="submitPartial()"><i class="bi bi-check-lg me-1"></i>Record Payment</button>
+    </div>
+  </div></div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const TX_ID       = /*[[${tx.id}]]*/ 0;
+const GRAND_TOTAL = parseFloat(/*[[${tx.grandTotal}]]*/ 0);
+const PAID_INIT   = parseFloat(/*[[${tx.amountPaid}]]*/ 0);
+const IS_FINAL    = /*[[${tx.status.name()=='FINAL_BILL'}]]*/ false;
+const fmt = n => '₹ '+parseFloat(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+document.getElementById('partialModal')?.addEventListener('show.bs.modal', () => {
+  loadPaid().then(paid => {
+    document.getElementById('mBillTotal').textContent = fmt(GRAND_TOTAL);
+    document.getElementById('mPaid').textContent      = fmt(paid);
+    document.getElementById('mBalance').textContent   = fmt(GRAND_TOTAL - paid);
+    document.getElementById('partialAmt').max         = GRAND_TOTAL - paid;
+  });
+});
+
+function calcRem() {
+  loadPaid().then(paid => {
+    const entered = parseFloat(document.getElementById('partialAmt').value)||0;
+    const after   = GRAND_TOTAL - paid - entered;
+    const div     = document.getElementById('afterDiv');
+    if (entered > 0) {
+      div.style.display = 'block';
+      document.getElementById('afterRem').textContent = after <= 0 ? '₹ 0.00 (Fully Settled!)' : fmt(after);
+      div.style.background = after <= 0 ? '#dcfce7' : '#fef9c3';
+    } else { div.style.display = 'none'; }
+  });
+}
+
+async function loadPaid() {
+  if (!IS_FINAL) return PAID_INIT;
+  try {
+    const r = await fetch('/admin/payments/transactions/'+TX_ID+'/history');
+    const d = await r.json();
+    return d.reduce((s,i) => s+parseFloat(i.amount), 0);
+  } catch { return PAID_INIT; }
+}
+
+function submitPartial() {
+  const amt   = document.getElementById('partialAmt').value;
+  const title = document.getElementById('partialTitle').value||'Partial Payment';
+  const err   = document.getElementById('partialErr');
+  err.style.display = 'none';
+  if (!amt||parseFloat(amt)<=0){err.textContent='Enter a valid amount.';err.style.display='block';return;}
+  fetch('/admin/payments/transactions/'+TX_ID+'/pay-partial?amount='+amt+'&title='+encodeURIComponent(title),{method:'POST'})
+    .then(r=>r.json()).then(d=>{
+      if(d.success){bootstrap.Modal.getInstance(document.getElementById('partialModal')).hide();location.reload();}
+      else{err.textContent=d.message;err.style.display='block';}
+    });
+}
+
+function payFull(){
+  if(!confirm('Mark this invoice as Fully Paid?'))return;
+  fetch('/admin/payments/transactions/'+TX_ID+'/pay-full',{method:'POST'})
+    .then(r=>r.json()).then(d=>{if(d.success)location.reload();else alert(d.message);});
+}
+
+function loadHistory(){
+  if(!IS_FINAL)return;
+  fetch('/admin/payments/transactions/'+TX_ID+'/history')
+    .then(r=>r.json()).then(items=>{
+      const el = document.getElementById('payHistoryList');
+      if(!items||!items.length){el.innerHTML='<div class="text-center text-muted py-3 small">No payments yet.</div>';return;}
+      el.innerHTML = items.map(i=>`
+        <div class="list-group-item px-3 py-2">
+          <div class="d-flex justify-content-between align-items-start">
+            <div>
+              <span class="badge ${i.title.toLowerCase().includes('full')?'badge-success':'badge-warn'} me-2">${i.title}</span>
+              <small class="text-muted">${i.date}</small>
+            </div>
+            <strong class="text-success">${fmt(i.amount)}</strong>
+          </div>
+          <small class="text-muted d-block mt-1" style="font-size:.72rem;">${i.description}</small>
+        </div>`).join('');
+    });
+}
+loadHistory();
+</script>
+</body>
+</html>

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Labour Wages')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('projects')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Labour Wages')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    
+    <div class="d-flex align-items-center mb-3 gap-2">
+      <a th:href="'/admin/projects/' + ${project.id}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Back to Project
+      </a>
+      <h4 class="mb-0 text-navy ms-2">Labour Wages</h4>
+      <span class="badge badge-navy ms-2" th:text="${project.name}"></span>
+    </div>
+
+    <div class="mt-1">
+      <!-- ── Filter Bar ─────────────────────────────────────────────── -->
+      <div class="card card-lv mb-3">
+        <div class="card-body py-3">
+          <form id="filterForm" th:action="@{'/admin/projects/' + ${project.id} + '/labours/wages'}" method="get"
+                class="d-flex flex-wrap gap-2 align-items-end">
+
+            <div>
+              <label class="form-label mb-1 small fw-bold text-muted">From</label>
+              <input type="date" name="from" class="form-control form-control-sm"
+                     th:value="${from}" style="width:150px;"/>
+            </div>
+            <div>
+              <label class="form-label mb-1 small fw-bold text-muted">To</label>
+              <input type="date" name="to" class="form-control form-control-sm"
+                     th:value="${to}" style="width:150px;"/>
+            </div>
+            <div>
+              <label class="form-label mb-1 small fw-bold text-muted">Labour Name</label>
+              <input type="text" name="labourName" class="form-control form-control-sm"
+                     placeholder="Search name..." th:value="${labourName}" style="width:180px;"/>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-sm btn-gold">
+                <i class="bi bi-funnel me-1"></i>Filter
+              </button>
+              <a th:href="@{'/admin/projects/' + ${project.id} + '/labours/wages'}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i>Clear
+              </a>
+            </div>
+
+            <!-- Download PDF button -->
+            <div class="ms-auto">
+              <a id="exportBtn" class="btn btn-sm btn-navy"
+                 th:href="@{'/admin/projects/' + ${project.id} + '/labours/wages/export/pdf'(from=${from},to=${to},labourName=${labourName})}">
+                <i class="bi bi-file-pdf me-1"></i>Labour Wage Report
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- ── Table ──────────────────────────────────────────────────── -->
+      <div class="card card-lv">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-people me-1"></i>Approved Labour Wages
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-lv mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Job Card Phase</th>
+                  <th>Labour Name</th>
+                  <th class="text-end">Wage ₹</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="l, idx : ${logs}">
+                  <td class="text-muted small" th:text="${idx.count}">1</td>
+                  <td>
+                    <small th:text="${#temporals.format(l.dailyLog.logDate,'dd MMM yyyy')}">-</small>
+                  </td>
+                  <td>
+                    <span class="badge badge-navy" th:text="${l.dailyLog.jobCard.phase}">-</span>
+                  </td>
+                  <td class="fw-bold text-dark" th:text="${l.projectLabour.name}">-</td>
+                  <td class="fw-bold text-danger text-end"
+                      th:text="'₹ ' + ${#numbers.formatDecimal(l.wagePaid,1,'COMMA',2,'POINT')}">-</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(logs)}">
+                  <td colspan="5" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+                    No approved labour wages found.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

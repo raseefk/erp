@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Employee')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('employees')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Employee')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="mb-3"><a th:href="@{/admin/employees}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="card card-levanto" style="max-width:620px;">
+  <div class="card-header"><i class="bi bi-person-badge me-2"></i><span th:text="${employee.id != null ? 'Edit Employee' : 'New Employee'}">Employee</span></div>
+  <div class="card-body">
+    <form th:action="@{/admin/employees/save}" method="post">
+      <input type="hidden" name="id" th:value="${employee.id}"/>
+      <input type="hidden" name="active" th:value="${employee.active != null ? employee.active : true}"/>
+      
+      <div class="row g-3">
+        <!-- Basic Details -->
+        <div class="col-12"><h6 class="text-gold border-bottom pb-1"><i class="bi bi-info-circle me-1"></i>Basic Details</h6></div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Employee Code</label>
+          <input type="text" name="employeeCode" class="form-control" th:value="${employee.employeeCode}" placeholder="Auto-generated"/>
+        </div>
+        <div class="col-md-8">
+          <label class="form-label fw-bold">Full Name *</label>
+          <input type="text" name="name" class="form-control" th:value="${employee.name}" required/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Designation</label>
+          <input type="text" name="designation" class="form-control" th:value="${employee.designation}" placeholder="e.g. Site Supervisor"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Department</label>
+          <input type="text" name="department" class="form-control" th:value="${employee.department}" placeholder="e.g. Operations"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Phone</label>
+          <input type="text" name="phone" class="form-control" th:value="${employee.phone}"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Email</label>
+          <input type="email" name="email" class="form-control" th:value="${employee.email}"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Date of Birth</label>
+          <input type="date" name="dob" class="form-control" th:value="${employee.dob}"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Joining Date</label>
+          <input type="date" name="joiningDate" class="form-control" th:value="${employee.joiningDate}"/>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-bold">Address</label>
+          <textarea name="address" class="form-control" rows="2" th:text="${employee.address}"></textarea>
+        </div>
+
+        <!-- Identity & Finance -->
+        <div class="col-12 mt-4"><h6 class="text-gold border-bottom pb-1"><i class="bi bi-shield-lock me-1"></i>Identity & Finance</h6></div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">Aadhaar Number</label>
+          <input type="text" name="aadhaarNumber" class="form-control" th:value="${employee.aadhaarNumber}"/>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">PAN Number</label>
+          <input type="text" name="panNumber" class="form-control" th:value="${employee.panNumber}"/>
+        </div>
+        <!-- User Account Mapping -->
+        <div class="col-12 mt-4"><h6 class="text-gold border-bottom pb-1"><i class="bi bi-person-lock me-1"></i>User Account</h6></div>
+        <div class="col-md-6" id="existingUserCol">
+          <label class="form-label fw-bold">Link to Existing User</label>
+          <select name="userId" id="userIdSelect" class="form-select">
+            <option value="">-- No User Link --</option>
+            <option th:each="u : ${users}" th:value="${u.id}" th:text="${u.fullName + ' (' + u.username + ')'}"
+                    th:selected="${employee.appUser != null && employee.appUser.id == u.id}"></option>
+          </select>
+        </div>
+        <div class="col-md-6 d-flex align-items-end" th:if="${employee.id == null}">
+          <div class="form-check mb-2">
+            <input class="form-check-input" type="checkbox" name="createUser" id="createUserCheck" value="true" onchange="toggleNewUserFields()">
+            <label class="form-check-label fw-bold" for="createUserCheck">Create New User Account instead?</label>
+          </div>
+        </div>
+
+        <div id="newUserFields" style="display:none;" class="row g-3 col-12 ps-0 ms-0 mt-0">
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Login Username</label>
+            <input type="text" name="username" class="form-control" placeholder="Unique username"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Password</label>
+            <input type="password" name="password" class="form-control" placeholder="Temporary password"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">System Role</label>
+            <select name="role" class="form-select">
+               <option th:each="r : ${roles}" th:value="${r}" th:text="${r.name().replace('ROLE_', '')}"
+                       th:selected="${r.name() == 'ROLE_EMPLOYEE'}"></option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Bank Details -->
+        <div class="col-12 mt-4"><h6 class="text-gold border-bottom pb-1"><i class="bi bi-bank me-1"></i>Bank Details</h6></div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Bank Name</label>
+          <input type="text" name="bankName" class="form-control" th:value="${employee.bankName}"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Account Number</label>
+          <input type="text" name="accountNumber" class="form-control" th:value="${employee.accountNumber}"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">IFSC Code</label>
+          <input type="text" name="ifscCode" class="form-control" th:value="${employee.ifscCode}"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Monthly Salary ₹</label>
+          <input type="number" step="0.01" name="monthlySalary" class="form-control" th:value="${employee.monthlySalary}"/>
+        </div>
+
+        <div class="col-12 d-flex gap-2 mt-4">
+          <button type="submit" class="btn btn-gold px-4">Save Employee</button>
+          <a th:href="@{/admin/employees}" class="btn btn-outline-secondary px-4">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function toggleNewUserFields() {
+  const check = document.getElementById('createUserCheck');
+  const fields = document.getElementById('newUserFields');
+  const select = document.getElementById('userIdSelect');
+  if (check && check.checked) {
+    fields.style.display = 'flex';
+    if (select) {
+        select.value = "";
+        select.disabled = true;
+    }
+  } else {
+    fields.style.display = 'none';
+    if (select) select.disabled = false;
+  }
+}
+</script>
+</body></html>

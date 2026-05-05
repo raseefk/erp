@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Daily Attendance Ledger')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('attendance')}"></th:block>
+<div id="main">
+    <th:block th:insert="~{fragments/layout :: topbar('Daily Attendance Ledger')}"></th:block>
+    <div class="pb">
+        <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+        
+        <!-- Filter Header -->
+        <div class="card card-lv mb-4">
+            <div class="card-body">
+                <form th:action="@{/hr/attendance}" method="get" class="row g-3 align-items-end">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Select Employee</label>
+                        <select name="employeeId" class="form-select" onchange="this.form.submit()">
+                            <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.name}"
+                                    th:selected="${emp.id == selectedEmployeeId}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Month</label>
+                        <select name="month" class="form-select" onchange="this.form.submit()">
+                            <option th:each="m : ${months}" th:value="${m.value}" th:text="${m.name()}"
+                                    th:selected="${m.value == selectedMonth}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label fw-bold">Year</label>
+                        <select name="year" class="form-select" onchange="this.form.submit()">
+                            <option th:each="y : ${years}" th:value="${y}" th:text="${y}"
+                                    th:selected="${y == selectedYear}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-navy w-100"><i class="bi bi-filter me-1"></i> Refresh</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Summary Stats -->
+        <div class="row mb-4" th:if="${selectedEmployeeId != null}">
+            <div class="col-md-3">
+                <div class="stat-card" style="padding: 1rem; border-left-color: #3b82f6;">
+                    <div class="stat-icon" style="background: #eff6ff; color: #3b82f6; width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="bi bi-calendar-range"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" style="font-size: 1.4rem;" th:text="${statWorkingDays}">0</div>
+                        <div class="stat-lbl" style="font-size: 0.65rem;">Working Days</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="padding: 1rem; border-left-color: #10b981;">
+                    <div class="stat-icon" style="background: #ecfdf5; color: #10b981; width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="bi bi-person-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" style="font-size: 1.4rem;" th:text="${statPresent}">0</div>
+                        <div class="stat-lbl" style="font-size: 0.65rem;">Present</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="padding: 1rem; border-left-color: #0ea5e9;">
+                    <div class="stat-icon" style="background: #e0f2fe; color: #0ea5e9; width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="bi bi-calendar2-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" style="font-size: 1.4rem;" th:text="${statLeaves}">0</div>
+                        <div class="stat-lbl" style="font-size: 0.65rem;">Leaves Taken</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-card" style="padding: 1rem; border-left-color: #ef4444;">
+                    <div class="stat-icon" style="background: #fef2f2; color: #ef4444; width: 40px; height: 40px; font-size: 1.1rem;">
+                        <i class="bi bi-person-x"></i>
+                    </div>
+                    <div>
+                        <div class="stat-num" style="font-size: 1.4rem;" th:text="${statAbsent}">0</div>
+                        <div class="stat-lbl" style="font-size: 0.65rem;">Absent</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar Matrix -->
+        <div class="card card-lv" th:if="${selectedEmployeeId != null}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-calendar3 me-2"></i>Attendance Matrix — <span th:text="${#strings.capitalize(#strings.toLowerCase(months[selectedMonth-1])) + ' ' + selectedYear}"></span></span>
+                <div class="small">
+                    <span class="badge bg-success me-1">Present</span>
+                    <span class="badge bg-info me-1">Leave</span>
+                    <span class="badge bg-danger me-1">Absent</span>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <style>
+                    .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); background: #e2e8f0; gap: 1px; }
+                    .cal-head { background: #f8fafc; padding: 0.75rem; text-align: center; font-weight: 700; color: #475569; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; }
+                    .cal-cell { background: #fff; min-height: 140px; padding: 0.75rem; display: flex; flex-direction: column; gap: 0.4rem; position: relative; }
+                    .cal-cell.weekend { background: #fdfdfd; }
+                    .cal-cell.today { border: 2px solid var(--gold); z-index: 1; }
+                    .cal-cell.future { opacity: 0.5; background: #f1f5f9; cursor: not-allowed; }
+                    .cal-day-num { font-weight: 800; font-size: 1.2rem; color: #1e293b; line-height: 1; }
+                    .cal-content { flex: 1; display: flex; flex-direction: column; justify-content: center; align-items: center; gap: 0.4rem; }
+                    .time-box { font-size: 0.7rem; background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 600; width: 100%; text-align: center; border: 1px solid #e2e8f0; }
+                    .leave-box { background: #e0f2fe; color: #0369a1; font-weight: 700; font-size: 0.7rem; padding: 4px; border-radius: 4px; width: 100%; text-align: center; border: 1px solid #bae6fd; }
+                    .holiday-box { background: #fef3c7; color: #b45309; font-weight: 700; font-size: 0.7rem; padding: 4px; border-radius: 4px; width: 100%; text-align: center; border: 1px solid #fde68a; }
+                    .mark-holiday-btn { position: absolute; top: 0.3rem; right: 0.3rem; font-size: 0.75rem; color: #94a3b8; background: none; border: none; cursor: pointer; transition: color 0.2s; }
+                    .mark-holiday-btn:hover { color: #f59e0b; }
+                    .mark-holiday-btn.active { color: #f59e0b; }
+                </style>
+                <div class="cal-grid">
+                    <div class="cal-head">Mon</div><div class="cal-head">Tue</div><div class="cal-head">Wed</div>
+                    <div class="cal-head">Thu</div><div class="cal-head">Fri</div><div class="cal-head">Sat</div><div class="cal-head">Sun</div>
+
+                    <!-- Offset Empty Cells -->
+                    <div th:each="i : ${#numbers.sequence(1, startOffset)}" th:if="${startOffset > 0}" class="cal-cell bg-light"></div>
+
+                    <!-- Day Cells -->
+                    <div th:each="day : ${calendar}" class="cal-cell" 
+                         th:classappend="${(day.isWeekend ? ' weekend' : '') + (day.isFuture ? ' future' : '') + (day.date == T(java.time.LocalDate).now() ? ' today' : '')}">
+                        
+                        <div class="cal-day-num" th:text="${day.date.dayOfMonth}"></div>
+                        
+                        <div class="cal-content">
+                            <!-- Holiday Status -->
+                            <div th:if="${day.isHoliday}" class="holiday-box">
+                                <i class="bi bi-brightness-high me-1"></i><span th:text="${day.holidayName ?: 'HOLIDAY'}"></span>
+                            </div>
+
+                            <!-- Leave Status -->
+                            <div th:if="${day.isLeave && !day.isHoliday}" class="leave-box" 
+                                 th:style="${day.approvedLeave != null && day.approvedLeave.leaveType.name() == 'LOSS_OF_PAY' ? 'background: #fee2e2; color: #b91c1c; border-color: #fecaca;' : ''}">
+                                <i class="bi bi-calendar2-check me-1"></i><span th:text="${day.approvedLeave != null && day.approvedLeave.leaveType.name() == 'LOSS_OF_PAY' ? 'LOSS OF PAY' : 'ON LEAVE'}"></span>
+                            </div>
+
+                            <!-- Attendance Info -->
+                            <th:block th:if="${!day.isLeave && !day.isFuture && !day.isHoliday}">
+                                <!-- Clocked In -->
+                                <div th:if="${day.attendance != null && day.attendance.clockInTime != null}" class="time-box text-success">
+                                    <i class="bi bi-box-arrow-in-right me-1"></i>In: <span th:text="${#temporals.format(day.attendance.clockInTime, 'HH:mm')}"></span>
+                                </div>
+                                <form th:if="${!day.isWeekend && (day.attendance == null || day.attendance.clockInTime == null)}" th:action="@{/hr/attendance/clock-in}" method="post">
+                                    <input type="hidden" name="employeeId" th:value="${selectedEmployeeId}"/>
+                                    <input type="hidden" name="date" th:value="${day.date}"/>
+                                    <button type="submit" class="btn btn-xs btn-outline-success py-0" style="font-size: 0.65rem;">Clock In</button>
+                                </form>
+
+                                <!-- Clocked Out -->
+                                <div th:if="${day.attendance != null && day.attendance.clockOutTime != null}" class="time-box text-danger">
+                                    <i class="bi bi-box-arrow-left me-1"></i>Out: <span th:text="${#temporals.format(day.attendance.clockOutTime, 'HH:mm')}"></span>
+                                </div>
+                                <form th:if="${!day.isWeekend && (day.attendance != null && day.attendance.clockInTime != null && day.attendance.clockOutTime == null)}" th:action="@{/hr/attendance/clock-out}" method="post">
+                                    <input type="hidden" name="employeeId" th:value="${selectedEmployeeId}"/>
+                                    <input type="hidden" name="date" th:value="${day.date}"/>
+                                    <button type="submit" class="btn btn-xs btn-outline-danger py-0" style="font-size: 0.65rem;">Clock Out</button>
+                                </form>
+                                
+                                <div th:if="${day.attendance == null && !day.isWeekend}" class="small text-muted" style="font-size:0.6rem;">Absent</div>
+                            </th:block>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-4" th:if="${selectedEmployeeId == null}">
+            Please select an employee to view their attendance matrix.
+        </div>
+    </div>
+
+    </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

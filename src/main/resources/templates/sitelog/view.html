@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Daily Log Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('sitelogs')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Daily Log Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <!-- Back row -->
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="'/admin/sitelogs/jobcard/'+${jobCard.id}"
+           class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Back to Logs
+        </a>
+        <button class="btn btn-sm btn-outline-danger"
+                th:onclick="'delLog('+${log.id}+','+${jobCard.id}+')'">
+          <i class="bi bi-trash me-1"></i>Delete Log
+        </button>
+      </div>
+
+      <div class="row g-3">
+        <!-- Log info -->
+        <div class="col-lg-7">
+          <div class="card card-lv mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+              <span>
+                <i class="bi bi-calendar-check me-2"></i>
+                <strong th:text="${#temporals.format(log.logDate,'dd MMMM yyyy')}">-</strong>
+              </span>
+              <small class="text-muted" th:text="${project.name}+' → '+${jobCard.phase}">-</small>
+            </div>
+            <div class="card-body">
+              <dl class="row mb-0">
+                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Progress</dt>
+                <dd class="col-8" th:text="${log.progressDescription ?: '—'}">-</dd>
+
+                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Work Value</dt>
+                <dd class="col-8 fw-bold text-success"
+                    th:text="'₹ '+${#numbers.formatDecimal(log.workValue,1,'COMMA',2,'POINT')}">-</dd>
+
+                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Labours</dt>
+                <dd class="col-8">
+                  <div th:if="${#lists.isEmpty(log.labourLogs)}" th:text="${log.numberOfLabours}+' @ ₹'+${log.dailyWageRate}+'/day'">-</div>
+                  <div th:if="${not #lists.isEmpty(log.labourLogs)}">
+                    <ul class="list-unstyled mb-0 small">
+                      <li th:each="ll : ${log.labourLogs}">
+                        <span th:text="${ll.projectLabour.name}"></span>
+                        <span class="text-muted ms-1" th:text="'(₹' + ${#numbers.formatDecimal(ll.wagePaid, 1, 'COMMA', 2, 'POINT')} + ')'"></span>
+                      </li>
+                    </ul>
+                  </div>
+                </dd>
+
+                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Labour Cost</dt>
+                <dd class="col-8 fw-bold text-danger"
+                    th:text="'₹ '+${#numbers.formatDecimal(log.totalLabourCost,1,'COMMA',2,'POINT')}">-</dd>
+
+                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Logged By</dt>
+                <dd class="col-8" th:text="${log.loggedBy != null ? log.loggedBy.fullName : '—'}">-</dd>
+              </dl>
+            </div>
+          </div>
+
+          <!-- Expenses for this log -->
+          <div class="card card-lv">
+            <div class="card-header"><i class="bi bi-receipt me-2"></i>Site Expenses</div>
+            <div class="card-body p-0">
+              <div class="table-responsive">
+                <table class="table table-lv mb-0">
+                  <thead>
+                    <tr><th>Category</th><th>Description</th><th>Amount ₹</th><th>Status</th><th>Receipt</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    <tr th:each="e : ${expenses}">
+                      <td>
+                        <span class="badge"
+                              th:text="${e.category}"
+                              style="background:#C8972A;color:#0F2338;">
+                        </span>
+                      </td>
+                      <td th:text="${e.description}">-</td>
+                      <td class="fw-bold"
+                          th:text="'₹ '+${#numbers.formatDecimal(e.amount,1,'COMMA',2,'POINT')}">-</td>
+                      <td>
+                        <span class="badge"
+                              th:text="${e.status}"
+                              th:style="${e.status.name()=='APPROVED'}?'background:#16a34a;color:#fff;':
+                                         (${e.status.name()=='REJECTED'}?'background:#dc2626;color:#fff;':
+                                         'background:#d97706;color:#fff;')">
+                        </span>
+                      </td>
+                      <td>
+                        <a th:if="${e.attachmentPath != null}"
+                           th:href="'/admin/finance/expenses/'+${e.id}+'/attachment'"
+                           target="_blank" class="btn btn-sm btn-outline-secondary">
+                          <i class="bi bi-paperclip"></i>
+                        </a>
+                        <span th:if="${e.attachmentPath == null}" class="text-muted">—</span>
+                      </td>
+                      <td>
+                        <button th:if="${e.status.name()=='NEW'}"
+                                class="btn btn-sm btn-outline-danger"
+                                th:onclick="'delExp('+${e.id}+')'">
+                          <i class="bi bi-trash"></i>
+                        </button>
+                      </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(expenses)}">
+                      <td colspan="6" class="text-center text-muted py-3">No expenses recorded yet.</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Add misc expense panel -->
+        <div class="col-lg-5">
+          <div class="card card-lv">
+            <div class="card-header"><i class="bi bi-plus-circle me-2"></i>Add Misc Expense</div>
+            <div class="card-body">
+              <form th:action="@{/admin/sitelogs/{id}/misc(id=${log.id})}"
+                    method="post" enctype="multipart/form-data">
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Category <span class="text-danger">*</span></label>
+                  <select name="category" class="form-select" required>
+                    <option value="">-- Select --</option>
+                    <option th:each="c : ${miscCats}" th:value="${c.name()}" th:text="${c.name()}"></option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Description <span class="text-danger">*</span></label>
+                  <input type="text" name="description" class="form-control" required
+                         placeholder="e.g. Diesel for generator"/>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">Amount ₹ <span class="text-danger">*</span></label>
+                  <input type="number" step="0.01" min="0.01" name="amount"
+                         class="form-control" required placeholder="0.00"/>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label fw-bold">
+                    <i class="bi bi-paperclip me-1"></i>Receipt (optional)
+                  </label>
+                  <input type="file" name="file" class="form-control"
+                         accept=".pdf,.jpg,.jpeg,.png,.webp"/>
+                  <small class="text-muted">PDF, JPG or PNG — max 10MB</small>
+                </div>
+                <button type="submit" class="btn btn-gold fw-bold w-100">
+                  <i class="bi bi-send me-1"></i>Add to Approval Queue
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const PROJECT_ID = /*[[${project.id}]]*/ 0;
+function delLog(id, jcId) {
+  if (!confirm('Delete this log? All NEW expenses will be purged.')) return;
+  fetch('/admin/sitelogs/'+id,{
+    method:'DELETE',
+    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || '' }
+  })
+    .then(r=>r.json())
+    .then(d=>{ if(d.success) location.href='/admin/sitelogs/jobcard/'+jcId; else alert(d.message); });
+}
+function delExp(id) {
+  if (!confirm('Remove this expense?')) return;
+  fetch('/admin/sitelogs/expenses/'+id,{
+    method:'DELETE',
+    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || '' }
+  })
+    .then(r=>r.json()).then(d=>{ if(d.success) location.reload(); else alert(d.message); });
+}
+</script>
+</body>
+</html>

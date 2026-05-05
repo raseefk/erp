@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('PO Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-po')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Purchase Order Details')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="@{/admin/scm/po}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <div class="btn-group">
+          <button th:if="${po.status.name() == 'DRAFT'}" class="btn btn-sm btn-info" onclick="updateStatus('ORDERED')"><i class="bi bi-send me-1"></i>Mark as Ordered</button>
+          <button th:if="${(po.status.name() == 'ORDERED' || po.status.name() == 'RECEIVED') && !po.paid}" class="btn btn-sm btn-gold" onclick="markAsPaid()"><i class="bi bi-cash-coin me-1"></i>Mark as Paid</button>
+          <button th:if="${po.status.name() == 'ORDERED'}" class="btn btn-sm btn-success" onclick="updateStatus('RECEIVED')"><i class="bi bi-box-seam me-1"></i>Mark as Received</button>
+          <button th:if="${po.status.name() != 'RECEIVED' && po.status.name() != 'CANCELLED'}" class="btn btn-sm btn-outline-danger" onclick="updateStatus('CANCELLED')"><i class="bi bi-x-circle me-1"></i>Cancel PO</button>
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <!-- Main Details -->
+        <div class="col-md-8">
+          <div class="card card-levanto mb-3">
+            <div class="card-header d-flex justify-content-between">
+              <span><i class="bi bi-file-earmark-text me-2"></i>PO #<span th:text="${po.poNumber}"></span></span>
+              <span th:if="${po.status != null}" class="badge" th:classappend="${
+                po.status.name() == 'DRAFT' ? 'bg-secondary' :
+                po.status.name() == 'ORDERED' ? 'bg-info' :
+                po.status.name() == 'RECEIVED' ? 'bg-success' : 'bg-danger'
+              }" th:text="${po.status}">-</span>
+              <span th:if="${po.paid}" class="badge bg-gold ms-1"><i class="bi bi-check-circle me-1"></i>PAID</span>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-sm table-levanto mb-0">
+                <thead>
+                  <tr>
+                    <th>Item</th>
+                    <th class="text-end">Qty</th>
+                    <th>Unit</th>
+                    <th class="text-end">Unit Price</th>
+                    <th class="text-end">Total Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr th:each="item : ${po.items}">
+                    <td>
+                      <strong th:text="${item.description}">-</strong><br/>
+                      <small class="text-muted" th:if="${item.inventoryItem != null}" th:text="${item.inventoryItem.name}"></small>
+                    </td>
+                    <td class="text-end" th:text="${item.quantity}">0</td>
+                    <td th:text="${item.unit}">NOS</td>
+                    <td class="text-end" th:text="${'₹ ' + #numbers.formatDecimal(item.unitPrice, 1, 2)}">0.00</td>
+                    <td class="text-end"><strong th:text="${'₹ ' + #numbers.formatDecimal(item.totalPrice, 1, 2)}">0.00</strong></td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="table-light">
+                    <td colspan="4" class="text-end fw-bold">Grand Total</td>
+                    <td class="text-end fw-bold text-navy" th:text="${'₹ ' + #numbers.formatDecimal(po.totalAmount, 1, 2)}">0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          
+          <div class="card card-levanto" th:if="${po.notes}">
+            <div class="card-header small fw-bold text-muted">Notes / Instructions</div>
+            <div class="card-body py-2">
+              <p class="mb-0" th:text="${po.notes}"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar Info -->
+        <div class="col-md-4">
+          <div class="card card-levanto mb-3">
+            <div class="card-header"><i class="bi bi-truck me-2"></i>Vendor Info</div>
+            <div class="card-body" th:if="${po.vendor != null}">
+              <h6 class="fw-bold mb-1" th:text="${po.vendor.name}">-</h6>
+              <p class="small text-muted mb-2" th:text="${po.vendor.address}">-</p>
+              <div class="small">
+                <div><i class="bi bi-person me-2"></i><span th:text="${po.vendor.contactPerson}"></span></div>
+                <div><i class="bi bi-telephone me-2"></i><span th:text="${po.vendor.phone}"></span></div>
+                <div><i class="bi bi-envelope me-2"></i><span th:text="${po.vendor.email}"></span></div>
+              </div>
+            </div>
+            <div class="card-body text-muted" th:if="${po.vendor == null}">
+              No vendor assigned.
+            </div>
+          </div>
+
+          <div class="card card-levanto">
+            <div class="card-header"><i class="bi bi-calendar-event me-2"></i>Timeline</div>
+            <div class="card-body py-2 small">
+              <div class="d-flex justify-content-between mb-1"><span>Ordered:</span><span th:text="${po.orderDate ?: '-'}"></span></div>
+              <div class="d-flex justify-content-between mb-1"><span>Expected:</span><span th:text="${po.expectedDeliveryDate ?: '-'}"></span></div>
+              <div class="d-flex justify-content-between"><span>Received:</span><span th:text="${po.actualDeliveryDate ?: '-'}"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+  function updateStatus(newStatus) {
+    if (!confirm('Update PO status to ' + newStatus + '?')) return;
+    const poId = [[${po.id}]];
+    const formData = new FormData();
+    formData.append('status', newStatus);
+
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+    fetch('/admin/scm/po/' + poId + '/status', {
+      method: 'POST',
+      headers: { [header]: token },
+      body: formData
+    }).then(r => r.json()).then(d => {
+      if (d.success) location.reload();
+      else alert('Error: ' + d.message);
+    });
+  }
+
+  function markAsPaid() {
+    if (!confirm('Mark this Purchase Order as Paid? This will create an expense entry.')) return;
+    const poId = [[${po.id}]];
+
+    const token = document.querySelector('meta[name="_csrf"]').content;
+    const header = document.querySelector('meta[name="_csrf_header"]').content;
+
+    fetch('/admin/scm/po/' + poId + '/mark-paid', {
+      method: 'POST',
+      headers: { [header]: token }
+    }).then(r => r.json()).then(d => {
+      if (d.success) location.reload();
+      else alert('Error: ' + d.message);
+    });
+  }
+</script>
+</body>
+</html>

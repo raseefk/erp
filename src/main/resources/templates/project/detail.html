@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Project Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('projects')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Project Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <!-- Back + actions -->
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <a href="/admin/projects" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>All Projects
+        </a>
+        <div class="d-flex gap-2">
+          <a th:href="'/admin/approval/analytics/'+${project.id}" class="btn btn-sm btn-navy">
+            <i class="bi bi-graph-up me-1"></i>Analytics
+          </a>
+          <a th:href="'/admin/projects/'+${project.id}+'/edit'" class="btn btn-sm btn-gold">
+            <i class="bi bi-pencil me-1"></i>Edit
+          </a>
+          <a th:href="'/admin/projects/'+${project.id}+'/jobcards/new'" class="btn btn-sm btn-navy">
+            <i class="bi bi-plus-lg me-1"></i>Add Job Card
+          </a>
+        </div>
+      </div>
+
+      <!-- Project header card -->
+      <div class="card card-lv mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;"
+                th:text="${project.name}">-</span>
+          <span class="badge fs-6"
+                th:text="${project.status}"
+                th:style="${project.status.name()=='ACTIVE'}?'background:#16a34a;color:#fff;':
+                           (${project.status.name()=='COMPLETED'}?'background:#C8972A;color:#0F2338;':
+                           'background:#6b7280;color:#fff;')">
+          </span>
+        </div>
+        <div class="card-body">
+          <div class="row g-3">
+            <div class="col-md-3 col-6">
+              <small style="color:#C8972A;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;">Client</small>
+              <div class="fw-bold" th:text="${project.clientName ?: '—'}">-</div>
+            </div>
+            <div class="col-md-3 col-6">
+              <small style="color:#C8972A;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;">Location</small>
+              <div class="fw-bold" th:text="${project.location ?: '—'}">-</div>
+            </div>
+            <div class="col-md-3 col-6">
+              <small style="color:#C8972A;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;">Contract Value</small>
+              <div class="fw-bold"
+                   th:text="'₹ '+${#numbers.formatDecimal(project.totalContractValue,1,'COMMA',2,'POINT')}">-</div>
+            </div>
+            <div class="col-md-3 col-6">
+              <small style="color:#C8972A;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;">Timeline</small>
+              <div class="fw-bold small">
+                <span th:text="${project.startDate != null ? #temporals.format(project.startDate,'dd MMM yyyy') : '—'}">-</span>
+                <span th:if="${project.endDate != null}"> → <span th:text="${#temporals.format(project.endDate,'dd MMM yyyy')}">-</span></span>
+              </div>
+            </div>
+            <div class="col-12" th:if="${project.description}">
+              <small style="color:#C8972A;font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;">Description</small>
+              <div class="text-muted" th:text="${project.description}">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stats row -->
+      <div class="row g-3 mb-3">
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+              <div class="stat-num text-success" style="font-size:1.2rem;"
+                   th:text="'₹'+${#numbers.formatDecimal(totalWork,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Work Value</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-left-color:#dc2626;">
+            <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-wallet2"></i></div>
+            <div>
+              <div class="stat-num text-danger" style="font-size:1.2rem;"
+                   th:text="'₹'+${#numbers.formatDecimal(totalApproved,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Approved Exp.</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-left-color:#d97706;">
+            <div class="stat-icon" style="background:#fef9c3;color:#d97706;"><i class="bi bi-hourglass-split"></i></div>
+            <div>
+              <div class="stat-num" style="font-size:1.2rem;color:#d97706;"
+                   th:text="'₹'+${#numbers.formatDecimal(totalPending,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Pending Approval</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card"
+               th:style="${netProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0}?
+                          'border-left-color:#16a34a;':'border-left-color:#dc2626;'">
+            <div class="stat-icon"
+                 th:style="${netProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0}?
+                            'background:#dcfce7;color:#16a34a;':'background:#fee2e2;color:#dc2626;'">
+              <i th:class="${netProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0}?
+                            'bi bi-arrow-up-circle':'bi bi-arrow-down-circle'"></i>
+            </div>
+            <div>
+              <div class="stat-num" style="font-size:1.2rem;"
+                   th:classappend="${netProfit.compareTo(T(java.math.BigDecimal).ZERO) >= 0}?' text-success':' text-danger'"
+                   th:text="'₹'+${#numbers.formatDecimal(netProfit,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Net Profit</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Job Cards -->
+      <div class="card card-lv">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-card-list me-2"></i>Job Cards</span>
+          <a th:href="'/admin/projects/'+${project.id}+'/jobcards/new'"
+             class="btn btn-sm btn-gold">
+            <i class="bi bi-plus-lg me-1"></i>Add Job Card
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-lv mb-0">
+              <thead>
+                <tr><th>Phase</th><th>Engineer</th><th>Status</th><th>Target Date</th><th>Logs</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <tr th:each="jc : ${jobCards}">
+                  <td>
+                    <strong th:text="${jc.phase}">-</strong>
+                    <small class="text-muted d-block" th:if="${jc.description}"
+                           th:text="${#strings.abbreviate(jc.description, 50)}">-</small>
+                  </td>
+                  <td>
+                    <span th:if="${jc.assignedEngineer != null}"
+                          th:text="${jc.assignedEngineer.name}">-</span>
+                    <span th:if="${jc.assignedEngineer == null}" class="text-muted">Unassigned</span>
+                  </td>
+                  <td>
+                    <span class="badge"
+                          th:text="${jc.status}"
+                          th:style="${jc.status.name()=='IN_PROGRESS'}?'background:#2563eb;color:#fff;':
+                                     (${jc.status.name()=='COMPLETED'}?'background:#16a34a;color:#fff;':
+                                     (${jc.status.name()=='ON_HOLD'}?'background:#d97706;color:#fff;':
+                                     'background:#6b7280;color:#fff;'))">
+                    </span>
+                  </td>
+                  <td>
+                    <small th:text="${jc.targetDate != null ? #temporals.format(jc.targetDate,'dd MMM yyyy') : '—'}">-</small>
+                  </td>
+                  <td>
+                    <span class="badge badge-navy" th:text="${#lists.size(jc.dailyLogs)}+' logs'">0</span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a th:href="'/admin/sitelogs/jobcard/'+${jc.id}"
+                         class="btn btn-navy" title="View Logs">
+                        <i class="bi bi-journal-text"></i>
+                      </a>
+                      <a th:href="'/admin/sitelogs/new?jobCardId='+${jc.id}"
+                         class="btn btn-gold" title="New Log">
+                        <i class="bi bi-plus-lg"></i>
+                      </a>
+                      <a th:href="'/admin/projects/jobcards/'+${jc.id}+'/edit'"
+                         class="btn btn-outline-secondary" title="Edit">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <button class="btn btn-outline-danger"
+                              th:onclick="'delJC('+${jc.id}+','+${project.id}+')'">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(jobCards)}">
+                  <td colspan="6" class="text-center text-muted py-4">
+                    No job cards yet.
+                    <a th:href="'/admin/projects/'+${project.id}+'/jobcards/new'"
+                       style="color:#C8972A;">Add one →</a>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      <!-- Project Labours -->
+      <div class="card card-lv mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-people me-2"></i>Project Labours</span>
+          <a th:href="'/admin/projects/'+${project.id}+'/labours/wages'" class="btn btn-sm btn-gold">
+            <i class="bi bi-file-earmark-text me-1"></i>Labour Wage Report
+          </a>
+        </div>
+        <div class="card-body">
+          <form th:action="@{/admin/projects/{id}/labours/save(id=${project.id})}" method="post" class="row g-2 align-items-end mb-3">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div class="col-md-3">
+              <label class="form-label small text-muted">Name</label>
+              <input type="text" name="name" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-muted">Phone</label>
+              <input type="text" name="phone" class="form-control form-control-sm">
+            </div>
+            <div class="col-md-3">
+              <label class="form-label small text-muted">Default Wage (₹)</label>
+              <input type="number" step="0.01" name="defaultWage" class="form-control form-control-sm" value="0">
+            </div>
+            <div class="col-md-3">
+              <button type="submit" class="btn btn-sm btn-navy"><i class="bi bi-plus-lg"></i> Add Labour</button>
+            </div>
+          </form>
+
+          <div class="table-responsive">
+            <table class="table table-lv table-sm mb-0">
+              <thead>
+                <tr><th>Name</th><th>Phone</th><th>Default Wage</th><th>Actions</th></tr>
+              </thead>
+              <tbody>
+                <tr th:each="labour : ${projectLabours}">
+                  <td class="fw-bold" th:text="${labour.name}">-</td>
+                  <td th:text="${labour.phone ?: '—'}">-</td>
+                  <td th:text="'₹' + ${#numbers.formatDecimal(labour.defaultWage, 1, 'COMMA', 2, 'POINT')}">-</td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a th:href="'/admin/projects/'+${project.id}+'/labours/'+${labour.id}" class="btn btn-outline-secondary" title="View History">
+                        <i class="bi bi-clock-history"></i>
+                      </a>
+                      <button type="button" class="btn btn-outline-danger" th:onclick="'delLabour('+${labour.id}+','+${project.id}+')'" title="Delete">
+                        <i class="bi bi-trash"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(projectLabours)}">
+                  <td colspan="4" class="text-center text-muted py-4">No project labours registered yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function delJC(id, pid) {
+  if (!confirm('Delete this job card and all its logs?')) return;
+  fetch('/admin/projects/jobcards/'+id,{
+    method:'DELETE',
+    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || '' }
+  })
+    .then(r=>r.json()).then(d=>{
+      if(d.success) location.href='/admin/projects/'+pid;
+      else alert(d.message);
+    });
+}
+
+function delLabour(id, pid) {
+  if (!confirm('Delete this project labour?')) return;
+  fetch('/admin/projects/labours/'+id,{
+    method:'DELETE',
+    headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="_csrf"]')?.content || '' }
+  })
+    .then(r=>r.json()).then(d=>{
+      if(d.success) location.href='/admin/projects/'+pid;
+      else alert(d.message);
+    });
+}
+</script>
+</body>
+</html>

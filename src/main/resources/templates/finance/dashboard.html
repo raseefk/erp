@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('P&amp;L Report')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('finance')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Profit &amp; Loss Report')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <!-- Date filter -->
+      <form action="/admin/finance" method="get" class="d-flex gap-2 flex-wrap align-items-end mb-4">
+        <div>
+          <label class="form-label mb-1" style="font-size:.72rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;">From</label>
+          <input type="date" name="from" class="form-control form-control-sm" th:value="${from}"/>
+        </div>
+        <div>
+          <label class="form-label mb-1" style="font-size:.72rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;">To</label>
+          <input type="date" name="to" class="form-control form-control-sm" th:value="${to}"/>
+        </div>
+        <button type="submit" class="btn btn-sm btn-gold">Calculate</button>
+        <a href="/admin/finance" class="btn btn-sm btn-outline-secondary">This Month</a>
+      </form>
+
+      <!-- Period summary cards -->
+      <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-graph-up-arrow"></i></div>
+            <div>
+              <div class="stat-num text-success" style="font-size:1.3rem;"
+                   th:text="'₹'+${#numbers.formatDecimal(summary.totalIncome,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Total Income</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-left-color:#dc2626;">
+            <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-wallet2"></i></div>
+            <div>
+              <div class="stat-num text-danger" style="font-size:1.3rem;"
+                   th:text="'₹'+${#numbers.formatDecimal(summary.totalExpenses,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Total Expenses</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card" style="border-left-color:#7c3aed;">
+            <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-person-badge"></i></div>
+            <div>
+              <div class="stat-num" style="font-size:1.3rem;color:#7c3aed;"
+                   th:text="'₹'+${#numbers.formatDecimal(summary.totalSalaries,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl">Salaries (incl.)</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-3">
+          <div class="stat-card"
+               th:classappend="${summary.profit}?' ':' '"
+               th:style="${summary.profit}?'border-left-color:#16a34a;':'border-left-color:#dc2626;'">
+            <div class="stat-icon"
+                 th:style="${summary.profit}?'background:#dcfce7;color:#16a34a;':'background:#fee2e2;color:#dc2626;'">
+              <i th:class="${summary.profit}?'bi bi-arrow-up-circle':'bi bi-arrow-down-circle'"></i>
+            </div>
+            <div>
+              <div class="stat-num" style="font-size:1.3rem;"
+                   th:classappend="${summary.profit}?' text-success':' text-danger'"
+                   th:text="'₹'+${#numbers.formatDecimal(summary.netProfit,1,'COMMA',0,'POINT')}">₹0</div>
+              <div class="stat-lbl" th:text="${summary.profit}?'Net Profit':'Net Loss'">Net</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 12-month chart + table -->
+      <div class="row g-3">
+        <div class="col-lg-8">
+          <div class="card card-lv">
+            <div class="card-header"><i class="bi bi-bar-chart-line me-2"></i>Last 12 Months</div>
+            <div class="card-body">
+              <canvas id="plChart" height="100"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="card card-lv h-100">
+            <div class="card-header"><i class="bi bi-table me-2"></i>Monthly Breakdown</div>
+            <div class="card-body p-0" style="overflow-y:auto;max-height:380px;">
+              <table class="table table-lv table-sm mb-0">
+                <thead><tr><th>Month</th><th>Income ₹</th><th>Expense ₹</th><th>Net ₹</th></tr></thead>
+                <tbody>
+                  <tr th:each="row : ${monthly}">
+                    <td><small th:text="${row.monthLabel}">-</small></td>
+                    <td class="text-success"
+                        th:text="${#numbers.formatDecimal(row.totalIncome,1,'COMMA',0,'POINT')}">0</td>
+                    <td class="text-danger"
+                        th:text="${#numbers.formatDecimal(row.totalExpenses,1,'COMMA',0,'POINT')}">0</td>
+                    <td class="fw-bold"
+                        th:classappend="${row.profit}?' text-success':' text-danger'"
+                        th:text="${#numbers.formatDecimal(row.netProfit,1,'COMMA',0,'POINT')}">0</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+const monthly = /*[[${monthly}]]*/ [];
+const labels   = monthly.map(r => r.monthLabel);
+const income   = monthly.map(r => parseFloat(r.totalIncome)   || 0);
+const expenses = monthly.map(r => parseFloat(r.totalExpenses) || 0);
+const net      = monthly.map(r => parseFloat(r.netProfit)     || 0);
+
+new Chart(document.getElementById('plChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      { label: 'Income',   data: income,   backgroundColor: 'rgba(22,163,74,.75)',   borderRadius: 4 },
+      { label: 'Expenses', data: expenses, backgroundColor: 'rgba(220,38,38,.65)',   borderRadius: 4 },
+      { label: 'Net',      data: net,      backgroundColor: 'rgba(200,151,42,.85)',  borderRadius: 4 }
+    ]
+  },
+  options: {
+    responsive: true,
+    plugins: { legend: { position: 'top' } },
+    scales: { y: { beginAtZero: true, ticks: { callback: v => '₹'+v.toLocaleString('en-IN') } } }
+  }
+});
+</script>
+</body>
+</html>

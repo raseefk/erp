@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Salaries')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('salaries')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Employee Salaries')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <!-- Quick pay + date filter row -->
+      <div class="d-flex justify-content-between align-items-end mb-3 flex-wrap gap-2">
+        <form action="/admin/salaries" method="get" class="d-flex gap-2 flex-wrap align-items-end">
+          <div>
+            <label class="form-label mb-1" style="font-size:.72rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;">From</label>
+            <input type="date" name="from" class="form-control form-control-sm" th:value="${from}"/>
+          </div>
+          <div>
+            <label class="form-label mb-1" style="font-size:.72rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;">To</label>
+            <input type="date" name="to" class="form-control form-control-sm" th:value="${to}"/>
+          </div>
+          <button type="submit" class="btn btn-sm btn-gold">Filter</button>
+          <a href="/admin/salaries" class="btn btn-sm btn-outline-secondary">Clear</a>
+        </form>
+        <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#payModal">
+          <i class="bi bi-cash me-1"></i>Pay Salary
+        </button>
+      </div>
+
+      <!-- Period total if filtered -->
+      <div th:if="${totalSalary != null}" class="stat-card mb-3" style="max-width:280px;">
+        <div class="stat-icon" style="background:#ede9fe;color:#7c3aed;"><i class="bi bi-cash-stack"></i></div>
+        <div>
+          <div class="stat-num" style="color:#7c3aed;"
+               th:text="'₹ '+${#numbers.formatDecimal(totalSalary,1,'COMMA',2,'POINT')}">₹0</div>
+          <div class="stat-lbl">Total Paid (Period)</div>
+        </div>
+      </div>
+
+      <div class="card card-lv">
+        <div class="card-header"><i class="bi bi-cash-stack me-2"></i>Salary Records</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-lv mb-0">
+              <thead>
+                <tr><th>#</th><th>Employee</th><th>Month / Year</th><th>Amount ₹</th><th>Credited On</th><th>Expense Ref</th></tr>
+              </thead>
+              <tbody>
+                <tr th:each="s, idx : ${salariesPage.content}">
+                  <td th:text="${idx.count}">1</td>
+                  <td>
+                    <strong th:text="${s.employee.name}">-</strong><br/>
+                    <small class="text-muted" th:text="${s.employee.designation ?: ''}">-</small>
+                  </td>
+                  <td>
+                    <span class="badge badge-navy" th:text="${s.salaryMonthYear}">-</span>
+                  </td>
+                  <td class="fw-bold text-success"
+                      th:text="'₹ '+${#numbers.formatDecimal(s.amount,1,'COMMA',2,'POINT')}">-</td>
+                  <td><small th:text="${#temporals.format(s.salaryCreditedDate,'dd MMM yyyy')}">-</small></td>
+                  <td>
+                    <small class="text-muted"
+                           th:text="${s.linkedExpense != null ? '#EXP-'+s.linkedExpense.id : '-'}">-</small>
+                  </td>
+                </tr>
+                <tr th:if="${salariesPage.totalElements == 0}">
+                  <td colspan="6" class="text-center text-muted py-4">No salary records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="d-flex justify-content-between align-items-center px-3 py-2"
+               th:if="${salariesPage.totalPages > 1}">
+            <small class="text-muted"
+                   th:text="'Page '+(${currentPage}+1)+' of '+${salariesPage.totalPages}"></small>
+            <div class="btn-group btn-group-sm">
+              <a th:if="${currentPage > 0}"
+                 th:href="'/admin/salaries?page='+(${currentPage}-1)"
+                 class="btn btn-outline-secondary">‹</a>
+              <a th:if="${currentPage < salariesPage.totalPages-1}"
+                 th:href="'/admin/salaries?page='+(${currentPage}+1)"
+                 class="btn btn-outline-secondary">›</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Pay Salary Modal -->
+<div class="modal fade" id="payModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#0F2338;color:#fff;border:none;">
+        <h5 class="modal-title"><i class="bi bi-cash me-2"></i>Pay Salary</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Employee <span class="text-danger">*</span></label>
+          <select id="empSelect" class="form-select" onchange="fillSalary()">
+            <option value="">-- Select Employee --</option>
+            <option th:each="e : ${employees}"
+                    th:value="${e.id}"
+                    th:text="${e.name} + ' — ' + ${e.designation ?: ''}"
+                    th:data-salary="${e.monthlySalary}">
+            </option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Amount ₹ <span class="text-danger">*</span></label>
+          <input type="number" id="payAmount" class="form-control" step="0.01" min="1" placeholder="0.00"/>
+          <small class="text-muted">Auto-filled from monthly salary. You can override.</small>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Credit Date <span class="text-danger">*</span></label>
+          <input type="date" id="creditDate" class="form-control"/>
+        </div>
+        <div id="payError" class="text-danger small" style="display:none;"></div>
+      </div>
+      <div class="modal-footer" style="border-color:#e2e8f0;">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-gold fw-bold" onclick="submitPay()">
+          <i class="bi bi-check-lg me-1"></i>Pay &amp; Record
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+// Set today's date as default
+document.getElementById('creditDate').value = new Date().toISOString().split('T')[0];
+
+function fillSalary() {
+  const sel = document.getElementById('empSelect');
+  const opt = sel.selectedOptions[0];
+  if (opt && opt.dataset.salary) {
+    document.getElementById('payAmount').value = parseFloat(opt.dataset.salary).toFixed(2);
+  }
+}
+
+function submitPay() {
+  const empId  = document.getElementById('empSelect').value;
+  const amount = document.getElementById('payAmount').value;
+  const date   = document.getElementById('creditDate').value;
+  const errDiv = document.getElementById('payError');
+
+  errDiv.style.display = 'none';
+  if (!empId)  { errDiv.textContent = 'Please select an employee.';  errDiv.style.display='block'; return; }
+  if (!amount || parseFloat(amount) <= 0) { errDiv.textContent = 'Enter a valid amount.'; errDiv.style.display='block'; return; }
+  if (!date)   { errDiv.textContent = 'Please select a date.';       errDiv.style.display='block'; return; }
+
+  fetch(`/admin/salaries/pay?employeeId=${empId}&amount=${amount}&creditDate=${date}`, { method: 'POST' })
+    .then(r => r.json())
+    .then(d => {
+      if (d.success) {
+        bootstrap.Modal.getInstance(document.getElementById('payModal')).hide();
+        location.reload();
+      } else {
+        errDiv.textContent = d.message;
+        errDiv.style.display = 'block';
+      }
+    })
+    .catch(() => { errDiv.textContent = 'Server error.'; errDiv.style.display = 'block'; });
+}
+</script>
+</body>
+</html>

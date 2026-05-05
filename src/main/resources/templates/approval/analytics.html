@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Project Analytics')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('approval')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Project Analytics')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <!-- Back + Period toggle -->
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <a href="/admin/approval" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Approval Queue
+        </a>
+        <div class="btn-group btn-group-sm">
+          <a th:href="'/admin/approval/analytics/'+${project.id}+'?days=7'"
+             class="btn" th:classappend="${days==7}?' btn-navy':' btn-outline-secondary'">7d</a>
+          <a th:href="'/admin/approval/analytics/'+${project.id}+'?days=14'"
+             class="btn" th:classappend="${days==14}?' btn-navy':' btn-outline-secondary'">14d</a>
+          <a th:href="'/admin/approval/analytics/'+${project.id}+'?days=30'"
+             class="btn" th:classappend="${days==30}?' btn-navy':' btn-outline-secondary'">30d</a>
+        </div>
+      </div>
+
+      <!-- Project header -->
+      <div class="card card-lv mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <span style="font-family:'Cormorant Garamond',serif;font-size:1.2rem;"
+                th:text="${project.name}">-</span>
+          <small class="text-muted"
+                 th:text="${project.clientName}+' | '+${project.location}">-</small>
+        </div>
+        <div class="card-body">
+
+          <!-- Project Pulse progress bars -->
+          <h6 class="fw-bold mb-3" style="color:#C8972A;letter-spacing:.08em;text-transform:uppercase;font-size:.8rem;">
+            <i class="bi bi-activity me-2"></i>Project Pulse
+          </h6>
+          <div class="row g-3 mb-3">
+            <div class="col-md-4 col-6">
+              <div class="stat-card">
+                <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-graph-up-arrow"></i></div>
+                <div>
+                  <div class="stat-num text-success" style="font-size:1.1rem;"
+                       th:text="'₹'+${#numbers.formatDecimal(pulse.totalWorkValue,1,'COMMA',0,'POINT')}">₹0</div>
+                  <div class="stat-lbl">Total Work Value</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-6">
+              <div class="stat-card" style="border-left-color:#dc2626;">
+                <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-wallet2"></i></div>
+                <div>
+                  <div class="stat-num text-danger" style="font-size:1.1rem;"
+                       th:text="'₹'+${#numbers.formatDecimal(pulse.totalApprovedExpenses,1,'COMMA',0,'POINT')}">₹0</div>
+                  <div class="stat-lbl">Approved Expenses</div>
+                </div>
+              </div>
+            </div>
+            <div class="col-md-4 col-6">
+              <div class="stat-card"
+                   th:style="${pulse.healthy}?'border-left-color:#16a34a;':'border-left-color:#dc2626;'">
+                <div class="stat-icon"
+                     th:style="${pulse.healthy}?'background:#dcfce7;color:#16a34a;':'background:#fee2e2;color:#dc2626;'">
+                  <i th:class="${pulse.healthy}?'bi bi-arrow-up-circle':'bi bi-arrow-down-circle'"></i>
+                </div>
+                <div>
+                  <div class="stat-num" style="font-size:1.1rem;"
+                       th:classappend="${pulse.healthy}?' text-success':' text-danger'"
+                       th:text="'₹'+${#numbers.formatDecimal(pulse.netProfit,1,'COMMA',0,'POINT')}">₹0</div>
+                  <div class="stat-lbl">Net Profit / Loss</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Progress bars -->
+          <div class="mb-2">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="fw-bold">Work Completion vs Contract</small>
+              <small class="fw-bold text-success" th:text="${pulse.workCompletionPct}+'%'">0%</small>
+            </div>
+            <div class="progress" style="height:14px;border-radius:6px;background:#e2e8f0;">
+              <div class="progress-bar" role="progressbar"
+                   style="background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:6px;"
+                   th:style="'width:'+${pulse.workCompletionPct}+'%;background:linear-gradient(90deg,#16a34a,#22c55e);border-radius:6px;'"
+                   th:attr="aria-valuenow=${pulse.workCompletionPct}">
+              </div>
+            </div>
+          </div>
+          <div class="mb-1">
+            <div class="d-flex justify-content-between mb-1">
+              <small class="fw-bold">Spend vs Contract</small>
+              <small class="fw-bold text-danger" th:text="${pulse.spendPct}+'%'">0%</small>
+            </div>
+            <div class="progress" style="height:14px;border-radius:6px;background:#e2e8f0;">
+              <div class="progress-bar" role="progressbar"
+                   style="border-radius:6px;"
+                   th:style="'width:'+${pulse.spendPct}+'%;background:linear-gradient(90deg,#dc2626,#f87171);border-radius:6px;'"
+                   th:attr="aria-valuenow=${pulse.spendPct}">
+              </div>
+            </div>
+            <small class="text-muted">
+              Contract: ₹<span th:text="${#numbers.formatDecimal(project.totalContractValue,1,'COMMA',0,'POINT')}">0</span>
+            </small>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Daily Profit Chart -->
+      <div class="card card-lv">
+        <div class="card-header">
+          <i class="bi bi-bar-chart-line me-2"></i>Daily Profit — Last <span th:text="${days}">30</span> Days
+          <small class="text-muted ms-2">Work Value vs Approved Expenses</small>
+        </div>
+        <div class="card-body">
+          <canvas id="profitChart" height="90"></canvas>
+        </div>
+      </div>
+
+      <!-- Daily table -->
+      <div class="card card-lv mt-3">
+        <div class="card-header"><i class="bi bi-table me-2"></i>Daily Breakdown</div>
+        <div class="card-body p-0" style="max-height:380px;overflow-y:auto;">
+          <table class="table table-lv table-sm mb-0">
+            <thead>
+              <tr><th>Day</th><th>Work Value ₹</th><th>Expenses ₹</th><th>Profit / Loss ₹</th></tr>
+            </thead>
+            <tbody>
+              <tr th:each="pt : ${chartData}" th:if="${pt.workValue.compareTo(T(java.math.BigDecimal).ZERO) > 0 or pt.expenses.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <td th:text="${pt.label}">-</td>
+                <td class="text-success" th:text="${#numbers.formatDecimal(pt.workValue,1,'COMMA',2,'POINT')}">0</td>
+                <td class="text-danger"  th:text="${#numbers.formatDecimal(pt.expenses,1,'COMMA',2,'POINT')}">0</td>
+                <td class="fw-bold"
+                    th:classappend="${pt.profit.compareTo(T(java.math.BigDecimal).ZERO) >= 0}?' text-success':' text-danger'"
+                    th:text="${#numbers.formatDecimal(pt.profit,1,'COMMA',2,'POINT')}">0</td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(chartData.?[workValue.compareTo(T(java.math.BigDecimal).ZERO) > 0 or expenses.compareTo(T(java.math.BigDecimal).ZERO) > 0])}">
+                <td colspan="4" class="text-center text-muted py-4">No activity data for this period.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script th:inline="javascript">
+const chartData = /*[[${chartData}]]*/ [];
+const labels    = chartData.map(p => p.label);
+const workVals  = chartData.map(p => parseFloat(p.workValue)  || 0);
+const expVals   = chartData.map(p => parseFloat(p.expenses)   || 0);
+const profVals  = chartData.map(p => parseFloat(p.profit)     || 0);
+
+new Chart(document.getElementById('profitChart'), {
+  type: 'bar',
+  data: {
+    labels,
+    datasets: [
+      {
+        label: 'Work Value',
+        data: workVals,
+        backgroundColor: 'rgba(22,163,74,.75)',
+        borderRadius: 4,
+        order: 2
+      },
+      {
+        label: 'Expenses',
+        data: expVals,
+        backgroundColor: 'rgba(220,38,38,.65)',
+        borderRadius: 4,
+        order: 3
+      },
+      {
+        label: 'Net Profit',
+        data: profVals,
+        type: 'line',
+        borderColor: '#C8972A',
+        backgroundColor: 'rgba(200,151,42,.1)',
+        borderWidth: 2.5,
+        pointBackgroundColor: '#C8972A',
+        pointRadius: 4,
+        tension: 0.35,
+        fill: true,
+        order: 1
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'top' },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': ₹' +
+            ctx.parsed.y.toLocaleString('en-IN', {minimumFractionDigits:2})
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { callback: v => '₹' + v.toLocaleString('en-IN') }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>

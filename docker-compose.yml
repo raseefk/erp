@@ -1,0 +1,38 @@
+version: '3.9'
+
+services:
+  levanto-app:
+    build: .
+    container_name: levanto-flooring
+    image: docker.io/raseefk/levanto-flooring:latest
+    ports:
+      - "8085:8085"
+    volumes:
+      # H2 database file persists across container restarts
+      - levanto_data:/app/data
+      - levanto_uploads:/app/uploads
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:h2:file:/app/data/levanto_db
+      - SPRING_DATASOURCE_USERNAME=sa
+      - SPRING_DATASOURCE_PASSWORD=Levanto@2024!
+      - APP_ADMIN_USERNAME=admin
+      - APP_ADMIN_PASSWORD=Admin@1234
+      # ── Update these with your actual company details ──
+      - APP_COMPANY_NAME=Lēvanto Flooring
+      - APP_COMPANY_ADDRESS=Your Shop Address, City, State - PIN
+      - APP_COMPANY_PHONE=+91 XXXXX XXXXX
+      - APP_COMPANY_EMAIL=info@levantoflooring.com
+      - APP_COMPANY_GSTNUMBER=YOUR_GSTIN_HERE
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/login || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  levanto_data:
+    driver: local
+  levanto_uploads:
+    driver: local

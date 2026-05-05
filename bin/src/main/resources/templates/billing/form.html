@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('New Transaction')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('billing')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('New Transaction')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<th:block th:fragment="head">
+<style>
+.item-row { background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:1rem; margin-bottom:.75rem; position:relative; }
+.item-row .row-num { position:absolute; top:-10px; left:12px; background:#0F2338; color:#C8972A; font-size:.7rem; font-weight:700; padding:.1rem .5rem; border-radius:10px; }
+.toggle-switch { display:flex; align-items:center; gap:.6rem; }
+.toggle-switch input[type=checkbox] { width:38px; height:20px; accent-color:#C8972A; cursor:pointer; }
+.section-head { font-family:'Cormorant Garamond',serif; font-size:1.1rem; font-weight:700; color:#0F2338; border-bottom:2px solid #C8972A; padding-bottom:.4rem; margin-bottom:1rem; }
+.totals-panel { background:linear-gradient(135deg,#0F2338,#1A3A5C); color:#fff; border-radius:8px; padding:1.4rem; }
+.totals-panel .t-row { display:flex; justify-content:space-between; padding:.3rem 0; font-size:.9rem; }
+.totals-panel .grand { font-size:1.3rem; font-weight:700; color:#C8972A; border-top:1px solid rgba(200,151,42,.3); padding-top:.6rem; margin-top:.4rem; }
+</style>
+
+
+
+<div class="mb-3"><a th:href="@{/admin/billing}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+
+<form id="txForm">
+<div class="row g-3">
+  <!-- Left column -->
+  <div class="col-lg-8">
+
+    <!-- Customer -->
+    <div class="card card-levanto mb-3">
+      <div class="card-header"><i class="bi bi-person me-2"></i>Customer</div>
+      <div class="card-body">
+        <div class="row g-2 align-items-end">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Select Customer <span class="text-danger">*</span></label>
+            <select id="customerId" name="customerId" class="form-select" required>
+              <option value="">-- Select Customer --</option>
+              <option th:each="c : ${customers}" th:value="${c.id}" th:text="${c.name} + ' (' + ${c.phone} + ')'"></option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <a th:href="@{/admin/customers/new}" target="_blank" class="btn btn-sm btn-outline-secondary">
+              <i class="bi bi-person-plus me-1"></i>New Customer
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GST Controls -->
+    <div class="card card-levanto mb-3">
+      <div class="card-header"><i class="bi bi-percent me-2"></i>GST Settings</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <div class="toggle-switch">
+              <input type="checkbox" id="gstEnabled" checked onchange="recalc()"/>
+              <label for="gstEnabled" class="fw-bold">Enable GST</label>
+            </div>
+            <small class="text-muted d-block mt-1">Turn OFF to zero-out all GST on this document.</small>
+          </div>
+          <div class="col-md-6">
+            <div class="toggle-switch">
+              <input type="checkbox" id="taxAllItems" onchange="recalc()"/>
+              <label for="taxAllItems" class="fw-bold">Tax All Items (incl. Products)</label>
+            </div>
+            <small class="text-muted d-block mt-1">OFF = GST only on Services. ON = GST on Products &amp; Services.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Line items -->
+    <div class="card card-levanto mb-3">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-ul me-2"></i>Line Items</span>
+        <div class="btn-group btn-group-sm">
+          <button type="button" class="btn btn-navy" onclick="addRow('PRODUCT')"><i class="bi bi-box me-1"></i>Add Product</button>
+          <button type="button" class="btn btn-gold"  onclick="addRow('SERVICE')"><i class="bi bi-tools me-1"></i>Add Service</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div id="itemsContainer"></div>
+        <div id="noItems" class="text-center text-muted py-3" style="display:none;">No items added. Click "Add Product" or "Add Service" above.</div>
+      </div>
+    </div>
+
+    <!-- Notes -->
+    <div class="card card-levanto mb-3">
+      <div class="card-header"><i class="bi bi-sticky me-2"></i>Notes</div>
+      <div class="card-body">
+        <textarea id="notes" class="form-control" rows="2" placeholder="Optional notes for this document…"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column: totals + submit -->
+  <div class="col-lg-4">
+    <div class="totals-panel mb-3" id="totalsPanel">
+      <div style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;font-weight:700;color:#C8972A;margin-bottom:.8rem;">
+        <i class="bi bi-calculator me-2"></i>Summary
+      </div>
+      <div class="t-row"><span>Subtotal</span><span id="tSubtotal">₹ 0.00</span></div>
+      <div class="t-row"><span id="cgstLabel">CGST (9%)</span><span id="tCgst">₹ 0.00</span></div>
+      <div class="t-row"><span id="sgstLabel">SGST (9%)</span><span id="tSgst">₹ 0.00</span></div>
+      <div class="t-row grand"><span>GRAND TOTAL</span><span id="tGrand">₹ 0.00</span></div>
+    </div>
+    <div class="card card-levanto">
+      <div class="card-body d-grid gap-2">
+        <button type="button" class="btn btn-navy" onclick="submit('QUOTATION')" th:if="${invoiceType=='QUOTATION' or invoiceType==null}">
+          <i class="bi bi-file-text me-2"></i>Save as Quotation
+        </button>
+        <button type="button" class="btn btn-gold" onclick="submit('FINAL_BILL')">
+          <i class="bi bi-receipt me-2"></i>Create Final Bill
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+</form>
+
+<!-- Item row template -->
+<template id="rowTemplate">
+  <div class="item-row" data-type="PRODUCT">
+    <span class="row-num"></span>
+    <div class="row g-2">
+      <div class="col-12 col-md-5">
+        <label class="form-label fw-bold" style="font-size:.75rem;">Description / Item</label>
+        <div class="input-group input-group-sm">
+          <select class="form-select inv-select">
+            <option value="">-- Select or type below --</option>
+          </select>
+        </div>
+        <input type="text" class="form-control form-control-sm mt-1 desc-input" placeholder="Or enter custom description…" oninput="recalc()"/>
+        <input type="hidden" class="item-id-input"/>
+        <input type="hidden" class="item-type-input" value="PRODUCT"/>
+        <input type="hidden" class="hsn-input"/>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label fw-bold" style="font-size:.75rem;">Sqft <small class="text-muted">(or Qty)</small></label>
+        <input type="number" step="0.01" min="0" class="form-control form-control-sm sqft-input" placeholder="0.00" oninput="recalc()"/>
+      </div>
+      <div class="col-6 col-md-2">
+        <label class="form-label fw-bold" style="font-size:.75rem;">Rate / Unit ₹</label>
+        <input type="number" step="0.01" min="0" class="form-control form-control-sm rate-input" placeholder="0.00" oninput="recalc()"/>
+      </div>
+      <div class="col-6 col-md-1">
+        <label class="form-label fw-bold" style="font-size:.75rem;">GST %</label>
+        <input type="number" step="0.01" min="0" max="28" class="form-control form-control-sm gst-input" value="0" oninput="recalc()"/>
+      </div>
+      <div class="col-6 col-md-1">
+        <label class="form-label fw-bold" style="font-size:.75rem;">Total ₹</label>
+        <input type="text" class="form-control form-control-sm total-display" readonly style="background:#f8f9fa;font-weight:700;"/>
+      </div>
+      <div class="col-12 col-md-1 d-flex align-items-end">
+        <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeRow(this)">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</template>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const allItems = /*[[${products}]]*/ [];
+const CGST_RATE = 9, SGST_RATE = 9;
+
+function addRow(type) {
+  const tmpl = document.getElementById('rowTemplate').content.cloneNode(true);
+  const row  = tmpl.querySelector('.item-row');
+  row.dataset.type = type;
+  row.querySelector('.item-type-input').value = type;
+
+  // Populate select with items of this type
+  const sel = row.querySelector('.inv-select');
+  allItems.filter(i => i.itemType === type).forEach(i => {
+    const opt = new Option(i.name + (i.stockQuantity != null && type==='PRODUCT' ? ' [Stk:'+i.stockQuantity+']' : ''), i.id);
+    opt.dataset.price = i.currentPrice;
+    opt.dataset.hsn   = i.hsnSacCode || '';
+    opt.dataset.name  = i.name;
+    sel.appendChild(opt);
+  });
+
+  sel.addEventListener('change', () => {
+    const opt = sel.selectedOptions[0];
+    if (opt && opt.value) {
+      row.querySelector('.item-id-input').value  = opt.value;
+      row.querySelector('.rate-input').value      = opt.dataset.price || 0;
+      row.querySelector('.hsn-input').value       = opt.dataset.hsn   || '';
+      row.querySelector('.desc-input').value      = opt.dataset.name  || '';
+      setDefaultGst(row, type);
+    }
+    recalc();
+  });
+
+  setDefaultGst(row, type);
+  document.getElementById('itemsContainer').appendChild(tmpl);
+  renumber();
+  recalc();
+}
+
+function setDefaultGst(row, type) {
+  const gstOn = document.getElementById('gstEnabled').checked;
+  const taxAll = document.getElementById('taxAllItems').checked;
+  let pct = 0;
+  if (gstOn && (type === 'SERVICE' || taxAll)) pct = CGST_RATE + SGST_RATE;
+  row.querySelector('.gst-input').value = pct;
+}
+
+function removeRow(btn) { btn.closest('.item-row').remove(); renumber(); recalc(); }
+
+function renumber() {
+  document.querySelectorAll('#itemsContainer .item-row').forEach((r, i) => {
+    r.querySelector('.row-num').textContent = i + 1;
+  });
+}
+
+function recalc() {
+  const gstOn  = document.getElementById('gstEnabled').checked;
+  const taxAll = document.getElementById('taxAllItems').checked;
+  let subtotal = 0, totalCgst = 0, totalSgst = 0;
+
+  document.querySelectorAll('#itemsContainer .item-row').forEach(row => {
+    const type    = row.dataset.type;
+    const sqft    = parseFloat(row.querySelector('.sqft-input').value) || 0;
+    const rate    = parseFloat(row.querySelector('.rate-input').value) || 0;
+    const qty     = sqft > 0 ? sqft : 1;
+    const base    = parseFloat((rate * qty).toFixed(2));
+
+    let gstPct = 0;
+    if (gstOn) {
+      if (type === 'SERVICE') gstPct = parseFloat(row.querySelector('.gst-input').value) || 0;
+      else if (taxAll)        gstPct = parseFloat(row.querySelector('.gst-input').value) || 0;
+    }
+    row.querySelector('.gst-input').disabled = !gstOn || (type==='PRODUCT' && !taxAll);
+
+    const gstTotal = parseFloat((base * gstPct / 100).toFixed(2));
+    const cgst     = parseFloat((gstTotal / 2).toFixed(2));
+    const sgst     = parseFloat((gstTotal - cgst).toFixed(2));
+    const total    = base + gstTotal;
+
+    row.querySelector('.total-display').value = '₹ ' + total.toFixed(2);
+    subtotal  += base;
+    totalCgst += cgst;
+    totalSgst += sgst;
+  });
+
+  document.getElementById('tSubtotal').textContent = '₹ ' + subtotal.toFixed(2);
+  document.getElementById('tCgst').textContent     = '₹ ' + totalCgst.toFixed(2);
+  document.getElementById('tSgst').textContent     = '₹ ' + totalSgst.toFixed(2);
+  document.getElementById('tGrand').textContent    = '₹ ' + (subtotal + totalCgst + totalSgst).toFixed(2);
+}
+
+function submit(docType) {
+  const customerId = document.getElementById('customerId').value;
+  if (!customerId) { alert('Please select a customer.'); return; }
+
+  const rows = document.querySelectorAll('#itemsContainer .item-row');
+  if (rows.length === 0) { alert('Please add at least one line item.'); return; }
+
+  const items = [];
+  let valid = true;
+  rows.forEach(row => {
+    const sqft = parseFloat(row.querySelector('.sqft-input').value) || 0;
+    const rate = parseFloat(row.querySelector('.rate-input').value) || 0;
+    const desc = row.querySelector('.desc-input').value.trim() || row.querySelector('.inv-select').selectedOptions[0]?.dataset.name || '';
+    if (!desc) { alert('Please fill in a description for each row.'); valid = false; return; }
+    if (sqft <= 0 && rate <= 0) { alert('Please enter Sqft/Qty and Rate for each row.'); valid = false; return; }
+    items.push({
+      itemType:       row.querySelector('.item-type-input').value,
+      inventoryItemId: row.querySelector('.item-id-input').value || null,
+      description:    desc,
+      hsnSacCode:     row.querySelector('.hsn-input').value || null,
+      squareFeet:     sqft > 0 ? sqft : null,
+      quantity:       sqft > 0 ? sqft : 1,
+      unit:           'SQF',
+      ratePerUnit:    rate,
+      gstPercent:     parseFloat(row.querySelector('.gst-input').value) || 0
+    });
+  });
+  if (!valid) return;
+
+  const payload = {
+    customerId:   parseInt(customerId),
+    gstEnabled:   document.getElementById('gstEnabled').checked,
+    taxAllItems:  document.getElementById('taxAllItems').checked,
+    notes:        document.getElementById('notes').value,
+    items
+  };
+
+  const url = docType === 'QUOTATION' ? '/admin/billing/quotation' : '/admin/billing/finalbill';
+  fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  })
+  .then(r => r.json())
+  .then(d => {
+    if (d.success) window.location.href = '/admin/billing/' + d.data;
+    else alert('Error: ' + d.message);
+  })
+  .catch(() => alert('Server error. Please try again.'));
+}
+
+// Init
+document.getElementById('gstEnabled').addEventListener('change', () => {
+  document.querySelectorAll('#itemsContainer .item-row').forEach(r => setDefaultGst(r, r.dataset.type));
+  recalc();
+});
+document.getElementById('taxAllItems').addEventListener('change', () => {
+  document.querySelectorAll('#itemsContainer .item-row').forEach(r => setDefaultGst(r, r.dataset.type));
+  recalc();
+});
+</script>
+</body></html>

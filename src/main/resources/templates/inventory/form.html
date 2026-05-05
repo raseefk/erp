@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Inventory Item')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('inventory')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Inventory Item')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="mb-3"><a th:href="@{/admin/inventory}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="card card-levanto" style="max-width:700px;">
+  <div class="card-header"><i class="bi bi-box me-2"></i><span th:text="${item.id != null ? 'Edit Item' : 'New Item'}">Item</span></div>
+  <div class="card-body">
+    <form th:action="@{/admin/inventory/save}" method="post">
+      <input type="hidden" name="id" th:value="${item.id}"/>
+      <input type="hidden" name="active" th:value="${item.active != null ? item.active : true}"/>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <label class="form-label fw-bold">Item Name <span class="text-danger">*</span></label>
+          <input type="text" name="name" class="form-control" th:value="${item.name}" required placeholder="e.g. Vitrified Tiles 600x600"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Item Type <span class="text-danger">*</span></label>
+          <select name="itemType" class="form-select" id="itemTypeSelect" onchange="toggleStock()">
+            <option th:each="t : ${ItemType}" th:value="${t}" th:text="${t}" th:selected="${t == item.itemType}"></option>
+          </select>
+        </div>
+        <div class="col-12">
+          <label class="form-label fw-bold">Description</label>
+          <textarea name="description" class="form-control" rows="2" th:text="${item.description}" placeholder="Brief description…"></textarea>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Current Price ₹ <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" min="0" name="currentPrice" class="form-control" th:value="${item.currentPrice}" required placeholder="0.00"/>
+        </div>
+        <div class="col-md-4" id="stockField">
+          <label class="form-label fw-bold">Stock Quantity</label>
+          <input type="number" min="0" name="stockQuantity" class="form-control" th:value="${item.stockQuantity ?: 0}" placeholder="0"/>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold">Unit</label>
+          <select name="unit" class="form-select">
+            <option th:each="u : ${ {'SQF','NOS','RFT','MTR','BAG','KG','LTR'} }" th:value="${u}" th:text="${u}" th:selected="${u == item.unit}"></option>
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label fw-bold">HSN / SAC Code</label>
+          <input type="text" name="hsnSacCode" class="form-control" th:value="${item.hsnSacCode}" placeholder="e.g. 6908 or 995466"/>
+        </div>
+        <div class="col-12 d-flex gap-2">
+          <button type="submit" class="btn btn-gold"><i class="bi bi-check-lg me-1"></i>Save Item</button>
+          <a th:href="@{/admin/inventory}" class="btn btn-outline-secondary">Cancel</a>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function toggleStock() {
+  const type = document.getElementById('itemTypeSelect').value;
+  document.getElementById('stockField').style.display = type === 'SERVICE' ? 'none' : '';
+}
+toggleStock();
+</script>
+</body></html>

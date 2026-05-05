@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Company Settings')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('settings')}"></th:block>
+<div id="main">
+    <th:block th:insert="~{fragments/layout :: topbar('Company Settings')}"></th:block>
+    <div class="pb">
+        <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">Company Settings</h1>
+                </div>
+
+
+
+                <div class="card shadow-sm col-lg-8">
+                    <div class="card-body">
+                        <form th:action="@{/settings}" th:object="${settings}" method="post">
+                            <input type="hidden" th:field="*{id}">
+
+                            <h5 class="card-title text-primary mb-3"><i class="bi bi-building"></i> General Information</h5>
+                            <div class="mb-3">
+                                <label for="companyName" class="form-label">Company Name</label>
+                                <input type="text" class="form-control" id="companyName" th:field="*{companyName}" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" rows="2" th:field="*{address}"></textarea>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="phone" class="form-label">Phone</label>
+                                    <input type="text" class="form-control" id="phone" th:field="*{phone}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" th:field="*{email}">
+                                </div>
+                            </div>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="website" class="form-label">Website</label>
+                                    <input type="url" class="form-control" id="website" th:field="*{website}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="taxNumber" class="form-label">Tax Number (VAT/GST)</label>
+                                    <input type="text" class="form-control" id="taxNumber" th:field="*{taxNumber}">
+                                </div>
+                            </div>
+
+                            <h5 class="card-title text-primary mb-3 border-top pt-3"><i class="bi bi-calendar-check"></i> Leave Policy Defaults</h5>
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label for="defaultSickLeavesPerYear" class="form-label">Default Sick Leaves / Year</label>
+                                    <input type="number" class="form-control" id="defaultSickLeavesPerYear" th:field="*{defaultSickLeavesPerYear}" min="0" required>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="defaultCasualLeavesPerYear" class="form-label">Default Casual Leaves / Year</label>
+                                    <input type="number" class="form-control" id="defaultCasualLeavesPerYear" th:field="*{defaultCasualLeavesPerYear}" min="0" required>
+                                </div>
+                            </div>
+
+                            <h5 class="card-title text-primary mb-3 border-top pt-3"><i class="bi bi-calendar-range"></i> Attendance & Working Days</h5>
+                            <div class="mb-4">
+                                <label class="form-label d-block fw-bold">Weekly Off Days (Weekends)</label>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="MONDAY" id="offMon" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).MONDAY)}">
+                                    <label class="form-check-label" for="offMon">Mon</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="TUESDAY" id="offTue" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).TUESDAY)}">
+                                    <label class="form-check-label" for="offTue">Tue</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="WEDNESDAY" id="offWed" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).WEDNESDAY)}">
+                                    <label class="form-check-label" for="offWed">Wed</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="THURSDAY" id="offThu" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).THURSDAY)}">
+                                    <label class="form-check-label" for="offThu">Thu</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="FRIDAY" id="offFri" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).FRIDAY)}">
+                                    <label class="form-check-label" for="offFri">Fri</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="SATURDAY" id="offSat" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).SATURDAY)}">
+                                    <label class="form-check-label" for="offSat">Sat</label>
+                                </div>
+                                <div class="form-check form-check-inline">
+                                    <input class="form-check-input" type="checkbox" name="offDays" value="SUNDAY" id="offSun" th:checked="${settings.weeklyOffDaysList.contains(T(java.time.DayOfWeek).SUNDAY)}">
+                                    <label class="form-check-label" for="offSun">Sun</label>
+                                </div>
+                                <div class="form-text mt-2"><i class="bi bi-info-circle"></i> Select the days that are considered regular weekly off days (e.g. weekends). These days will be automatically excluded from working day calculations and clock-in requirements.</div>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> Save Settings</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+    </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Vendor')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('vendors')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Vendor')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="mb-3"><a th:href="@{/admin/vendors}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+<div class="card card-levanto" style="max-width:620px;">
+  <div class="card-header"><i class="bi bi-truck me-2"></i><span th:text="${vendor.id != null ? 'Edit Vendor' : 'New Vendor'}">Vendor</span></div>
+  <div class="card-body">
+    <form th:action="@{/admin/vendors/save}" method="post">
+      <input type="hidden" name="id" th:value="${vendor.id}"/>
+      <input type="hidden" name="active" value="true"/>
+      <div class="row g-3">
+        <div class="col-md-6"><label class="form-label fw-bold">Vendor Name *</label><input type="text" name="name" class="form-control" th:value="${vendor.name}" required/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Contact Person</label><input type="text" name="contactPerson" class="form-control" th:value="${vendor.contactPerson}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Phone</label><input type="text" name="phone" class="form-control" th:value="${vendor.phone}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Email</label><input type="email" name="email" class="form-control" th:value="${vendor.email}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">GSTIN</label><input type="text" name="gstNumber" class="form-control" th:value="${vendor.gstNumber}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Material Supplied</label><input type="text" name="materialSupplied" class="form-control" th:value="${vendor.materialSupplied}" placeholder="e.g. Tiles, Adhesive"/></div>
+        <div class="col-12"><label class="form-label fw-bold">Address</label><textarea name="address" class="form-control" rows="2" th:text="${vendor.address}"></textarea></div>
+        <div class="col-12"><label class="form-label fw-bold">Notes</label><textarea name="notes" class="form-control" rows="2" th:text="${vendor.notes}"></textarea></div>
+        
+        <div class="col-12 mt-3 mb-1"><h6 class="text-navy fw-bold border-bottom pb-1"><i class="bi bi-bank me-2"></i>Bank Details</h6></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Account Name</label><input type="text" name="bankAccountName" class="form-control" th:value="${vendor.bankAccountName}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Account Number</label><input type="text" name="bankAccountNumber" class="form-control" th:value="${vendor.bankAccountNumber}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">Bank Name</label><input type="text" name="bankName" class="form-control" th:value="${vendor.bankName}"/></div>
+        <div class="col-md-6"><label class="form-label fw-bold">IFSC Code</label><input type="text" name="ifscCode" class="form-control" th:value="${vendor.ifscCode}"/></div>
+
+        <div class="col-12 d-flex gap-2"><button type="submit" class="btn btn-gold">Save</button><a th:href="@{/admin/vendors}" class="btn btn-outline-secondary">Cancel</a></div>
+      </div>
+    </form>
+  </div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+
+</body></html>

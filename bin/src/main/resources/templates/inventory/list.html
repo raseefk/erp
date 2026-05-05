@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Inventory')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('inventory')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Inventory')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <form th:action="@{/admin/inventory}" method="get" class="d-flex gap-2">
+    <input type="text" name="search" class="form-control form-control-sm" placeholder="Search items…" th:value="${search}" style="width:220px;"/>
+    <button type="submit" class="btn btn-sm btn-gold">Search</button>
+    <a th:href="@{/admin/inventory}" class="btn btn-sm btn-outline-secondary">Clear</a>
+  </form>
+  <a th:href="@{/admin/inventory/new}" class="btn btn-sm btn-gold"><i class="bi bi-plus-lg me-1"></i>New Item</a>
+</div>
+
+<!-- Low stock alerts -->
+<div th:if="${not #lists.isEmpty(lowStock)}" class="alert alert-levanto mb-3">
+  <i class="bi bi-exclamation-triangle me-2" style="color:#C8972A;"></i>
+  <strong>Low Stock:</strong>
+  <span th:each="item, idx : ${lowStock}">
+    <strong th:text="${item.name}"></strong> (<span th:text="${item.stockQuantity}"></span> <span th:text="${item.unit}"></span>)<span th:if="${!idx.last}">, </span>
+  </span>
+</div>
+
+<div class="card card-levanto">
+  <div class="card-header"><i class="bi bi-boxes me-2"></i>Inventory Items</div>
+  <div class="card-body p-0">
+    <div class="table-responsive">
+      <table class="table table-levanto mb-0">
+        <thead>
+          <tr><th>#</th><th>Name</th><th>Type</th><th>HSN/SAC</th><th>Unit</th><th>Price ₹</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+        </thead>
+        <tbody>
+          <tr th:each="item, idx : ${itemsPage.content}" th:classappend="${not item.active}?'opacity-50':''">
+            <td th:text="${idx.count}">1</td>
+            <td><strong th:text="${item.name}">-</strong><br/><small class="text-muted" th:text="${item.description}">-</small></td>
+            <td><span class="badge" th:text="${item.itemType}" th:classappend="${item.itemType.name()=='SERVICE'}?'badge-navy':'badge-gold'"></span></td>
+            <td><small th:text="${item.hsnSacCode ?: '-'}">-</small></td>
+            <td th:text="${item.unit}">-</td>
+            <td class="fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(item.currentPrice,1,'COMMA',2,'POINT')}">-</td>
+            <td>
+              <span th:if="${item.itemType.name()=='PRODUCT'}" class="badge"
+                th:text="${item.stockQuantity} + ' ' + ${item.unit}"
+                th:classappend="${item.stockQuantity < 10}?'badge-danger':'badge-success'"></span>
+              <span th:if="${item.itemType.name()=='SERVICE'}" class="text-muted">N/A</span>
+            </td>
+            <td>
+              <span class="badge" th:text="${item.active ? 'Active' : 'Inactive'}"
+                th:classappend="${item.active}?'badge-success':'badge-danger'"></span>
+            </td>
+            <td>
+              <div class="btn-group btn-group-sm">
+                <a th:href="@{/admin/inventory/{id}/edit(id=${item.id})}" class="btn btn-navy"><i class="bi bi-pencil"></i></a>
+                <button th:if="${item.itemType.name()=='PRODUCT'}" class="btn btn-outline-success"
+                        onclick="addStockModal(this)" th:data-id="${item.id}" th:data-name="${item.name}" title="Add Stock">
+                  <i class="bi bi-plus-circle"></i>
+                </button>
+                <button class="btn btn-outline-secondary" onclick="toggleItem(this)" th:data-id="${item.id}" title="Toggle Active">
+                  <i class="bi bi-toggle-on"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr th:if="${itemsPage.totalElements==0}">
+            <td colspan="9" class="text-center text-muted py-4">No items found.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="d-flex justify-content-between align-items-center px-3 py-2" th:if="${itemsPage.totalPages > 1}">
+      <small class="text-muted" th:text="'Page ' + (${currentPage}+1) + ' of ' + ${itemsPage.totalPages}"></small>
+      <div class="btn-group btn-group-sm">
+        <a th:if="${currentPage > 0}" th:href="@{/admin/inventory(page=${currentPage-1},search=${search})}" class="btn btn-outline-secondary">‹</a>
+        <a th:if="${currentPage < itemsPage.totalPages-1}" th:href="@{/admin/inventory(page=${currentPage+1},search=${search})}" class="btn btn-outline-secondary">›</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Stock Modal -->
+<div class="modal fade" id="stockModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:#0F2338;color:#fff;">
+        <h5 class="modal-title">Add Stock — <span id="stockItemName"></span></h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <label class="form-label fw-bold">Quantity to Add</label>
+        <input type="number" id="stockQty" class="form-control" min="1" placeholder="Enter quantity"/>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button class="btn btn-gold" onclick="saveStock()">Add Stock</button>
+      </div>
+    </div>
+  </div>
+</div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+let currentItemId = null;
+const stockModal = new bootstrap.Modal(document.getElementById('stockModal'));
+
+function addStockModal(btn) {
+  currentItemId = btn.dataset.id;
+  document.getElementById('stockItemName').textContent = btn.dataset.name;
+  document.getElementById('stockQty').value = '';
+  stockModal.show();
+}
+function saveStock() {
+  const qty = parseInt(document.getElementById('stockQty').value);
+  if (!qty || qty < 1) { alert('Enter a valid quantity.'); return; }
+  fetch('/admin/inventory/' + currentItemId + '/stock?qty=' + qty, { method:'POST' })
+    .then(r => r.json()).then(d => { if (d.success) { stockModal.hide(); location.reload(); } else alert(d.message); });
+}
+function toggleItem(btn) {
+  fetch('/admin/inventory/' + btn.dataset.id + '/toggle', { method:'POST' })
+    .then(() => location.reload());
+}
+</script>
+</body></html>

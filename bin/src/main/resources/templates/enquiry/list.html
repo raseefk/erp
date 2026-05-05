@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Enquiries')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('enquiries')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Enquiries')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 mt-1">
+      <div>
+        <span class="badge badge-warn me-2" th:text="${newCount}+' New'">0</span>
+        <span class="badge badge-navy" th:text="${contactedCount}+' Contacted'">0</span>
+      </div>
+      <form action="/admin/enquiries" method="get" class="d-flex gap-2 flex-wrap">
+        <input type="text" name="search" class="form-control form-control-sm" placeholder="Search name/phone…" th:value="${search}" style="width:200px;"/>
+        <select name="status" class="form-select form-select-sm" style="width:150px;">
+          <option value="">All Statuses</option>
+          <option th:each="s : ${EnquiryStatus}" th:value="${s.name()}" th:text="${s.name()}" th:selected="${s.name()==statusFilter}"></option>
+        </select>
+        <button type="submit" class="btn btn-sm btn-gold">Filter</button>
+        <a href="/admin/enquiries" class="btn btn-sm btn-outline-secondary">Clear</a>
+      </form>
+    </div>
+    <div class="card card-lv">
+      <div class="card-header"><i class="bi bi-chat-left-text me-2"></i>Enquiries</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-lv mb-0">
+            <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Email</th><th>Service</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr th:each="e, idx : ${enquiriesPage.content}">
+                <td th:text="${idx.count}">1</td>
+                <td><strong th:text="${e.name}">-</strong></td>
+                <td><a th:href="'tel:'+${e.phone}" th:text="${e.phone}" style="color:#C8972A;">-</a></td>
+                <td><small th:text="${e.email ?: '-'}">-</small></td>
+                <td><small th:text="${e.service ?: '-'}">-</small></td>
+                <td><span class="badge" th:text="${e.status}"
+                  th:classappend="${e.status.name()=='NEW'}?' badge-warn':(${e.status.name()=='CONTACTED'}?' badge-navy':' badge-success')">-</span></td>
+                <td><small th:text="${#temporals.format(e.submittedAt,'dd MMM yy HH:mm')}">-</small></td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a th:href="'/admin/enquiries/'+${e.id}" class="btn btn-navy"><i class="bi bi-eye"></i></a>
+                    <button th:if="${e.status.name()!='CLOSED'}" class="btn btn-outline-success"
+                            th:onclick="'quickStatus('+${e.id}+',\''+(${e.status.name()=='NEW'}?'CONTACTED':'CLOSED')+'\')'"
+                            title="Advance"><i class="bi bi-arrow-right-circle"></i></button>
+                    <button class="btn btn-outline-danger" th:onclick="'delEnq('+${e.id}+')'"><i class="bi bi-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr th:if="${enquiriesPage.totalElements==0}">
+                <td colspan="8" class="text-center text-muted py-4">No enquiries found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="d-flex justify-content-between align-items-center px-3 py-2" th:if="${enquiriesPage.totalPages>1}">
+          <small class="text-muted" th:text="'Page '+(${currentPage}+1)+' of '+${enquiriesPage.totalPages}"></small>
+          <div class="btn-group btn-group-sm">
+            <a th:if="${currentPage>0}" th:href="'/admin/enquiries?page='+(${currentPage}-1)+'&amp;search='+${search}+'&amp;status='+${statusFilter}" class="btn btn-outline-secondary">‹</a>
+            <a th:if="${currentPage<enquiriesPage.totalPages-1}" th:href="'/admin/enquiries?page='+(${currentPage}+1)+'&amp;search='+${search}+'&amp;status='+${statusFilter}" class="btn btn-outline-secondary">›</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function quickStatus(id, next) {
+  const fd = new FormData(); fd.append('status', next);
+  fetch('/admin/enquiries/'+id+'/status', {method:'POST', body:fd}).then(()=>location.reload());
+}
+function delEnq(id) {
+  if (!confirm('Delete this enquiry?')) return;
+  fetch('/admin/enquiries/'+id, {method:'DELETE'}).then(r=>r.json()).then(d=>{if(d.success)location.reload();});
+}
+</script>
+</body></html>

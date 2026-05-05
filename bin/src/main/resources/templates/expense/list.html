@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Expenses')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('expenses')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Expenses')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+
+      <!-- ── Filter Bar ─────────────────────────────────────────────── -->
+      <div class="card card-lv mb-3">
+        <div class="card-body py-3">
+          <form id="filterForm" action="/admin/expenses" method="get"
+                class="d-flex flex-wrap gap-2 align-items-end">
+
+            <div>
+              <label class="form-label mb-1 small fw-bold text-muted">From</label>
+              <input type="date" name="from" class="form-control form-control-sm"
+                     th:value="${from}" style="width:150px;"/>
+            </div>
+            <div>
+              <label class="form-label mb-1 small fw-bold text-muted">To</label>
+              <input type="date" name="to" class="form-control form-control-sm"
+                     th:value="${to}" style="width:150px;"/>
+            </div>
+            <div>
+              <label class="form-label mb-1 small fw-bold text-muted">Category</label>
+              <select name="category" class="form-select form-select-sm" style="width:160px;"
+                      onchange="this.form.submit()">
+                <option value="">All Categories</option>
+                <option th:each="cat : ${categories}"
+                        th:value="${cat.name()}"
+                        th:text="${cat.name()}"
+                        th:selected="${cat.name() == categoryFilter}">
+                </option>
+              </select>
+            </div>
+
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-sm btn-gold">
+                <i class="bi bi-funnel me-1"></i>Filter
+              </button>
+              <a href="/admin/expenses" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-x-circle me-1"></i>Clear
+              </a>
+            </div>
+
+            <!-- Download PDF button — carries the same filters -->
+            <div class="ms-auto">
+              <a id="exportBtn" th:href="${exportUrl}" class="btn btn-sm btn-navy"
+                 th:href="@{/admin/expenses/export/pdf(from=${from},to=${to},category=${categoryFilter})}">
+                <i class="bi bi-file-pdf me-1"></i>Download PDF
+              </a>
+            </div>
+
+          </form>
+        </div>
+      </div>
+
+      <!-- ── Active filter badges ───────────────────────────────────── -->
+      <div class="d-flex align-items-center gap-2 mb-3 flex-wrap" th:if="${categoryFilter != null}">
+        <small class="text-muted">Active filters:</small>
+        <span class="badge" th:text="${categoryFilter}"
+              style="background:#C8972A;color:#0F2338;font-size:.78rem;padding:.35rem .8rem;"></span>
+        <a href="/admin/expenses" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:.75rem;">
+          Remove
+        </a>
+      </div>
+
+      <!-- ── Summary stat card ──────────────────────────────────────── -->
+      <div class="row g-3 mb-3">
+        <div class="col-auto">
+          <div class="stat-card" style="min-width:240px;">
+            <div class="stat-icon" style="background:#fee2e2;color:#dc2626;">
+              <i class="bi bi-wallet2"></i>
+            </div>
+            <div>
+              <div class="stat-num text-danger"
+                   th:text="'₹ ' + ${#numbers.formatDecimal(totalExpenses,1,'COMMA',2,'POINT')}">₹0</div>
+              <div class="stat-lbl"
+                   th:text="${categoryFilter != null ? categoryFilter + ' Expenses' : 'Total Expenses'}">
+                Total Expenses
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-auto d-flex align-items-center gap-2" th:if="${expensesPage.totalElements > 0}">
+          <span class="badge badge-navy"
+                th:text="${expensesPage.totalElements} + ' records'"></span>
+          <span class="text-muted small">
+            Page <span th:text="${currentPage + 1}">1</span>
+            of <span th:text="${expensesPage.totalPages}">1</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- ── New Expense Button ─────────────────────────────────────── -->
+      <div class="d-flex justify-content-end mb-2">
+        <a href="/admin/expenses/new" class="btn btn-sm btn-gold">
+          <i class="bi bi-plus-lg me-1"></i>Add Expense
+        </a>
+      </div>
+
+      <!-- ── Table ──────────────────────────────────────────────────── -->
+      <div class="card card-lv">
+        <div class="card-header d-flex align-items-center gap-2">
+          <i class="bi bi-wallet2 me-1"></i>Expense Records
+          <span th:if="${categoryFilter != null}"
+                class="badge ms-2"
+                th:text="${categoryFilter}"
+                style="background:#C8972A;color:#0F2338;font-size:.72rem;"></span>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-lv mb-0">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Date</th>
+                  <th>Category</th>
+                  <th>Description</th>
+                  <th>Amount ₹</th>
+                  <th>Reference</th>
+                  <th>Receipt</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="e, idx : ${expensesPage.content}">
+                  <td class="text-muted small" th:text="${idx.count}">1</td>
+                  <td>
+                    <small th:text="${#temporals.format(e.expenseDate,'dd MMM yyyy')}">-</small>
+                  </td>
+                  <td>
+                    <!-- Category badge with per-category colour -->
+                    <span class="badge"
+                          th:text="${e.category}"
+                          th:style="${
+                            e.category.name()=='RENT'     ? 'background:#dc2626;color:#fff;' :
+                            e.category.name()=='MATERIAL' ? 'background:#2563eb;color:#fff;' :
+                            e.category.name()=='SALARY'   ? 'background:#7c3aed;color:#fff;' :
+                            e.category.name()=='UTILITY'  ? 'background:#059669;color:#fff;' :
+                                                            'background:#C8972A;color:#0F2338;'}">
+                    </span>
+                  </td>
+                  <td th:text="${e.description}">-</td>
+                  <td class="fw-bold text-danger"
+                      th:text="'₹ ' + ${#numbers.formatDecimal(e.amount,1,'COMMA',2,'POINT')}">-</td>
+                  <td><small class="text-muted" th:text="${e.reference ?: '—'}">-</small></td>
+                  <td>
+                    <a th:if="${e.attachmentPath != null}"
+                       th:href="'/admin/finance/expenses/' + ${e.id} + '/attachment'"
+                       target="_blank"
+                       class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+                       title="View Receipt">
+                      <i th:class="${e.attachmentMimeType == 'application/pdf'
+                                    ? 'bi bi-file-pdf' : 'bi bi-image'}"
+                         style="color:#C8972A;"></i>
+                      <span class="d-none d-md-inline"
+                            th:text="${#strings.abbreviate(e.attachmentName, 14)}">file</span>
+                    </a>
+                    <span th:if="${e.attachmentPath == null}" class="text-muted">—</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline-danger"
+                            th:onclick="'delExp(' + ${e.id} + ')'">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </td>
+                </tr>
+                <tr th:if="${expensesPage.totalElements == 0}">
+                  <td colspan="8" class="text-center text-muted py-5">
+                    <i class="bi bi-inbox" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
+                    No expenses found for the selected filters.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="d-flex justify-content-between align-items-center px-3 py-2"
+               th:if="${expensesPage.totalPages > 1}">
+            <small class="text-muted"
+                   th:text="'Showing page ' + (${currentPage}+1) + ' of ' + ${expensesPage.totalPages}"></small>
+            <div class="btn-group btn-group-sm">
+              <a th:if="${currentPage > 0}"
+                 th:href="@{/admin/expenses(page=${currentPage-1},from=${from},to=${to},category=${categoryFilter})}"
+                 class="btn btn-outline-secondary">‹ Prev</a>
+              <a th:if="${currentPage < expensesPage.totalPages - 1}"
+                 th:href="@{/admin/expenses(page=${currentPage+1},from=${from},to=${to},category=${categoryFilter})}"
+                 class="btn btn-outline-secondary">Next ›</a>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function delExp(id) {
+  if (!confirm('Delete this expense and its attachment?')) return;
+  fetch('/admin/expenses/' + id, { method: 'DELETE' })
+    .then(r => r.json())
+    .then(d => { if (d.success) location.reload(); else alert(d.message); });
+}
+</script>
+</body>
+</html>

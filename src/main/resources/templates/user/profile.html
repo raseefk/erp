@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('My Profile')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('profile')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('My Profile')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="row mt-1 g-3">
+      <div class="col-md-6">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-person me-2"></i>User Details</div>
+          <div class="card-body">
+            <table class="table table-sm table-borderless mb-0">
+              <tr><th style="width:120px;color:#C8972A;">Full Name</th><td th:text="${user.fullName}"></td></tr>
+              <tr><th style="color:#C8972A;">Username</th><td th:text="${user.username}"></td></tr>
+              <tr><th style="color:#C8972A;">Role</th><td><span class="badge bg-secondary" th:text="${user.role.name()}"></span></td></tr>
+              <tr><th style="color:#C8972A;">Account Created</th><td th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy')}"></td></tr>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-6">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-shield-lock me-2"></i>Change Password</div>
+          <div class="card-body">
+            <form th:action="@{/admin/profile/password}" method="post">
+              <div class="mb-3">
+                <label class="form-label fw-bold">Current Password</label>
+                <input type="password" name="currentPassword" class="form-control" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">New Password</label>
+                <input type="password" name="newPassword" class="form-control" required minlength="6">
+                <div class="form-text">Must be at least 6 characters.</div>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-bold">Confirm New Password</label>
+                <input type="password" name="confirmPassword" class="form-control" required minlength="6">
+              </div>
+              <button type="submit" class="btn btn-navy"><i class="bi bi-check-circle me-1"></i>Update Password</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

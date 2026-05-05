@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Create User')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('users')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Create New User')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="mb-3 mt-2">
+      <a th:href="@{/admin/users}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back to Users</a>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-6">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-person-plus me-2"></i>User Details</div>
+          <div class="card-body">
+            <form th:action="@{/admin/users}" th:object="${user}" method="post">
+              
+              <div class="mb-3">
+                <label class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
+                <input type="text" th:field="*{fullName}" class="form-control" required placeholder="John Doe">
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Username <span class="text-danger">*</span></label>
+                <input type="text" th:field="*{username}" class="form-control" required placeholder="johndoe">
+                <div class="form-text">Must be unique.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold">Initial Password <span class="text-danger">*</span></label>
+                <input type="password" th:field="*{password}" class="form-control" required minlength="6">
+                <div class="form-text">Must be at least 6 characters.</div>
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fw-bold">Role <span class="text-danger">*</span></label>
+                <select th:field="*{role}" class="form-select" required>
+                  <option th:each="r : ${roles}" th:value="${r}" th:text="${r.name()}"></option>
+                </select>
+              </div>
+
+              <button type="submit" class="btn btn-navy"><i class="bi bi-check-circle me-1"></i>Create User</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
