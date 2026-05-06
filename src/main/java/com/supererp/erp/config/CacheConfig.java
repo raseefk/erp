@@ -31,6 +31,7 @@ public class CacheConfig {
             "tenantBySlug",       // 10 min — tenant metadata
             "tenantById",         // 10 min
             "tenantFeatures",     // 5 min — feature toggles per tenant
+            "tenantMenus",        // 5 min — menu toggles per tenant
             "permissionManifest", // 5 min — full permission tree per user
             "tokenBlacklist"      // checked per-request
         ));

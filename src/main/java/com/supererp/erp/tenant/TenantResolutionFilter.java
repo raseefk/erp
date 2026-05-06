@@ -65,6 +65,7 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
                     tenant -> {
                         TenantContext.setTenantId(tenant.getId());
                         TenantContext.setTenantSlug(tenant.getSlug());
+                        request.setAttribute("currentTenant", tenant);
                         log.debug("Tenant resolved: {} ({})", slug, tenant.getId());
                     },
                     () -> log.warn("Unknown or inactive tenant slug: {}", slug)

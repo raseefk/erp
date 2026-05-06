@@ -32,7 +32,10 @@ public class HibernateTenantFilterAspect {
     @Pointcut("execution(* com.supererp.erp.rbac.repository..*(..))")
     public void rbacRepositoryMethods() {}
 
-    @Before("repositoryMethods() || rbacRepositoryMethods()")
+    @Pointcut("execution(* com.supererp.erp.service..*(..))")
+    public void serviceMethods() {}
+
+    @Before("repositoryMethods() || rbacRepositoryMethods() || serviceMethods()")
     public void beforeExecution() {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId != null) {

@@ -9,5 +9,8 @@
   <include file="classpath:db/changelog/V2__existing_tables.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V3__rls_policies.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V4__add_max_storage.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V5__tenant_menu_mapping.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V6__add_tagline.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V7__rls_menu_mapping.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

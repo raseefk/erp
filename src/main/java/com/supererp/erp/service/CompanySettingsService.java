@@ -15,6 +15,7 @@ public class CompanySettingsService {
     public CompanySettings getSettings() {
         return repository.findAll().stream().findFirst().orElseGet(() -> {
             CompanySettings defaultSettings = CompanySettings.builder()
+                    .tenantId(com.supererp.erp.tenant.TenantContext.getTenantId())
                     .companyName("Levanto Flooring")
                     .defaultSickLeavesPerYear(10)
                     .defaultCasualLeavesPerYear(10)

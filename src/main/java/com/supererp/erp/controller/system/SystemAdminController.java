@@ -25,6 +25,7 @@ public class SystemAdminController {
     private final TenantService tenantService;
     private final com.supererp.erp.rbac.service.RbacService rbacService;
     private final com.supererp.erp.rbac.repository.FeatureRepository featureRepo;
+    private final com.supererp.erp.rbac.repository.MenuRepository menuRepo;
     private final jakarta.persistence.EntityManager entityManager;
     private final com.supererp.erp.service.FileStorageService fileStorageService;
     
@@ -141,9 +142,16 @@ public class SystemAdminController {
         model.addAttribute("pageTitle", "Edit Tenant — " + tenant.getName());
         model.addAttribute("isNew", false);
 
-        // Feature toggling data
-        model.addAttribute("allFeatures", featureRepo.findAll());
+        // Feature & Menu toggling data
+        model.addAttribute("allFeatures", featureRepo.findAllWithMenus());
         model.addAttribute("enabledFeatures", rbacService.getEnabledFeatures(id));
+        
+        // Disabled menus: find all menu mappings for this tenant that have enabled=false
+        List<String> disabledMenuIds = rbacService.getMenuMappingsForTenant(id).stream()
+                .filter(m -> !m.isEnabled())
+                .map(m -> m.getMenuId())
+                .toList();
+        model.addAttribute("disabledMenuIds", disabledMenuIds);
 
         return "system/tenant-form";
     }
@@ -162,21 +170,31 @@ public class SystemAdminController {
         return "redirect:/system/tenants";
     }
 
-    // ── Update Tenant Features ───────────────────────────────────────────────
+    // ── Update Tenant Features & Menus ──────────────────────────────────────
     @PostMapping("/tenants/{id}/features")
     @AuditAction(value = "TENANT_FEATURE_UPDATE", entityType = "Tenant")
     public String updateTenantFeatures(@PathVariable UUID id,
                                        @RequestParam(name = "featureIds", required = false) List<String> featureIds,
+                                       @RequestParam(name = "menuIds", required = false) List<String> menuIds,
                                        RedirectAttributes ra) {
         try {
-            List<String> enabled = featureIds != null ? featureIds : List.of();
-            List<String> allIds = featureRepo.findAll().stream().map(f -> f.getId()).toList();
-
-            for (String fid : allIds) {
-                rbacService.toggleFeature(id, fid, enabled.contains(fid));
+            List<String> enabledFeatIds = featureIds != null ? featureIds : List.of();
+            List<String> enabledMenuIds = menuIds != null ? menuIds : List.of();
+            
+            // 1. Update Features
+            List<String> allFeatIds = featureRepo.findAll().stream().map(f -> f.getId()).toList();
+            for (String fid : allFeatIds) {
+                rbacService.toggleFeature(id, fid, enabledFeatIds.contains(fid));
             }
 
-            ra.addFlashAttribute("success", "Feature permissions updated for tenant.");
+            // 2. Update Menus (Granular control)
+            List<String> allMenuIds = menuRepo.findAll().stream().map(m -> m.getId()).toList();
+            for (String mid : allMenuIds) {
+                // If mid is in enabledMenuIds, toggle(enabled=true), else toggle(enabled=false)
+                rbacService.toggleMenu(id, mid, enabledMenuIds.contains(mid));
+            }
+
+            ra.addFlashAttribute("success", "Feature and Menu permissions updated for tenant.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }

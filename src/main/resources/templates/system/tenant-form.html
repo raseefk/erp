@@ -6,7 +6,7 @@
 
 <div th:replace="~{fragments/layout :: sidebar(activePage='system-tenants')}"></div>
 
-<div id="main-content">
+<div id="main">
     <div th:replace="~{fragments/layout :: topbar(pageTitle=${pageTitle})}"></div>
     <div th:replace="~{fragments/layout :: alerts}"></div>
 
@@ -105,39 +105,108 @@
                 </div>
             </form>
 
-            <!-- ── Feature Access Control Card (Edit Mode Only) ──────────────── -->
+            <!-- ── Feature & Menu Access Control (Edit Mode Only) ─────────────── -->
             <div th:if="${!isNew}" class="card border-0 shadow-sm rounded-4 overflow-hidden mt-4">
-                <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                <div class="card-header border-0 pt-4 px-4 d-flex justify-content-between align-items-center"
+                     style="background:#0F2338;">
                     <div>
-                        <h5 class="fw-bold mb-0">Feature Access Control</h5>
-                        <p class="text-muted small mb-0">Enable or disable ERP modules for this organization.</p>
+                        <h5 class="fw-bold mb-0 text-white"><i class="bi bi-toggles me-2"></i>Feature &amp; Menu Access</h5>
+                        <p class="mb-0 mt-1" style="color:#7A9FBF;font-size:0.78rem;">Enable features and configure which menus are visible within each feature.</p>
                     </div>
-                    <span class="badge bg-light text-muted border">Modules Management</span>
+                    <span class="badge" style="background:rgba(200,151,42,.2);color:#C8972A;border:1px solid rgba(200,151,42,.4);">Modules Management</span>
                 </div>
                 <div class="card-body p-4">
-                    <form th:action="@{/system/tenants/{id}/features(id=${tenant.id})}" method="POST">
-                        <div class="row g-3">
-                            <div th:each="feat : ${allFeatures}" class="col-md-6 col-lg-4">
-                                <div class="card border border-light-subtle h-100 shadow-none">
-                                    <div class="card-body p-3">
-                                        <div class="form-check form-switch">
-                                            <input class="form-check-input" type="checkbox" name="featureIds"
-                                                   th:value="${feat.id}" th:id="${'feat-' + feat.id}"
-                                                   th:checked="${enabledFeatures.contains(feat.id)}">
-                                            <label class="form-check-label fw-bold small" th:for="${'feat-' + feat.id}"
-                                                   th:text="${feat.displayName}">Feature Name</label>
+                    <form th:action="@{/system/tenants/{id}/features(id=${tenant.id})}" method="POST" id="featureMenuForm">
+
+                        <div th:each="feat : ${allFeatures}" class="mb-3">
+                            <!-- Feature Header -->
+                            <div class="d-flex align-items-center justify-content-between p-3 rounded-3"
+                                 style="background:#f8fafc; border:1px solid #e2e8f0;">
+                                <div class="d-flex align-items-center gap-3 flex-grow-1">
+                                    <!-- Feature Toggle -->
+                                    <div class="form-check form-switch mb-0">
+                                        <input class="form-check-input feature-toggle" type="checkbox"
+                                               name="featureIds"
+                                               th:value="${feat.id}"
+                                               th:id="${'feat-' + feat.id}"
+                                               th:checked="${enabledFeatures.contains(feat.id)}"
+                                               th:attr="data-target='menus-' + ${feat.id}">
+                                    </div>
+                                    <!-- Feature Icon & Label -->
+                                    <div>
+                                        <label class="fw-bold mb-0" th:for="${'feat-' + feat.id}"
+                                               style="color:#0F2338;font-size:0.9rem;"
+                                               th:text="${feat.displayName}">Feature Name</label>
+                                        <div class="text-muted" style="font-size:0.72rem;" th:text="${feat.description}">Description</div>
+                                    </div>
+                                </div>
+                                <!-- Expand menus button (only if menus exist) -->
+                                <button type="button" class="btn btn-sm border"
+                                        th:if="${feat.menus != null and !feat.menus.isEmpty()}"
+                                        style="font-size:0.72rem;color:#64748b;"
+                                        data-bs-toggle="collapse"
+                                        th:attr="data-bs-target='#menus-' + ${feat.id}">
+                                    <i class="bi bi-list-ul me-1"></i>
+                                    <span th:text="${feat.menus.size()} + ' menus'">Menus</span>
+                                    <i class="bi bi-chevron-down ms-1" style="font-size:0.6rem;"></i>
+                                </button>
+                            </div>
+
+                            <!-- Menu Sub-list (collapsible) -->
+                            <div th:if="${feat.menus != null and !feat.menus.isEmpty()}"
+                                 class="collapse" th:id="${'menus-' + feat.id}"
+                                 th:classappend="${enabledFeatures.contains(feat.id)} ? 'show' : ''">
+                                <div class="ps-5 pt-2 pb-1 rounded-bottom-3"
+                                     style="background:#f1f5f9;border:1px solid #e2e8f0;border-top:none;">
+                                    <div class="row g-2 py-2">
+                                        <div th:each="menu : ${feat.menus}" class="col-md-6 col-lg-4">
+                                            <div class="form-check form-switch mb-0">
+                                                <input class="form-check-input menu-toggle" type="checkbox"
+                                                       name="menuIds"
+                                                       th:value="${menu.id}"
+                                                       th:id="${'menu-' + menu.id}"
+                                                       th:checked="${!disabledMenuIds.contains(menu.id)}"
+                                                       th:attr="data-feature=${feat.id}">
+                                                <label class="form-check-label small" th:for="${'menu-' + menu.id}">
+                                                    <i th:class="'bi ' + (${menu.icon} ?: 'bi-dot') + ' me-1'" style="color:#C8972A;"></i>
+                                                    <span th:text="${menu.displayName}">Menu Name</span>
+                                                </label>
+                                            </div>
                                         </div>
-                                        <p class="text-muted x-small mb-0 mt-1" th:text="${feat.description}">Description</p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                        <div class="mt-4 pt-3 border-top d-flex justify-content-end">
-                            <button type="submit" class="btn btn-lv px-5 shadow-sm">Update Feature Access</button>
+
+                        <div class="mt-4 pt-3 border-top d-flex justify-content-end gap-2">
+                            <span class="text-muted small align-self-center me-auto">
+                                <i class="bi bi-info-circle me-1"></i>
+                                Disabling a feature will hide all its menus regardless of individual menu settings.
+                            </span>
+                            <button type="submit" class="btn px-5 shadow-sm"
+                                    style="background:#0F2338;color:#fff;font-weight:600;">Save Feature &amp; Menu Access</button>
                         </div>
                     </form>
                 </div>
             </div>
+
+            <script>
+            // When a feature is toggled OFF, auto-collapse its menus section
+            document.querySelectorAll('.feature-toggle').forEach(toggle => {
+              toggle.addEventListener('change', function() {
+                const targetId = this.getAttribute('data-target');
+                const collapseEl = document.getElementById(targetId);
+                if (!collapseEl) return;
+                if (this.checked) {
+                  bootstrap.Collapse.getOrCreateInstance(collapseEl).show();
+                  // re-enable all menu checkboxes within
+                  collapseEl.querySelectorAll('.menu-toggle').forEach(m => m.disabled = false);
+                } else {
+                  bootstrap.Collapse.getOrCreateInstance(collapseEl).hide();
+                }
+              });
+            });
+            </script>
         </div>
     </div>
 </div>

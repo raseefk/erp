@@ -19,6 +19,7 @@ public class RbacService {
     private final AppRoleRepository    roleRepo;
     private final PermissionRepository permRepo;
     private final TenantFeatureMappingRepository featureMapRepo;
+    private final TenantMenuMappingRepository menuMapRepo;
 
     // ── Role Management ──────────────────────────────────────────────────────
 
@@ -110,6 +111,37 @@ public class RbacService {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) return true; // Super admins see everything or system context
         return getEnabledFeatures(tenantId).contains(featureId);
+    }
+
+    // ── Menu Toggle Management ────────────────────────────────────────────────
+
+    @Transactional
+    @CacheEvict(value = {"tenantMenus"}, allEntries = true)
+    public void toggleMenu(UUID tenantId, String menuId, boolean enabled) {
+        TenantMenuMapping mapping = menuMapRepo
+            .findById(new TenantMenuId(tenantId, menuId))
+            .orElse(TenantMenuMapping.builder()
+                .tenantId(tenantId)
+                .menuId(menuId)
+                .build());
+        mapping.setEnabled(enabled);
+        menuMapRepo.save(mapping);
+    }
+
+    /**
+     * Returns true if the menu is enabled for the current tenant.
+     * Default is ENABLED — a menu is only hidden when explicitly set to disabled.
+     */
+    @Cacheable(value = "tenantMenus", key = "T(com.supererp.erp.tenant.TenantContext).getTenantId() + '-' + #menuId")
+    public boolean isMenuEnabled(String menuId) {
+        UUID tenantId = TenantContext.getTenantId();
+        if (tenantId == null) return true;
+        // If a row exists with enabled=false, then it is disabled
+        return !menuMapRepo.existsByTenantIdAndMenuIdAndEnabledFalse(tenantId, menuId);
+    }
+
+    public List<TenantMenuMapping> getMenuMappingsForTenant(UUID tenantId) {
+        return menuMapRepo.findByTenantId(tenantId);
     }
 
     // ── Permission Query ─────────────────────────────────────────────────────

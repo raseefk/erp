@@ -29,4 +29,11 @@ public abstract class TenantAwareEntity {
 
     @Column(name = "tenant_id", nullable = false, updatable = false)
     private UUID tenantId;
+
+    @jakarta.persistence.PrePersist
+    public void ensureTenantId() {
+        if (this.tenantId == null) {
+            this.tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+        }
+    }
 }

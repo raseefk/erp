@@ -5,13 +5,16 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 @Entity @Table(name = "company_settings")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
 public class CompanySettings extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(length = 200)
     private String companyName;
+
+    @Column(length = 200)
+    private String tagline;
 
     @Column(length = 500)
     private String address;

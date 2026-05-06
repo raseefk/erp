@@ -18,7 +18,8 @@ public class UserService {
     private final com.supererp.erp.tenant.TenantService tenantService;
 
     public List<AppUser> getAllUsers() {
-        return userRepository.findAll();
+        java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+        return userRepository.findAllWithRoles(tenantId);
     }
 
     public AppUser getById(Long id) {

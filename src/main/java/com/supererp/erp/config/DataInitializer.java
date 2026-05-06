@@ -131,7 +131,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAllFeatures(UUID tenantId) {
-        List<String> features = List.of("BILLING","CRM","INVENTORY","SCM","PROJECTS","HR","FINANCE","SETTINGS");
+        List<String> features = List.of("SALES","OPERATIONS","SCM","PROJECTS","HR","FINANCE","ADMIN","SYSTEM");
         for (String f : features) {
             if (!featureMapRepo.existsById(new com.supererp.erp.rbac.entity.TenantFeatureId(tenantId, f))) {
                 featureMapRepo.save(TenantFeatureMapping.builder()
