@@ -29,6 +29,7 @@ public class TenantService {
     private final AppRoleRepository appRoleRepository;
     private final PermissionRepository permissionRepository;
     private final PasswordEncoder passwordEncoder;
+    private final jakarta.persistence.EntityManager entityManager;
 
     @Cacheable(value = "tenantBySlug", key = "#slug")
     public Optional<Tenant> findBySlug(String slug) {
@@ -61,7 +62,11 @@ public class TenantService {
         UUID tenantId = savedTenant.getId();
 
         // 2. Provision the first administrator and role
-        // We temporarily set TenantContext so that RLS filters/inserts work for this new tenant
+        // Fetch permissions while STILL in the System Admin context (null tenant)
+        // This ensures the Hibernate filter is NOT active during the fetch.
+        List<com.supererp.erp.rbac.entity.Permission> allPermissions = permissionRepository.findAll();
+        log.info("TenantService: Found {} global permissions BEFORE context switch", allPermissions.size());
+
         UUID previousTenant = TenantContext.getTenantId();
         try {
             TenantContext.setTenantId(tenantId);
@@ -72,8 +77,15 @@ public class TenantService {
                 .name("ADMIN")
                 .description("Full System Administrator")
                 .system(true)
-                .permissions(new HashSet<>(permissionRepository.findAll()))
                 .build());
+
+            // Use native SQL to ensure permissions are assigned even if Hibernate association is tricky
+            log.info("TenantService: Assigning permissions to role ID {} via native SQL", adminRole.getId());
+            entityManager.createNativeQuery(
+                "INSERT INTO role_permissions (role_id, permission_id) " +
+                "SELECT :roleId, id FROM permissions")
+                .setParameter("roleId", adminRole.getId())
+                .executeUpdate();
 
             // Create the first AppUser
             AppUser adminUser = AppUser.builder()

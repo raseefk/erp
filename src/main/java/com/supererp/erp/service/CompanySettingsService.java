@@ -2,6 +2,7 @@ package com.supererp.erp.service;
 
 import com.supererp.erp.entity.CompanySettings;
 import com.supererp.erp.repository.CompanySettingsRepository;
+import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,11 +13,18 @@ public class CompanySettingsService {
 
     private final CompanySettingsRepository repository;
 
-    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
+    @Transactional
     public CompanySettings getSettings() {
-        return repository.findAll().stream().findFirst().orElseGet(() -> {
+        // If no tenant context (e.g. System Admin), return a transient default — never save to DB
+        if (TenantContext.getTenantId() == null) {
+            return CompanySettings.builder()
+                    .companyName("Super ERP")
+                    .tagline("Enterprise Resource Planning")
+                    .build();
+        }
+        return repository.findByTenantId(TenantContext.getTenantId()).orElseGet(() -> {
             CompanySettings defaultSettings = CompanySettings.builder()
-                    .tenantId(com.supererp.erp.tenant.TenantContext.getTenantId())
+                    .tenantId(TenantContext.getTenantId())
                     .companyName("New Organization")
                     .defaultSickLeavesPerYear(10)
                     .defaultCasualLeavesPerYear(10)

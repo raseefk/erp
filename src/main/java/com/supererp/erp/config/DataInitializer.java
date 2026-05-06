@@ -62,7 +62,12 @@ public class DataInitializer implements CommandLineRunner {
     @Override
     @Transactional
     public void run(String... args) {
+        // 1. Seed System Admin (Superuser) - This table has NO RLS, so it's always safe
         seedSystemAdmin();
+
+        // 2. Demo Data Seeding (Disabled for stability - Enable if you want a demo environment)
+        /*
+        setRlsSystemAdmin(true);
         UUID demoTenantId = seedDemoTenant();
         if (demoTenantId != null) {
             seedRoles(demoTenantId);
@@ -72,6 +77,17 @@ public class DataInitializer implements CommandLineRunner {
             seedCustomers(demoTenantId);
             seedEmployees(demoTenantId);
             seedVendors(demoTenantId);
+        }
+        */
+    }
+
+    private void setRlsSystemAdmin(boolean enabled) {
+        try {
+            entityManager.createNativeQuery("SELECT set_config('app.is_system_admin', :isSys, true)")
+                    .setParameter("isSys", enabled ? "true" : "false")
+                    .getSingleResult();
+        } catch (Exception e) {
+            log.warn("Could not set RLS system admin flag: {}", e.getMessage());
         }
     }
 
@@ -112,7 +128,7 @@ public class DataInitializer implements CommandLineRunner {
         try {
             entityManager.createNativeQuery(
                 "SELECT set_config('app.current_tenant_id', :tid, true)")
-                .setParameter("tid", tenantId.toString())
+                .setParameter("tid", tenantId != null ? tenantId.toString() : "")
                 .getSingleResult();
         } catch (Exception e) {
             log.warn("Could not set RLS context for seeder: {}", e.getMessage());

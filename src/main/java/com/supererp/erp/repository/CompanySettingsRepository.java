@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface CompanySettingsRepository extends JpaRepository<CompanySettings, Long> {
+    java.util.Optional<CompanySettings> findByTenantId(java.util.UUID tenantId);
 }

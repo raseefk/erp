@@ -98,10 +98,16 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // ── 3. Set SecurityContext ─────────────────────────────────────
             @SuppressWarnings("unchecked")
             List<String> permissions = claims.get("permissions", List.class);
-            List<SimpleGrantedAuthority> authorities = (permissions != null ? permissions : List.<String>of())
-                .stream()
-                .map(p -> new SimpleGrantedAuthority("PERM_" + p))
-                .collect(Collectors.toList());
+            @SuppressWarnings("unchecked")
+            List<String> roles = claims.get("roles", List.class);
+
+            List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+            if (permissions != null) {
+                permissions.forEach(p -> authorities.add(new SimpleGrantedAuthority("PERM_" + p)));
+            }
+            if (roles != null) {
+                roles.forEach(r -> authorities.add(new SimpleGrantedAuthority(r)));
+            }
 
             // Add SYSTEM_ADMIN role if applicable
             if ("SYSTEM".equals(jwtTenantId)) {
@@ -114,7 +120,9 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             // ── 4. Populate TenantContext (Critical for RLS/Filters) ───────
             if (!"SYSTEM".equals(jwtTenantId)) {
-                TenantContext.setTenantId(UUID.fromString(jwtTenantId));
+                UUID tid = UUID.fromString(jwtTenantId);
+                TenantContext.setTenantId(tid);
+                log.debug("JwtAuthFilter: Set TenantContext for user {} to {}", username, tid);
             }
 
             chain.doFilter(request, response);

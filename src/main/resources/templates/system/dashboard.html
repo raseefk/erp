@@ -1,14 +1,14 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head('System Dashboard')}"></head>
+<head th:replace="~{fragments/system-layout :: head('Tenant Dashboard')}"></head>
 <body>
 
-<div th:replace="~{fragments/layout :: sidebar(activePage='system-dashboard')}"></div>
+<div th:replace="~{fragments/system-layout :: sidebar(activePage='system-dashboard')}"></div>
 
-<div id="main">
-    <div th:replace="~{fragments/layout :: topbar(pageTitle='System Health Dashboard')}"></div>
-    <div th:replace="~{fragments/layout :: alerts}"></div>
+<div id="sys-main">
+    <div th:replace="~{fragments/system-layout :: topbar(pageTitle='Tenant Dashboard')}"></div>
+    <div th:replace="~{fragments/system-layout :: alerts}"></div>
 
     <div class="p-4">
         <div class="row g-4 mb-4">

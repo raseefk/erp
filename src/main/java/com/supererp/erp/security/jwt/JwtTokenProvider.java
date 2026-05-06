@@ -46,6 +46,13 @@ public class JwtTokenProvider {
             .distinct()
             .collect(Collectors.toList());
 
+        List<String> roles = user.getRoles().stream()
+            .map(r -> {
+                String name = r.getName();
+                return name.startsWith("ROLE_") ? name : "ROLE_" + name;
+            })
+            .collect(Collectors.toList());
+
         return Jwts.builder()
             .id(jti)
             .subject(user.getUsername())
@@ -53,6 +60,7 @@ public class JwtTokenProvider {
             .claim("tenant_id", user.getTenantId().toString())
             .claim("full_name", user.getFullName())
             .claim("permissions", permissions)
+            .claim("roles", roles)
             .claim("type", "ACCESS")
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))

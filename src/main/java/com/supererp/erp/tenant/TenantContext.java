@@ -23,8 +23,15 @@ public final class TenantContext {
             try {
                 org.springframework.security.core.Authentication auth = 
                     org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null && auth.getPrincipal() instanceof com.supererp.erp.security.SecurityUser) {
-                    return ((com.supererp.erp.security.SecurityUser) auth.getPrincipal()).getTenantId();
+                if (auth != null) {
+                    if (auth.getPrincipal() instanceof com.supererp.erp.security.SecurityUser) {
+                        return ((com.supererp.erp.security.SecurityUser) auth.getPrincipal()).getTenantId();
+                    } else if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken) {
+                        String tid = ((com.supererp.erp.security.jwt.JwtAuthToken) auth).getTenantId();
+                        if (tid != null && !"SYSTEM".equals(tid)) {
+                            return UUID.fromString(tid);
+                        }
+                    }
                 }
             } catch (Exception e) {
                 // Ignore if security context is not available

@@ -11,6 +11,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@lombok.extern.slf4j.Slf4j
 public class UserService {
 
     private final AppUserRepository userRepository;
@@ -18,18 +19,24 @@ public class UserService {
     private final com.supererp.erp.tenant.TenantService tenantService;
     private final com.supererp.erp.rbac.service.RbacService rbacService;
 
+    @Transactional(readOnly = true)
     public List<AppUser> getAllUsers() {
         java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
         return userRepository.findAllWithRoles(tenantId);
     }
 
+    @Transactional(readOnly = true)
     public AppUser getById(Long id) {
-        return userRepository.findByIdWithRoles(id)
+        java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+        return userRepository.findByIdWithRolesAndTenant(id, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 
+    @Transactional(readOnly = true)
     public AppUser getByUsername(String username) {
-        return userRepository.findByUsername(username)
+        java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+        log.info("UserService: Looking for user '{}' in tenant '{}'", username, tenantId);
+        return userRepository.findByUsernameAndTenantId(username, tenantId)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 

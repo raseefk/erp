@@ -53,8 +53,14 @@ public class CustomUserDetailsService implements UserDetailsService {
             .map(p -> new SimpleGrantedAuthority("PERM_" + p))
             .collect(Collectors.toList());
 
-        // Add role names as authorities too
-        user.getRoles().forEach(r -> authorities.add(new SimpleGrantedAuthority(r.getName())));
+        // Add role names as authorities too (ensure ROLE_ prefix for hasRole() support)
+        user.getRoles().forEach(r -> {
+            String roleName = r.getName();
+            if (!roleName.startsWith("ROLE_")) {
+                roleName = "ROLE_" + roleName;
+            }
+            authorities.add(new SimpleGrantedAuthority(roleName));
+        });
 
         return new SecurityUser(
             user.getUsername(), user.getPassword(), user.isEnabled(),

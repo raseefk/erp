@@ -6,6 +6,7 @@ import com.supererp.erp.rbac.annotation.AuditAction;
 import com.supererp.erp.repository.AuditLogRepository;
 import com.supererp.erp.security.jwt.JwtAuthToken;
 import com.supererp.erp.tenant.TenantContext;
+import jakarta.persistence.EntityManager;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +29,7 @@ public class AuditAspect {
 
     private final AuditLogRepository auditRepo;
     private final ObjectMapper objectMapper;
+    private final EntityManager entityManager;
 
     @AfterReturning(value = "@annotation(auditAction)", returning = "result")
     public void auditAfterReturning(JoinPoint joinPoint, AuditAction auditAction, Object result) {
@@ -47,7 +49,6 @@ public class AuditAspect {
             String entityId = null;
             Map<String, Object> state = new HashMap<>();
 
-            // Basic attempt to extract entity ID from result if it's an entity
             if (result != null) {
                 try {
                     var idField = result.getClass().getDeclaredField("id");
@@ -61,18 +62,31 @@ public class AuditAspect {
                 .tenantId(TenantContext.getTenantId())
                 .userId(userId)
                 .action(auditAction.value())
-                .entityType(auditAction.entityType().isEmpty() ? joinPoint.getTarget().getClass().getSimpleName() : auditAction.entityType())
+                .entityType(auditAction.entityType().isEmpty()
+                    ? joinPoint.getTarget().getClass().getSimpleName()
+                    : auditAction.entityType())
                 .entityId(entityId)
                 .newStateJson(state)
                 .ipAddress(request != null ? request.getRemoteAddr() : "UNKNOWN")
                 .userAgent(request != null ? request.getHeader("User-Agent") : "UNKNOWN")
                 .build();
 
+            // Explicitly set the RLS session variable for this connection before the INSERT.
+            // AuditAspect runs @AfterReturning and may execute on a pooled connection where
+            // app.is_system_admin was not set, causing RLS to block the insert.
+            boolean isSystemAdmin = auth != null && auth.getAuthorities().stream()
+                    .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
+            entityManager.createNativeQuery(
+                    "SELECT set_config('app.is_system_admin', :v, false)")
+                    .setParameter("v", isSystemAdmin ? "true" : "false")
+                    .getSingleResult();
+
             auditRepo.save(logEntry);
             log.debug("Audit Log saved: {} for entity {}", auditAction.value(), entityId);
 
         } catch (Exception e) {
-            log.error("Failed to persist audit log", e);
+            // Audit log failures must NEVER break the main business operation.
+            log.warn("Failed to persist audit log for action '{}': {}", auditAction.value(), e.getMessage());
         }
     }
 }

@@ -38,33 +38,49 @@ public class HibernateTenantFilterAspect {
     @Before("repositoryMethods() || rbacRepositoryMethods() || serviceMethods()")
     public void beforeExecution() {
         UUID tenantId = TenantContext.getTenantId();
-        log.debug("HibernateTenantFilterAspect: Resolved tenantId from context: {}", tenantId);
+        var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        String username = (auth != null) ? auth.getName() : "anonymous";
         
+        log.info("RLS Aspect: [Tenant: {}] [User: {}] [Thread: {}]", 
+                tenantId != null ? tenantId : "NONE", 
+                username,
+                Thread.currentThread().getName());
+        
+        Session session = entityManager.unwrap(Session.class);
+        boolean isSystemAdmin = auth != null && auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
+
+        // 1. Enable/Disable Hibernate Filter
         if (tenantId != null) {
-            Session session = entityManager.unwrap(Session.class);
             log.debug("HibernateTenantFilterAspect: Enabling 'tenantFilter' for tenantId: {}", tenantId);
-            
-            // 1. Enable Hibernate Filter
-            session.enableFilter("tenantFilter")
-                   .setParameter("tenantId", tenantId);
-            
-            // 2. Set PostgreSQL session variables for RLS
-            try {
-                entityManager.createNativeQuery("SELECT set_config('app.current_tenant_id', :tid, true)")
-                            .setParameter("tid", tenantId.toString())
-                            .getSingleResult();
-                
-                var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken jwtAuth) {
-                    entityManager.createNativeQuery("SELECT set_config('app.current_user_id', :uid, true)")
-                                .setParameter("uid", jwtAuth.getUserId().toString())
-                                .getSingleResult();
-                }
-            } catch (Exception e) {
-                log.warn("Could not set PostgreSQL session variables for RLS: {}", e.getMessage());
-            }
+            session.enableFilter("tenantFilter").setParameter("tenantId", tenantId);
         } else {
-            log.warn("HibernateTenantFilterAspect: No tenantId found in TenantContext! Data isolation might be compromised.");
+            session.disableFilter("tenantFilter");
+        }
+
+        // 2. Set PostgreSQL session variables for RLS (Always set to prevent leak from previous pooled connections)
+        try {
+            // Set Tenant ID (Use session-level 'false' so it persists into the transaction)
+            entityManager.createNativeQuery("SELECT set_config('app.current_tenant_id', :tid, false)")
+                        .setParameter("tid", tenantId != null ? tenantId.toString() : "")
+                        .getSingleResult();
+            
+            // Set System Admin bypass flag
+            entityManager.createNativeQuery("SELECT set_config('app.is_system_admin', :isSys, false)")
+                        .setParameter("isSys", isSystemAdmin ? "true" : "false")
+                        .getSingleResult();
+ 
+            // Set User ID if available
+            if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken jwtAuth) {
+                entityManager.createNativeQuery("SELECT set_config('app.current_user_id', :uid, false)")
+                            .setParameter("uid", jwtAuth.getUserId().toString())
+                            .getSingleResult();
+            } else {
+                entityManager.createNativeQuery("SELECT set_config('app.current_user_id', '', false)")
+                            .getSingleResult();
+            }
+        } catch (Exception e) {
+            log.warn("Could not set PostgreSQL session variables for RLS: {}", e.getMessage());
         }
     }
 }

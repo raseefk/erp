@@ -14,12 +14,11 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     Optional<AppUser> findByUsername(String username);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
-    @Query("SELECT u FROM AppUser u WHERE u.id = :id")
-    Optional<AppUser> findByIdWithRoles(@org.springframework.data.repository.query.Param("id") Long id);
+    @Query("SELECT u FROM AppUser u WHERE u.id = :id AND u.tenantId = :tenantId")
+    Optional<AppUser> findByIdWithRolesAndTenant(@org.springframework.data.repository.query.Param("id") Long id, @org.springframework.data.repository.query.Param("tenantId") UUID tenantId);
 
-    @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions " +
-           "WHERE u.username = :username AND u.tenantId = :tenantId")
-    Optional<AppUser> findByUsernameAndTenantId(String username, UUID tenantId);
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles", "roles.permissions"})
+    Optional<AppUser> findByUsernameAndTenantId(String username, java.util.UUID tenantId);
 
     boolean existsByUsernameAndTenantId(String username, UUID tenantId);
     boolean existsByUsername(String username);

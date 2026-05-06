@@ -13,5 +13,8 @@
   <include file="classpath:db/changelog/V6__add_tagline.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V7__rls_menu_mapping.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V8__add_employee_hr_fields.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V9__fix_rls_functions.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V10__fix_audit_rls.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V11__fix_multi_tenant_unique_constraints.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

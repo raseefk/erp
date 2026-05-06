@@ -85,15 +85,16 @@ public class RbacService {
     }
 
     // ── Feature Toggle Management ────────────────────────────────────────────
-
+ 
     @Cacheable(value = "tenantFeatures", key = "#tenantId")
+    @Transactional(readOnly = true)
     public Set<String> getEnabledFeatures(UUID tenantId) {
         Set<String> enabled = new HashSet<>();
         featureMapRepo.findByTenantId(tenantId)
             .forEach(m -> { if (m.isEnabled()) enabled.add(m.getFeatureId()); });
         return enabled;
     }
-
+ 
     @Transactional
     @CacheEvict(value = {"tenantFeatures", "permissionManifest"}, allEntries = true)
     public void toggleFeature(UUID tenantId, String featureId, boolean enabled) {
@@ -106,15 +107,15 @@ public class RbacService {
         mapping.setEnabled(enabled);
         featureMapRepo.save(mapping);
     }
-
+ 
     public boolean isFeatureEnabled(String featureId) {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) return true; // Super admins see everything or system context
         return getEnabledFeatures(tenantId).contains(featureId);
     }
-
+ 
     // ── Menu Toggle Management ────────────────────────────────────────────────
-
+ 
     @Transactional
     @CacheEvict(value = {"tenantMenus"}, allEntries = true)
     public void toggleMenu(UUID tenantId, String menuId, boolean enabled) {
@@ -127,12 +128,13 @@ public class RbacService {
         mapping.setEnabled(enabled);
         menuMapRepo.save(mapping);
     }
-
+ 
     /**
      * Returns true if the menu is enabled for the current tenant.
      * Default is ENABLED — a menu is only hidden when explicitly set to disabled.
      */
     @Cacheable(value = "tenantMenus", key = "T(com.supererp.erp.tenant.TenantContext).getTenantId() + '-' + #menuId")
+    @Transactional(readOnly = true)
     public boolean isMenuEnabled(String menuId) {
         UUID tenantId = TenantContext.getTenantId();
         if (tenantId == null) return true;

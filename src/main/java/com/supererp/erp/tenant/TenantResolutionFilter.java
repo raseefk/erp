@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.UUID;
 
 /**
  * Priority -100 filter that resolves the tenant from the incoming request.
@@ -61,26 +62,36 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String slug = resolveSlug(request);
+            log.info("TenantResolutionFilter: Resolved slug '{}' from request {}", slug, request.getRequestURI());
             if (slug != null) {
                 tenantService.findBySlug(slug).ifPresentOrElse(
                     tenant -> {
                         TenantContext.setTenantId(tenant.getId());
                         TenantContext.setTenantSlug(tenant.getSlug());
                         request.setAttribute("currentTenant", tenant);
-                        log.debug("Tenant resolved: {} ({})", slug, tenant.getId());
+                        log.info("TenantResolutionFilter: Tenant '{}' resolved to ID {}", slug, tenant.getId());
                     },
-                    () -> log.warn("Unknown or inactive tenant slug: {}", slug)
+                    () -> log.warn("TenantResolutionFilter: Unknown or inactive tenant slug: {}", slug)
                 );
             } else {
                 // Fallback: Resolve from SecurityContext if authenticated (useful for localhost/dev)
                 org.springframework.security.core.Authentication auth = 
                     org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
                 
-                if (auth != null && auth.getPrincipal() instanceof SecurityUser) {
-                    SecurityUser user = (SecurityUser) auth.getPrincipal();
-                    if (user.getTenantId() != null) {
-                        TenantContext.setTenantId(user.getTenantId());
-                        log.debug("Tenant resolved from SecurityContext: {}", user.getTenantId());
+                if (auth != null) {
+                    if (auth.getPrincipal() instanceof SecurityUser) {
+                        SecurityUser user = (SecurityUser) auth.getPrincipal();
+                        if (user.getTenantId() != null) {
+                            TenantContext.setTenantId(user.getTenantId());
+                            log.debug("Tenant resolved from SecurityContext (SecurityUser): {}", user.getTenantId());
+                        }
+                    } else if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken) {
+                        String tid = ((com.supererp.erp.security.jwt.JwtAuthToken) auth).getTenantId();
+                        if (tid != null && !"SYSTEM".equals(tid)) {
+                            UUID uuid = UUID.fromString(tid);
+                            TenantContext.setTenantId(uuid);
+                            log.debug("Tenant resolved from SecurityContext (JwtAuthToken): {}", uuid);
+                        }
                     }
                 }
             }
