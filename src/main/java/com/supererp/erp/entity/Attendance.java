@@ -10,6 +10,7 @@ import java.time.LocalTime;
 
 @Entity @Table(name = "attendance_ledger")
 @Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Attendance extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

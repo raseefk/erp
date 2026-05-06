@@ -38,21 +38,22 @@ public class HibernateTenantFilterAspect {
     @Before("repositoryMethods() || rbacRepositoryMethods() || serviceMethods()")
     public void beforeExecution() {
         UUID tenantId = TenantContext.getTenantId();
+        log.debug("HibernateTenantFilterAspect: Resolved tenantId from context: {}", tenantId);
+        
         if (tenantId != null) {
             Session session = entityManager.unwrap(Session.class);
+            log.debug("HibernateTenantFilterAspect: Enabling 'tenantFilter' for tenantId: {}", tenantId);
             
             // 1. Enable Hibernate Filter
             session.enableFilter("tenantFilter")
                    .setParameter("tenantId", tenantId);
             
             // 2. Set PostgreSQL session variables for RLS
-            // We use a native query to set LOCAL variables (valid for the transaction)
             try {
                 entityManager.createNativeQuery("SELECT set_config('app.current_tenant_id', :tid, true)")
                             .setParameter("tid", tenantId.toString())
                             .getSingleResult();
                 
-                // If we have a user ID in the security context, set it too
                 var auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
                 if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken jwtAuth) {
                     entityManager.createNativeQuery("SELECT set_config('app.current_user_id', :uid, true)")
@@ -62,6 +63,8 @@ public class HibernateTenantFilterAspect {
             } catch (Exception e) {
                 log.warn("Could not set PostgreSQL session variables for RLS: {}", e.getMessage());
             }
+        } else {
+            log.warn("HibernateTenantFilterAspect: No tenantId found in TenantContext! Data isolation might be compromised.");
         }
     }
 }

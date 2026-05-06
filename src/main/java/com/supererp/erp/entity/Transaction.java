@@ -11,6 +11,7 @@ import java.util.List;
 
 @Entity @Table(name = "transactions")
 @Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Transaction extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

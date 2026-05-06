@@ -112,6 +112,11 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 jwtTenantId, authorities, token);
             SecurityContextHolder.getContext().setAuthentication(auth);
 
+            // ── 4. Populate TenantContext (Critical for RLS/Filters) ───────
+            if (!"SYSTEM".equals(jwtTenantId)) {
+                TenantContext.setTenantId(UUID.fromString(jwtTenantId));
+            }
+
             chain.doFilter(request, response);
 
         } catch (JwtException e) {

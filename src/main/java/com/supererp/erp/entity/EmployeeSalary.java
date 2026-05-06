@@ -19,6 +19,7 @@ import java.time.LocalDateTime;
            columnNames = {"employee_id", "salary_month_year"},
            name = "uk_emp_salary_month"))
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class EmployeeSalary extends TenantAwareEntity {
 
     @Id

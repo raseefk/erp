@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
         @UniqueConstraint(columnNames = {"employee_id", "year_val"})
 })
 @Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class LeaveBalance extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

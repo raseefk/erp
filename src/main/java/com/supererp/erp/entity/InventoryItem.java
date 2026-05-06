@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 
 @Entity @Table(name = "inventory_items")
 @Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class InventoryItem extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

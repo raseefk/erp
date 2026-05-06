@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 
 @Entity @Table(name = "leave_applications")
 @Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class LeaveApplication extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

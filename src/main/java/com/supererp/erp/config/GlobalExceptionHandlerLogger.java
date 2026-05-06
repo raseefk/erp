@@ -12,6 +12,21 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class GlobalExceptionHandlerLogger {
 
+    @ExceptionHandler(com.supererp.erp.rbac.exception.FeatureDisabledException.class)
+    public Object handleFeatureDisabled(com.supererp.erp.rbac.exception.FeatureDisabledException ex, WebRequest request) {
+        String acceptHeader = request.getHeader("Accept");
+        boolean isHtmlRequest = acceptHeader != null && acceptHeader.contains("text/html");
+
+        if (isHtmlRequest) {
+            org.springframework.web.servlet.ModelAndView mav = new org.springframework.web.servlet.ModelAndView("error/feature-blocked");
+            mav.addObject("featureName", ex.getFeatureName());
+            return mav;
+        } else {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                .body(new com.supererp.erp.dto.ApiResponse<>(false, ex.getMessage(), null));
+        }
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         try (FileWriter fw = new FileWriter("error_log.txt", true);

@@ -14,6 +14,7 @@ import java.util.List;
 @Entity
 @Table(name = "job_cards")
 @Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class JobCard extends TenantAwareEntity {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)

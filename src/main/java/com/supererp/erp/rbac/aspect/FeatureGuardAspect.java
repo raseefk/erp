@@ -20,8 +20,23 @@ public class FeatureGuardAspect {
 
     private final RbacService rbacService;
 
-    @Before("@annotation(requiresFeature) || @within(requiresFeature)")
-    public void checkFeature(RequiresFeature requiresFeature) {
+    @Before("@annotation(com.supererp.erp.rbac.annotation.RequiresFeature) || @within(com.supererp.erp.rbac.annotation.RequiresFeature)")
+    public void checkFeature(org.aspectj.lang.JoinPoint joinPoint) {
+        RequiresFeature requiresFeature = null;
+        
+        // 1. Try Method
+        if (joinPoint.getSignature() instanceof org.aspectj.lang.reflect.MethodSignature) {
+            requiresFeature = ((org.aspectj.lang.reflect.MethodSignature) joinPoint.getSignature())
+                .getMethod().getAnnotation(RequiresFeature.class);
+        }
+        
+        // 2. Try Class
+        if (requiresFeature == null) {
+            requiresFeature = joinPoint.getTarget().getClass().getAnnotation(RequiresFeature.class);
+        }
+
+        if (requiresFeature == null) return;
+
         String feature = requiresFeature.value();
         UUID tenantId = TenantContext.getTenantId();
 
@@ -34,7 +49,7 @@ public class FeatureGuardAspect {
 
         if (!enabled) {
             log.warn("Feature Blocked: Tenant {} tried to access disabled feature {}", tenantId, feature);
-            throw new AccessDeniedException("This feature is not enabled for your subscription: " + feature);
+            throw new com.supererp.erp.rbac.exception.FeatureDisabledException(feature);
         }
     }
 }

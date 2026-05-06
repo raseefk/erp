@@ -6,6 +6,7 @@ import java.math.BigDecimal;
 
 @Entity @Table(name = "purchase_order_items")
 @Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class PurchaseOrderItem extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -48,12 +48,14 @@ public class UserController {
 
     // ── User Management (Admin Only) ─────────────────────────────────────────
     @GetMapping("/users")
+    @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String listUsers(Model model) {
         model.addAttribute("users", userService.getAllUsers());
         return "user/list";
     }
 
     @GetMapping("/users/new")
+    @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String newUserForm(Model model) {
         model.addAttribute("user", new AppUser());
         model.addAttribute("roles", rbacService.getRolesForCurrentTenant());
@@ -61,6 +63,7 @@ public class UserController {
     }
 
     @PostMapping("/users")
+    @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String createUser(@ModelAttribute AppUser user, 
                              @RequestParam Long roleId,
                              RedirectAttributes ra) {
@@ -79,6 +82,7 @@ public class UserController {
     }
     
     @PostMapping("/users/{id}/toggle")
+    @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String toggleUserStatus(@PathVariable Long id, RedirectAttributes ra) {
         try {
             userService.toggleStatus(id);
@@ -90,6 +94,7 @@ public class UserController {
     }
 
     @GetMapping("/users/{id}/edit")
+    @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String editUserForm(@PathVariable Long id, Model model) {
         AppUser user = userService.getById(id);
         model.addAttribute("user", user);
@@ -99,6 +104,7 @@ public class UserController {
 
     @PostMapping("/users/{id}")
     @org.springframework.transaction.annotation.Transactional
+    @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String updateUser(@PathVariable Long id, 
                              @ModelAttribute AppUser userDetails,
                              @RequestParam(required = false) Long roleId,

@@ -11,15 +11,13 @@ import java.util.UUID;
 
 @Entity
 @Table(name = "audit_log")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
-public class AuditLog {
+@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+public class AuditLog extends TenantAwareEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(name = "tenant_id")
-    private UUID tenantId;
 
     @Column(name = "user_id")
     private Long userId;

@@ -8,6 +8,7 @@ import com.supererp.erp.rbac.repository.TenantFeatureMappingRepository;
 import com.supererp.erp.repository.*;
 import com.supererp.erp.tenant.Tenant;
 import com.supererp.erp.tenant.TenantRepository;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,6 +45,7 @@ public class DataInitializer implements CommandLineRunner {
     private final EmployeeRepository            employeeRepo;
     private final VendorRepository              vendorRepo;
     private final PasswordEncoder               encoder;
+    private final EntityManager                 entityManager;
 
     @Value("${app.system.admin.username:superadmin}")
     private String systemAdminUsername;
@@ -101,7 +103,24 @@ public class DataInitializer implements CommandLineRunner {
         return demo.getId();
     }
 
+    /**
+     * Sets the PostgreSQL session variable required by RLS policies.
+     * During startup there is no HTTP request, so no filter sets this variable.
+     * We must set it manually before any tenant-scoped INSERT/UPDATE/DELETE.
+     */
+    private void setRlsContext(UUID tenantId) {
+        try {
+            entityManager.createNativeQuery(
+                "SELECT set_config('app.current_tenant_id', :tid, true)")
+                .setParameter("tid", tenantId.toString())
+                .getSingleResult();
+        } catch (Exception e) {
+            log.warn("Could not set RLS context for seeder: {}", e.getMessage());
+        }
+    }
+
     private void seedRoles(UUID tenantId) {
+        setRlsContext(tenantId);
         if (!roleRepo.existsByTenantIdAndName(tenantId, "ADMIN")) {
             roleRepo.save(AppRole.builder()
                 .tenantId(tenantId).name("ADMIN")
@@ -115,6 +134,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedTenantAdmin(UUID tenantId) {
+        setRlsContext(tenantId);
         if (!userRepo.existsByUsernameAndTenantId(tenantAdminUsername, tenantId)) {
             AppRole adminRole = roleRepo.findByTenantIdAndName(tenantId, "ADMIN")
                 .orElseThrow();
@@ -131,6 +151,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAllFeatures(UUID tenantId) {
+        setRlsContext(tenantId);
         List<String> features = List.of("SALES","OPERATIONS","SCM","PROJECTS","HR","FINANCE","ADMIN","SYSTEM");
         for (String f : features) {
             if (!featureMapRepo.existsById(new com.supererp.erp.rbac.entity.TenantFeatureId(tenantId, f))) {
@@ -141,6 +162,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedInventory(UUID tenantId) {
+        setRlsContext(tenantId);
         if (itemRepo.countByTenantId(tenantId) > 0) return;
         itemRepo.save(item(tenantId, "Vitrified Tiles 600x600mm", "PRODUCT",
             "Premium double-charged vitrified tiles", "55.00", 2000, "6908", "SQF"));
@@ -156,6 +178,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedCustomers(UUID tenantId) {
+        setRlsContext(tenantId);
         if (customerRepo.countByTenantId(tenantId) > 0) return;
         customerRepo.save(Customer.builder().tenantId(tenantId)
             .name("Demo Customer").phone("9876543210")
@@ -164,6 +187,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedEmployees(UUID tenantId) {
+        setRlsContext(tenantId);
         if (employeeRepo.countByTenantId(tenantId) > 0) return;
         employeeRepo.save(Employee.builder().tenantId(tenantId)
             .name("John Doe").phone("9988776655")
@@ -174,6 +198,7 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedVendors(UUID tenantId) {
+        setRlsContext(tenantId);
         if (vendorRepo.countByTenantId(tenantId) > 0) return;
         vendorRepo.save(Vendor.builder().tenantId(tenantId)
             .name("Demo Supplier").contactPerson("Supplier Rep")

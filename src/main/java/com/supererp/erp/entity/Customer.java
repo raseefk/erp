@@ -9,6 +9,7 @@ import java.util.UUID;
 
 @Entity @Table(name = "customers")
 @Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Customer extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

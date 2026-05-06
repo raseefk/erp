@@ -77,9 +77,11 @@
     <li><a href="/admin/home" th:classappend="${activePage=='home'}?' active':''">
       <i class="bi bi-house-door"></i> Home
     </a></li>
-    <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DASHBOARD_VIEW')"><a href="/admin/dashboard" th:classappend="${activePage=='dashboard'}?' active':''">
-      <i class="bi bi-speedometer2"></i> Dashboard
-    </a></li>
+    <li th:if="${@rbacService.isFeatureEnabled('SYSTEM')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DASHBOARD_VIEW')">
+      <a href="/admin/dashboard" th:classappend="${activePage=='dashboard'}?' active':''">
+        <i class="bi bi-speedometer2"></i> Dashboard
+      </a>
+    </li>
 
     <!-- ── SALES ────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"

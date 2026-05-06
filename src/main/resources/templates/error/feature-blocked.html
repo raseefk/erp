@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle='Feature Blocked')}"></head>
+<body class="bg-light">
+    <div id="main">
+        <div class="container-fluid py-5">
+            <div class="row justify-content-center mt-5">
+                <div class="col-md-8 col-lg-6 text-center">
+                    <div class="card border-0 shadow-sm p-5 animate-in">
+                        <div class="mb-4">
+                            <div class="feature-icon-wrapper mx-auto mb-4">
+                                <i class="bi bi-shield-lock-fill text-primary" style="font-size: 4rem;"></i>
+                            </div>
+                            <h1 class="display-5 fw-bold text-dark">Feature Locked</h1>
+                            <p class="lead text-muted">The <span class="fw-bold text-primary" th:text="${featureName}">FEATURE</span> module is not included in your current subscription plan.</p>
+                        </div>
+
+                        <hr class="my-4 opacity-25">
+
+                        <div class="alert alert-info border-0 shadow-none text-start d-flex align-items-center mb-4">
+                            <i class="bi bi-info-circle-fill me-3 fs-4"></i>
+                            <div>
+                                <strong>Why am I seeing this?</strong><br>
+                                Your organization hasn't enabled this feature. Accessing this module requires an upgrade to your tenant settings.
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                            <a href="/admin/home" class="btn btn-outline-secondary px-4 me-sm-2 rounded-pill">
+                                <i class="bi bi-arrow-left me-2"></i> Go Back Home
+                            </a>
+                            <a href="/settings" class="btn btn-primary px-4 rounded-pill shadow">
+                                <i class="bi bi-gear-fill me-2"></i> Manage Settings
+                            </a>
+                        </div>
+                        
+                        <div class="mt-5 text-muted small">
+                            <p>Need help? Contact your system administrator or reach out to support.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .feature-icon-wrapper {
+            width: 120px;
+            height: 120px;
+            background: rgba(var(--bs-primary-rgb), 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .animate-in {
+            animation: fadeInUp 0.6s ease-out;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        #main {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+    </style>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>
