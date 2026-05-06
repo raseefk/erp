@@ -22,7 +22,17 @@ public class DashboardController {
     private final ProjectService    projectService;
 
     @GetMapping({"/dashboard", ""})
-    public String dashboard(Model m) {
+    public String dashboard(Model m, org.springframework.security.core.Authentication auth) {
+        // If user doesn't have dashboard permission, redirect to profile
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
+        boolean canSeeDashboard = isAdmin || auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("PERM_DASHBOARD_VIEW"));
+        
+        if (!canSeeDashboard) {
+            return "redirect:/admin/home";
+        }
+
         // Counts
         m.addAttribute("newEnquiries",     enquiryService.countNew());
         m.addAttribute("contactedEnquiries", enquiryService.countContacted());

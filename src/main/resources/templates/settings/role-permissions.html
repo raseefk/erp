@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head}"></head>
+<head th:replace="~{fragments/layout :: head(pageTitle=${pageTitle})}"></head>
 <style>
     .perm-card { transition: all 0.2s; border: 1px solid #e2e8f0; }
     .perm-card:hover { border-color: var(--navy-deep); box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
@@ -12,11 +12,12 @@
 </style>
 <body>
 
-<div th:replace="~{fragments/layout :: sidebar(activePage='roles')}"></div>
+<th:block th:insert="~{fragments/layout :: sidebar('roles')}"></th:block>
 
-<div id="main-content">
-    <div th:replace="~{fragments/layout :: topbar(pageTitle=${pageTitle})}"></div>
-    <div th:replace="~{fragments/layout :: alerts}"></div>
+<div id="main">
+    <th:block th:insert="~{fragments/layout :: topbar(${pageTitle})}"></th:block>
+    <div class="px-5 py-4">
+        <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
 
     <div class="p-4">
         <form th:action="@{/settings/roles/{id}/permissions(id=${role.id})}" method="POST">
@@ -79,6 +80,10 @@
                 <button type="submit" class="btn btn-lv btn-lg px-5 shadow-sm">Save Permissions</button>
             </div>
         </form>
+    </div>
+</div>
+
+        </div>
     </div>
 </div>
 

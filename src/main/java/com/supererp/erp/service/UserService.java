@@ -23,7 +23,7 @@ public class UserService {
     }
 
     public AppUser getById(Long id) {
-        return userRepository.findById(id)
+        return userRepository.findByIdWithRoles(id)
             .orElseThrow(() -> new IllegalArgumentException("User not found"));
     }
 

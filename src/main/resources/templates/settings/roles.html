@@ -1,14 +1,15 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:replace="~{fragments/layout :: head}"></head>
+<head th:replace="~{fragments/layout :: head(pageTitle=${pageTitle})}"></head>
 <body>
 
-<div th:replace="~{fragments/layout :: sidebar(activePage='roles')}"></div>
+<th:block th:insert="~{fragments/layout :: sidebar('roles')}"></th:block>
 
-<div id="main-content">
-    <div th:replace="~{fragments/layout :: topbar(pageTitle=${pageTitle})}"></div>
-    <div th:replace="~{fragments/layout :: alerts}"></div>
+    <div id="main">
+        <th:block th:insert="~{fragments/layout :: topbar(${pageTitle})}"></th:block>
+        <div class="px-5 py-4">
+            <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
 
     <div class="p-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
@@ -17,7 +18,7 @@
                 <p class="text-muted small mb-0">Define user access levels and granular permissions for your tenant.</p>
             </div>
             <button class="btn btn-lv shadow-sm" data-bs-toggle="modal" data-bs-target="#newRoleModal"
-                    sec:authorize="hasAuthority('PERM_SETTINGS_ROLES_MANAGE')">
+                    sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_ROLES_MANAGE')">
                 <i class="bi bi-plus-lg me-2"></i> Create New Role
             </button>
         </div>
@@ -46,12 +47,13 @@
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a th:href="@{/settings/roles/{id}/permissions(id=${role.id})}"
-                                       class="btn btn-sm btn-outline-secondary" title="Manage Permissions">
+                                       class="btn btn-sm btn-outline-secondary" title="Manage Permissions"
+                                       sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_ROLES_MANAGE')">
                                         <i class="bi bi-shield-lock"></i> Permissions
                                     </a>
                                     <button th:if="${!role.system}" class="btn btn-sm btn-outline-danger"
                                             th:onclick="'deleteRole(' + ${role.id} + ', \'' + ${role.name} + '\')'"
-                                            sec:authorize="hasAuthority('PERM_SETTINGS_ROLES_MANAGE')">
+                                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_ROLES_MANAGE')">
                                         <i class="bi bi-trash"></i>
                                     </button>
                                 </div>
@@ -98,6 +100,8 @@
 <!-- Delete Confirmation Form (Hidden) -->
 <form id="deleteRoleForm" method="POST" style="display:none;"></form>
 
+    </div>
+</div>
 <div th:replace="~{fragments/layout :: scripts}"></div>
 <script>
     function deleteRole(id, name) {

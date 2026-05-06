@@ -17,7 +17,7 @@
             <table class="table table-sm table-borderless mb-0">
               <tr><th style="width:120px;color:#C8972A;">Full Name</th><td th:text="${user.fullName}"></td></tr>
               <tr><th style="color:#C8972A;">Username</th><td th:text="${user.username}"></td></tr>
-              <tr><th style="color:#C8972A;">Role</th><td><span class="badge bg-secondary" th:text="${user.role.name()}"></span></td></tr>
+              <tr><th style="color:#C8972A;">Role</th><td><span class="badge bg-secondary me-1" th:each="r : ${user.roles}" th:text="${r.name}"></span></td></tr>
               <tr><th style="color:#C8972A;">Account Created</th><td th:text="${#temporals.format(user.createdAt, 'dd MMM yyyy')}"></td></tr>
             </table>
           </div>

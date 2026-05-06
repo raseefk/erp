@@ -2,7 +2,7 @@ package com.supererp.erp.rbac.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "features")
@@ -25,5 +25,5 @@ public class Feature {
 
     @OneToMany(mappedBy = "feature", fetch = FetchType.LAZY)
     @OrderBy("sortOrder ASC")
-    private List<Menu> menus;
+    private Set<Menu> menus;
 }

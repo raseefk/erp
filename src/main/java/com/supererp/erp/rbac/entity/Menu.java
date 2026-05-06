@@ -2,7 +2,7 @@ package com.supererp.erp.rbac.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
-import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "menus")
@@ -15,6 +15,8 @@ public class Menu {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "feature_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Feature feature;
 
     @Column(name = "display_name", nullable = false)
@@ -30,5 +32,5 @@ public class Menu {
     private int sortOrder = 0;
 
     @OneToMany(mappedBy = "menu", fetch = FetchType.LAZY)
-    private List<Permission> permissions;
+    private Set<Permission> permissions;
 }

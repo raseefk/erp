@@ -16,7 +16,7 @@ public interface DailyLabourLogRepository extends JpaRepository<DailyLabourLog, 
            "AND l.status = 'APPROVED' " +
            "AND (cast(:fromDate as date) IS NULL OR l.dailyLog.logDate >= :fromDate) " +
            "AND (cast(:toDate as date) IS NULL OR l.dailyLog.logDate <= :toDate) " +
-           "AND (:labourName IS NULL OR LOWER(l.projectLabour.name) LIKE LOWER(CONCAT('%', :labourName, '%'))) " +
+           "AND (:labourName IS NULL OR :labourName = '' OR LOWER(l.projectLabour.name) LIKE LOWER(CONCAT('%', :labourName, '%'))) " +
            "ORDER BY l.projectLabour.name ASC, l.dailyLog.logDate ASC")
     List<DailyLabourLog> findApprovedFiltered(
             @org.springframework.data.repository.query.Param("projectId") Long projectId,

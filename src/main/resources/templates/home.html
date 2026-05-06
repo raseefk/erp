@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Home')}"></head>
+<style>
+    .welcome-card {
+        background: linear-gradient(135deg, var(--navy-deep) 0%, #1e293b 100%);
+        color: white;
+        border-radius: 1rem;
+        padding: 3rem 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        position: relative;
+        overflow: hidden;
+    }
+    .welcome-card::after {
+        content: '';
+        position: absolute;
+        top: -50px;
+        right: -50px;
+        width: 200px;
+        height: 200px;
+        background: rgba(200, 151, 42, 0.1);
+        border-radius: 50%;
+    }
+    .quick-card {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 0.75rem;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        text-decoration: none;
+        color: var(--navy-deep);
+    }
+    .quick-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        border-color: var(--gold);
+        color: var(--navy-deep);
+    }
+    .quick-icon {
+        width: 60px;
+        height: 60px;
+        background: #f8fafc;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        color: var(--gold);
+        transition: all 0.3s ease;
+    }
+    .quick-card:hover .quick-icon {
+        background: var(--gold);
+        color: white;
+    }
+    .quick-title {
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    .quick-desc {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+</style>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('home')}"></th:block>
+<div id="main">
+    <th:block th:insert="~{fragments/layout :: topbar('Welcome')}"></th:block>
+    <div class="pb">
+        
+        <div class="welcome-card">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h5 class="text-gold mb-1" th:text="${greeting + ', ' + user.fullName}">Good Morning, User</h5>
+                    <h2 class="fw-bold">Ready to manage your workspace today?</h2>
+                    <p class="mb-0 opacity-75" th:text="${currentTime}">Tuesday, 06 May 2026</p>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="fw-bold mb-4">Quick Access Modules</h5>
+        
+        <div class="row g-4">
+            <!-- Billing -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_BILLING_INVOICES_VIEW')">
+                <a th:href="@{/admin/billing}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-receipt-cutoff"></i></div>
+                    <div class="quick-title">Billing</div>
+                    <div class="quick-desc">Invoices & Quotations</div>
+                </a>
+            </div>
+            
+            <!-- Projects -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_PROJ_LIST_VIEW')">
+                <a th:href="@{/admin/projects}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-kanban"></i></div>
+                    <div class="quick-title">Projects</div>
+                    <div class="quick-desc">Active Workflows</div>
+                </a>
+            </div>
+
+            <!-- Inventory -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_INV_ITEMS_VIEW')">
+                <a th:href="@{/admin/inventory}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-boxes"></i></div>
+                    <div class="quick-title">Inventory</div>
+                    <div class="quick-desc">Stock Management</div>
+                </a>
+            </div>
+
+            <!-- Attendance -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_HR_ATTENDANCE_VIEW')">
+                <a th:href="@{/hr/attendance}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-clock-history"></i></div>
+                    <div class="quick-title">Attendance</div>
+                    <div class="quick-desc">Daily Ledger</div>
+                </a>
+            </div>
+
+            <!-- Finance -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_FIN_EXPENSES_VIEW')">
+                <a th:href="@{/admin/expenses}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-wallet2"></i></div>
+                    <div class="quick-title">Finance</div>
+                    <div class="quick-desc">Expenses & Payments</div>
+                </a>
+            </div>
+
+            <!-- SCM -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_SCM_PO_VIEW')">
+                <a th:href="@{/admin/scm/po}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-truck"></i></div>
+                    <div class="quick-title">Supply Chain</div>
+                    <div class="quick-desc">Purchase Orders</div>
+                </a>
+            </div>
+
+            <!-- Admin -->
+            <div class="col-6 col-md-4 col-lg-3" sec:authorize="hasAuthority('PERM_SETTINGS_USERS_VIEW')">
+                <a th:href="@{/admin/users}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-shield-lock"></i></div>
+                    <div class="quick-title">Administration</div>
+                    <div class="quick-desc">Users & Access</div>
+                </a>
+            </div>
+
+            <!-- Profile (Always Available) -->
+            <div class="col-6 col-md-4 col-lg-3">
+                <a th:href="@{/admin/profile}" class="quick-card">
+                    <div class="quick-icon"><i class="bi bi-person-circle"></i></div>
+                    <div class="quick-title">My Account</div>
+                    <div class="quick-desc">Profile & Security</div>
+                </a>
+            </div>
+        </div>
+
+    </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -11,6 +11,9 @@ public final class Permissions {
 
     private Permissions() {}
 
+    // ── GENERAL ──────────────────────────────────────────────────────────────
+    public static final String DASHBOARD_VIEW               = "DASHBOARD_VIEW";
+
     // ── BILLING Feature ──────────────────────────────────────────────────────
     public static final String BILLING_INVOICES_VIEW        = "BILLING_INVOICES_VIEW";
     public static final String BILLING_INVOICES_CREATE      = "BILLING_INVOICES_CREATE";
@@ -73,12 +76,16 @@ public final class Permissions {
     public static final String HR_SALARY_VIEW               = "HR_SALARY_VIEW";
     public static final String HR_SALARY_PAY               = "HR_SALARY_PAY";
     public static final String HR_HOLIDAYS_MANAGE           = "HR_HOLIDAYS_MANAGE";
+    public static final String HR_ATTENDANCE_REPORT_VIEW   = "HR_ATTENDANCE_REPORT_VIEW";
 
     // ── FINANCE Feature ───────────────────────────────────────────────────────
     public static final String FIN_TRANSACTIONS_VIEW        = "FIN_TRANSACTIONS_VIEW";
     public static final String FIN_EXPENSES_VIEW            = "FIN_EXPENSES_VIEW";
     public static final String FIN_EXPENSES_CREATE          = "FIN_EXPENSES_CREATE";
     public static final String FIN_EXPENSES_APPROVE         = "FIN_EXPENSES_APPROVE";
+    public static final String FIN_PAYMENTS_VIEW            = "FIN_PAYMENTS_VIEW";
+    public static final String FIN_PAYMENTS_RECORD          = "FIN_PAYMENTS_RECORD";
+    public static final String FIN_LEDGER_VIEW              = "FIN_LEDGER_VIEW";
     public static final String FIN_REPORTS_VIEW             = "FIN_REPORTS_VIEW";
 
     // ── SETTINGS Feature (Admin) ───────────────────────────────────────────────

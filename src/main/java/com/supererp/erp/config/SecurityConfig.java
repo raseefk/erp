@@ -73,7 +73,7 @@ public class SecurityConfig {
                     if (isSystemAdmin) {
                         response.sendRedirect("/system/tenants");
                     } else {
-                        response.sendRedirect("/admin/dashboard");
+                        response.sendRedirect("/admin/home");
                     }
                 })
                 .failureHandler((request, response, exception) -> {

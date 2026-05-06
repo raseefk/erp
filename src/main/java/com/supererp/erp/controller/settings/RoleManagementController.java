@@ -64,7 +64,7 @@ public class RoleManagementController {
         Set<String> assigned = new HashSet<>();
         role.getPermissions().forEach(p -> assigned.add(p.getId()));
 
-        List<Feature> features = featureRepo.findAllOrdered();
+        List<Feature> features = featureRepo.findAllFullHierarchy();
 
         model.addAttribute("role",           role);
         model.addAttribute("assignedPerms",  assigned);

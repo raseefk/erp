@@ -20,6 +20,7 @@ import java.util.*;
 @Order(1)
 @RequiredArgsConstructor
 @Slf4j
+@org.springframework.transaction.annotation.Transactional
 public class PermissionSeeder implements CommandLineRunner {
 
     private final FeatureRepository     featureRepo;
@@ -87,6 +88,7 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_ROLES", "ADMIN", "Roles & Permissions", "shield-check", 2);
 
         // System
+        upsertMenu("MENU_DASHBOARD", "SYSTEM", "Dashboard", "speedometer2", 0);
         upsertMenu("MENU_SETTINGS", "SYSTEM", "Settings", "gear", 1);
         upsertMenu("MENU_HOLIDAYS", "SYSTEM", "Annual Holidays", "calendar-event", 2);
     }
@@ -113,14 +115,36 @@ public class PermissionSeeder implements CommandLineRunner {
                 String display   = toDisplayName(id);
                 Feature feature  = featureRepo.findById(featureId).orElse(null);
                 if (feature != null) {
+                    String menuId = resolveMenu(id);
+                    Menu menu = menuRepo.findById(menuId).orElse(null);
                     permRepo.save(Permission.builder()
                         .id(id)
                         .feature(feature)
+                        .menu(menu)
                         .displayName(display)
                         .action(action)
                         .build());
                     created++;
                 }
+            } else {
+                // Force update existing permissions to ensure they are grouped correctly
+                permRepo.findById(id).ifPresent(p -> {
+                    String fId = resolveFeature(id);
+                    String mId = resolveMenu(id);
+                    Feature f = featureRepo.findById(fId).orElse(null);
+                    Menu m = menuRepo.findById(mId).orElse(null);
+
+                    boolean updated = false;
+                    if (f != null && (p.getFeature() == null || !f.getId().equals(p.getFeature().getId()))) {
+                        p.setFeature(f);
+                        updated = true;
+                    }
+                    if (m != null && (p.getMenu() == null || !m.getId().equals(p.getMenu().getId()))) {
+                        p.setMenu(m);
+                        updated = true;
+                    }
+                    if (updated) permRepo.save(p);
+                });
             }
         }
         if (created > 0) log.info("✅ Seeded {} new permissions", created);
@@ -140,8 +164,44 @@ public class PermissionSeeder implements CommandLineRunner {
         return defs;
     }
 
+    private String resolveMenu(String id) {
+        if (id.equals("DASHBOARD_VIEW")) return "MENU_DASHBOARD";
+        if (id.startsWith("BILLING_")) return "MENU_BILLING";
+        if (id.startsWith("CRM_CUSTOMERS_")) return "MENU_CUSTOMERS";
+        if (id.startsWith("CRM_ENQUIRIES_")) return "MENU_ENQUIRIES";
+        if (id.startsWith("INV_")) return "MENU_INVENTORY";
+        if (id.startsWith("SCM_PO_")) return "MENU_PURCHASE_ORDERS";
+        if (id.startsWith("SCM_VENDORS_")) return "MENU_VENDORS";
+        if (id.startsWith("PROJ_LIST_")) return "MENU_PROJECTS";
+        if (id.startsWith("PROJ_DAILYLOG_")) return "MENU_SITELOGS";
+        if (id.startsWith("PROJ_EXPENSES_") || id.startsWith("PROJ_JOBCARD_")) return "MENU_APPROVALS";
+        if (id.startsWith("HR_EMPLOYEES_")) return "MENU_EMPLOYEES";
+        if (id.startsWith("HR_ATTENDANCE_")) return "MENU_ATTENDANCE";
+        if (id.startsWith("HR_LEAVES_")) return "MENU_LEAVES";
+        if (id.startsWith("HR_SALARY_")) return "MENU_SALARIES";
+        if (id.startsWith("HR_ATTENDANCE_REPORT_")) return "MENU_ATTENDANCE_REPORT";
+        if (id.startsWith("HR_HOLIDAYS_")) return "MENU_HOLIDAYS";
+        if (id.startsWith("FIN_EXPENSES_")) return "MENU_EXPENSES";
+        if (id.startsWith("FIN_PAYMENTS_")) return "MENU_PAYMENTS";
+        if (id.startsWith("FIN_LEDGER_")) return "MENU_PL_REPORT";
+        if (id.startsWith("FIN_TRANSACTIONS_") || id.startsWith("FIN_REPORTS_")) return "MENU_PL_REPORT";
+        if (id.startsWith("SETTINGS_USERS_")) return "MENU_USERS";
+        if (id.startsWith("SETTINGS_ROLES_")) return "MENU_ROLES";
+        if (id.startsWith("SETTINGS_COMPANY_") || id.startsWith("SETTINGS_FEATURES_")) return "MENU_SETTINGS";
+        return "MENU_SETTINGS";
+    }
+
     private String resolveFeature(String permId) {
-        // First segment of permission ID = feature
+        if (permId.equals("DASHBOARD_VIEW")) return "SYSTEM";
+        if (permId.startsWith("CRM_")) return "SALES";
+        if (permId.startsWith("BILLING_")) return "SALES";
+        if (permId.startsWith("INV_")) return "OPERATIONS";
+        if (permId.startsWith("PROJ_")) return "PROJECTS";
+        if (permId.startsWith("HR_")) return "HR";
+        if (permId.startsWith("FIN_")) return "FINANCE";
+        if (permId.startsWith("SETTINGS_COMPANY_") || permId.startsWith("SETTINGS_FEATURES_")) return "SYSTEM";
+        if (permId.startsWith("SETTINGS_")) return "ADMIN";
+        if (permId.startsWith("SCM_")) return "SCM";
         return permId.split("_")[0];
     }
 

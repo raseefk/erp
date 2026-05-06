@@ -39,8 +39,9 @@
 
               <div class="mb-4">
                 <label class="form-label fw-bold">Role <span class="text-danger">*</span></label>
-                <select th:field="*{role}" class="form-select" required>
-                  <option th:each="r : ${roles}" th:value="${r}" th:text="${r.name()}"></option>
+                <select name="roleId" class="form-select" required>
+                  <option value="" disabled selected>Select a role...</option>
+                  <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.name}"></option>
                 </select>
               </div>
 

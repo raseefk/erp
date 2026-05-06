@@ -15,7 +15,7 @@
     <button type="submit" class="btn btn-sm btn-gold">Search</button>
     <a th:href="@{/admin/inventory}" class="btn btn-sm btn-outline-secondary">Clear</a>
   </form>
-  <a th:href="@{/admin/inventory/new}" class="btn btn-sm btn-gold"><i class="bi bi-plus-lg me-1"></i>New Item</a>
+  <a th:href="@{/admin/inventory/new}" class="btn btn-sm btn-gold" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_CREATE')"><i class="bi bi-plus-lg me-1"></i>New Item</a>
 </div>
 
 <!-- Low stock alerts -->
@@ -33,7 +33,7 @@
     <div class="table-responsive">
       <table class="table table-levanto mb-0">
         <thead>
-          <tr><th>#</th><th>Name</th><th>Type</th><th>HSN/SAC</th><th>Unit</th><th>Price ₹</th><th>Stock</th><th>Status</th><th>Actions</th></tr>
+          <tr><th>#</th><th>Name</th><th>Type</th><th>HSN/SAC</th><th>Unit</th><th>Price ₹</th><th>Stock</th><th>Status</th><th sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_EDIT', 'PERM_INV_STOCK_MANAGE')">Actions</th></tr>
         </thead>
         <tbody>
           <tr th:each="item, idx : ${itemsPage.content}" th:classappend="${not item.active}?'opacity-50':''">
@@ -53,14 +53,17 @@
               <span class="badge" th:text="${item.active ? 'Active' : 'Inactive'}"
                 th:classappend="${item.active}?'badge-success':'badge-danger'"></span>
             </td>
-            <td>
+            <td sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_EDIT', 'PERM_INV_STOCK_MANAGE')">
               <div class="btn-group btn-group-sm">
-                <a th:href="@{/admin/inventory/{id}/edit(id=${item.id})}" class="btn btn-navy"><i class="bi bi-pencil"></i></a>
+                <a th:href="@{/admin/inventory/{id}/edit(id=${item.id})}" class="btn btn-navy" 
+                   sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_EDIT')"><i class="bi bi-pencil"></i></a>
                 <button th:if="${item.itemType.name()=='PRODUCT'}" class="btn btn-outline-success"
-                        onclick="addStockModal(this)" th:data-id="${item.id}" th:data-name="${item.name}" title="Add Stock">
+                        onclick="addStockModal(this)" th:data-id="${item.id}" th:data-name="${item.name}" title="Add Stock"
+                        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_STOCK_MANAGE')">
                   <i class="bi bi-plus-circle"></i>
                 </button>
-                <button class="btn btn-outline-secondary" onclick="toggleItem(this)" th:data-id="${item.id}" title="Toggle Active">
+                <button class="btn btn-outline-secondary" onclick="toggleItem(this)" th:data-id="${item.id}" title="Toggle Active"
+                        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_EDIT')">
                   <i class="bi bi-toggle-on"></i>
                 </button>
               </div>

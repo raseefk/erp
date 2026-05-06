@@ -10,7 +10,12 @@ import java.util.UUID;
 @Repository
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
     Optional<AppUser> findByUsername(String username);
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
+    @Query("SELECT u FROM AppUser u WHERE u.id = :id")
+    Optional<AppUser> findByIdWithRoles(@org.springframework.data.repository.query.Param("id") Long id);
 
     @Query("SELECT u FROM AppUser u LEFT JOIN FETCH u.roles r LEFT JOIN FETCH r.permissions " +
            "WHERE u.username = :username AND u.tenantId = :tenantId")

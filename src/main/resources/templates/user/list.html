@@ -9,7 +9,7 @@
   <div class="pb">
     <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
 
-    <div class="d-flex justify-content-end mb-3 mt-2">
+    <div class="d-flex justify-content-end mb-3 mt-2" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_USERS_CREATE')">
       <a th:href="@{/admin/users/new}" class="btn btn-navy"><i class="bi bi-person-plus me-1"></i>Create New User</a>
     </div>
 
@@ -24,7 +24,7 @@
               <th>Role</th>
               <th>Status</th>
               <th>Created On</th>
-              <th class="text-end">Actions</th>
+              <th class="text-end" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_USERS_MANAGE')">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -42,7 +42,7 @@
                 <span class="badge" th:classappend="${u.enabled ? 'bg-success' : 'bg-secondary'}" th:text="${u.enabled ? 'Active' : 'Disabled'}"></span>
               </td>
               <td th:text="${#temporals.format(u.createdAt, 'dd MMM yyyy')}"></td>
-              <td class="text-end">
+              <td class="text-end" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_USERS_MANAGE')">
                 <form th:action="@{/admin/users/{id}/toggle(id=${u.id})}" method="post" class="d-inline">
                   <button type="submit" class="btn btn-sm" th:classappend="${u.enabled ? 'btn-outline-danger' : 'btn-outline-success'}">
                     <i class="bi" th:classappend="${u.enabled ? 'bi-lock' : 'bi-unlock'}"></i>

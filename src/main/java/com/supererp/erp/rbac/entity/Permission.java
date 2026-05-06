@@ -14,10 +14,14 @@ public class Permission {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "feature_id", nullable = false)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Feature feature;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_id")
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Menu menu;
 
     @Column(name = "display_name", nullable = false)

@@ -13,4 +13,10 @@ public interface FeatureRepository extends JpaRepository<Feature, String> {
 
     @Query("SELECT DISTINCT f FROM Feature f LEFT JOIN FETCH f.menus ORDER BY f.sortOrder ASC")
     List<Feature> findAllWithMenus();
+
+    @Query("SELECT DISTINCT f FROM Feature f " +
+           "LEFT JOIN FETCH f.menus m " +
+           "LEFT JOIN FETCH m.permissions " +
+           "ORDER BY f.sortOrder ASC")
+    List<Feature> findAllFullHierarchy();
 }

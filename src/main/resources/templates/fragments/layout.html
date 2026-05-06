@@ -74,30 +74,34 @@
 
     <!-- ── MAIN ────────────────────────────────────────────────── -->
     <li class="nav-sec" style="cursor:default;">Main</li>
-    <li><a href="/admin/dashboard" th:classappend="${activePage=='dashboard'}?' active':''">
+    <li><a href="/admin/home" th:classappend="${activePage=='home'}?' active':''">
+      <i class="bi bi-house-door"></i> Home
+    </a></li>
+    <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DASHBOARD_VIEW')"><a href="/admin/dashboard" th:classappend="${activePage=='dashboard'}?' active':''">
       <i class="bi bi-speedometer2"></i> Dashboard
     </a></li>
 
     <!-- ── SALES ────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('SALES')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_ENQUIRIES_VIEW', 'PERM_BILLING_INVOICES_VIEW', 'PERM_CRM_CUSTOMERS_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseSales"
         th:attr="aria-expanded=${#lists.contains({'enquiries','billing','customers'}, activePage) ? 'true' : 'false'}">
       <span>Sales</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseSales"
          th:classappend="${#lists.contains({'enquiries','billing','customers'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_ENQUIRIES')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_ENQUIRIES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_ENQUIRIES_VIEW')">
         <a href="/admin/enquiries" th:classappend="${activePage=='enquiries'}?' active':''">
           <i class="bi bi-chat-left-text"></i> Enquiries
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_BILLING')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_BILLING')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_BILLING_INVOICES_VIEW')">
         <a href="/admin/billing" th:classappend="${activePage=='billing'}?' active':''">
           <i class="bi bi-receipt-cutoff"></i> Billing &amp; Quotations
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_CUSTOMERS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_CUSTOMERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_CUSTOMERS_VIEW')">
         <a href="/admin/customers" th:classappend="${activePage=='customers'}?' active':''">
           <i class="bi bi-people"></i> Customers
         </a>
@@ -107,13 +111,14 @@
     <!-- ── OPERATIONS ───────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('OPERATIONS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseOperations"
         th:attr="aria-expanded=${#lists.contains({'inventory'}, activePage) ? 'true' : 'false'}">
       <span>Operations</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseOperations"
          th:classappend="${#lists.contains({'inventory'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_INVENTORY')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_INVENTORY')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_VIEW')">
         <a href="/admin/inventory" th:classappend="${activePage=='inventory'}?' active':''">
           <i class="bi bi-boxes"></i> Inventory
         </a>
@@ -123,18 +128,19 @@
     <!-- ── SUPPLY CHAIN ──────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('SCM')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_VENDORS_VIEW', 'PERM_SCM_PO_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseScm"
         th:attr="aria-expanded=${#lists.contains({'vendors','scm-po'}, activePage) ? 'true' : 'false'}">
       <span>Supply Chain</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseScm"
          th:classappend="${#lists.contains({'vendors','scm-po'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_VENDORS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_VENDORS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_VENDORS_VIEW')">
         <a href="/admin/vendors" th:classappend="${activePage=='vendors'}?' active':''">
           <i class="bi bi-truck"></i> Vendor Directory
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_PURCHASE_ORDERS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PURCHASE_ORDERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_PO_VIEW')">
         <a href="/admin/scm/po" th:classappend="${activePage=='scm-po'}?' active':''">
           <i class="bi bi-cart"></i> Purchase Orders
         </a>
@@ -144,23 +150,24 @@
     <!-- ── PROJECTS ──────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('PROJECTS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW', 'PERM_PROJ_DAILYLOG_VIEW', 'PERM_PROJ_EXPENSES_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseProjects"
         th:attr="aria-expanded=${#lists.contains({'projects','sitelogs','approval'}, activePage) ? 'true' : 'false'}">
       <span>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseProjects"
          th:classappend="${#lists.contains({'projects','sitelogs','approval'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_PROJECTS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PROJECTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW')">
         <a href="/admin/projects" th:classappend="${activePage=='projects'}?' active':''">
           <i class="bi bi-kanban"></i> Projects
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_SITELOGS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_SITELOGS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_DAILYLOG_VIEW')">
         <a href="/admin/sitelogs/all" th:classappend="${activePage=='sitelogs'}?' active':''">
           <i class="bi bi-journal-text"></i> Daily Logs
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_APPROVALS')}" sec:authorize="hasRole('ADMIN')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_APPROVALS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_EXPENSES_VIEW')">
         <a href="/admin/approval" th:classappend="${activePage=='approval'}?' active':''">
           <i class="bi bi-check2-square"></i> Approval Queue
           <span class="approval-badge" id="approvalBadge">0</span>
@@ -171,33 +178,34 @@
     <!-- ── HR ──────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('HR')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_VIEW', 'PERM_HR_SALARY_VIEW', 'PERM_HR_ATTENDANCE_VIEW', 'PERM_HR_ATTENDANCE_REPORT_VIEW', 'PERM_HR_LEAVES_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseHr"
         th:attr="aria-expanded=${#lists.contains({'employees','salaries','attendance','attendance-report','leaves'}, activePage) ? 'true' : 'false'}">
       <span>HR</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseHr"
          th:classappend="${#lists.contains({'employees','salaries','attendance','attendance-report','leaves'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_EMPLOYEES')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_EMPLOYEES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_VIEW')">
         <a href="/admin/employees" th:classappend="${activePage=='employees'}?' active':''">
           <i class="bi bi-person-badge"></i> Employees
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_SALARIES')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_SALARIES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_SALARY_VIEW')">
         <a href="/admin/salaries" th:classappend="${activePage=='salaries'}?' active':''">
           <i class="bi bi-cash-stack"></i> Salaries
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_ATTENDANCE')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_ATTENDANCE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_ATTENDANCE_VIEW')">
         <a href="/hr/attendance" th:classappend="${activePage=='attendance'}?' active':''">
           <i class="bi bi-clock-history"></i> Daily Ledger
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_ATTENDANCE_REPORT')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_ATTENDANCE_REPORT')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_ATTENDANCE_REPORT_VIEW')">
         <a href="/hr/attendance/report" th:classappend="${activePage=='attendance-report'}?' active':''">
           <i class="bi bi-calendar3"></i> Attendance Report
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_LEAVES')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_LEAVES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_LEAVES_VIEW')">
         <a href="/hr/leaves" th:classappend="${activePage=='leaves'}?' active':''">
           <i class="bi bi-calendar2-minus"></i> Leaves
         </a>
@@ -207,23 +215,24 @@
     <!-- ── FINANCE ─────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('FINANCE')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_FIN_EXPENSES_VIEW', 'PERM_FIN_PAYMENTS_VIEW', 'PERM_FIN_REPORTS_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseFinance"
         th:attr="aria-expanded=${#lists.contains({'expenses','payments','finance'}, activePage) ? 'true' : 'false'}">
       <span>Finance</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseFinance"
          th:classappend="${#lists.contains({'expenses','payments','finance'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_EXPENSES')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_EXPENSES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_FIN_EXPENSES_VIEW')">
         <a href="/admin/expenses" th:classappend="${activePage=='expenses'}?' active':''">
           <i class="bi bi-wallet2"></i> Expenses
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_PAYMENTS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PAYMENTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_FIN_PAYMENTS_VIEW')">
         <a href="/admin/payments" th:classappend="${activePage=='payments'}?' active':''">
           <i class="bi bi-cash-coin"></i> Payments
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_PL_REPORT')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PL_REPORT')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_FIN_REPORTS_VIEW')">
         <a href="/admin/finance" th:classappend="${activePage=='finance'}?' active':''">
           <i class="bi bi-graph-up-arrow"></i> P&amp;L Report
         </a>
@@ -233,18 +242,19 @@
     <!-- ── ADMINISTRATION ────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('ADMIN')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_USERS_VIEW', 'PERM_SETTINGS_ROLES_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseAdmin"
         th:attr="aria-expanded=${#lists.contains({'users','roles'}, activePage) ? 'true' : 'false'}">
       <span>Administration</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseAdmin"
          th:classappend="${#lists.contains({'users','roles'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_USERS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_USERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_USERS_VIEW')">
         <a href="/admin/users" th:classappend="${activePage=='users'}?' active':''">
           <i class="bi bi-shield-lock"></i> User Management
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_ROLES')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_ROLES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_ROLES_VIEW')">
         <a href="/settings/roles" th:classappend="${activePage=='roles'}?' active':''">
           <i class="bi bi-shield-check"></i> Roles &amp; Permissions
         </a>
@@ -254,18 +264,19 @@
     <!-- ── SYSTEM ────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('SYSTEM')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_COMPANY_VIEW', 'PERM_HR_HOLIDAYS_MANAGE')"
         data-bs-toggle="collapse" data-bs-target="#collapseSystem"
         th:attr="aria-expanded=${#lists.contains({'settings','holidays'}, activePage) ? 'true' : 'false'}">
       <span>System</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseSystem"
          th:classappend="${#lists.contains({'settings','holidays'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_SETTINGS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_SETTINGS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_COMPANY_VIEW')">
         <a href="/settings" th:classappend="${activePage=='settings'}?' active':''">
           <i class="bi bi-gear"></i> Settings
         </a>
       </li>
-      <li th:if="${@rbacService.isMenuEnabled('MENU_HOLIDAYS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_HOLIDAYS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_HOLIDAYS_MANAGE')">
         <a href="/settings/holidays" th:classappend="${activePage=='holidays'}?' active':''">
           <i class="bi bi-calendar-event"></i> Annual Holidays
         </a>

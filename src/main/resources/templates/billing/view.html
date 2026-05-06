@@ -224,10 +224,14 @@ const fmt = n => '₹ '+parseFloat(n).toLocaleString('en-IN',{minimumFractionDig
 
 document.getElementById('partialModal')?.addEventListener('show.bs.modal', () => {
   loadPaid().then(paid => {
+    const balance = GRAND_TOTAL - paid;
     document.getElementById('mBillTotal').textContent = fmt(GRAND_TOTAL);
     document.getElementById('mPaid').textContent      = fmt(paid);
-    document.getElementById('mBalance').textContent   = fmt(GRAND_TOTAL - paid);
-    document.getElementById('partialAmt').max         = GRAND_TOTAL - paid;
+    document.getElementById('mBalance').textContent   = fmt(balance);
+    const amtInput = document.getElementById('partialAmt');
+    amtInput.max   = balance;
+    amtInput.value = balance > 0 ? balance.toFixed(2) : '';
+    calcRem();
   });
 });
 

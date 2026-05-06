@@ -18,7 +18,7 @@
       </form>
       <div class="d-flex align-items-center gap-2">
         <span class="badge badge-navy" th:text="${employeesPage.totalElements} + ' Total Employees'"></span>
-        <a th:href="@{/admin/employees/new}" class="btn btn-sm btn-gold"><i class="bi bi-person-plus me-1"></i>Add Employee</a>
+        <a th:href="@{/admin/employees/new}" class="btn btn-sm btn-gold" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_CREATE')"><i class="bi bi-person-plus me-1"></i>Add Employee</a>
       </div>
     </div>
 <div class="card card-levanto">
@@ -26,7 +26,7 @@
   <div class="card-body p-0">
     <div class="table-responsive">
       <table class="table table-levanto mb-0">
-        <thead><tr><th>#</th><th>Name</th><th>Designation</th><th>Phone</th><th>Salary ₹</th><th>Joined</th><th>Actions</th></tr></thead>
+        <thead><tr><th>#</th><th>Name</th><th>Designation</th><th>Phone</th><th>Salary ₹</th><th>Joined</th><th sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_EDIT', 'PERM_HR_SALARY_PAY')">Actions</th></tr></thead>
         <tbody>
           <tr th:each="emp, idx : ${employees}">
             <td th:text="${idx.count}">1</td>
@@ -35,10 +35,12 @@
             <td th:text="${emp.phone ?: '-'}">-</td>
             <td class="fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(emp.monthlySalary,1,'COMMA',2,'POINT')}">-</td>
             <td><small th:text="${emp.joiningDate != null ? #temporals.format(emp.joiningDate,'dd MMM yyyy') : '-'}">-</small></td>
-            <td>
+            <td sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_EDIT', 'PERM_HR_SALARY_PAY')">
               <div class="btn-group btn-group-sm">
-                <a th:href="@{/admin/employees/{id}/edit(id=${emp.id})}" class="btn btn-navy"><i class="bi bi-pencil"></i></a>
-                <button class="btn btn-gold" onclick="payModal(this)" th:data-id="${emp.id}" th:data-name="${emp.name}" th:data-salary="${emp.monthlySalary}" title="Pay Salary"><i class="bi bi-cash"></i></button>
+                <a th:href="@{/admin/employees/{id}/edit(id=${emp.id})}" class="btn btn-navy" 
+                   sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_EDIT')"><i class="bi bi-pencil"></i></a>
+                <button class="btn btn-gold" onclick="payModal(this)" th:data-id="${emp.id}" th:data-name="${emp.name}" th:data-salary="${emp.monthlySalary}" title="Pay Salary"
+                        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_SALARY_PAY')"><i class="bi bi-cash"></i></button>
               </div>
             </td>
           </tr>
