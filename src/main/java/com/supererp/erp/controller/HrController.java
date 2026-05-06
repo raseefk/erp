@@ -23,6 +23,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/hr")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("HR")
 public class HrController {
 
     private final HrService hrService;

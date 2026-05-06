@@ -12,7 +12,7 @@
     <!-- ── Stat Cards ──────────────────────────────────────────────── -->
     <div class="row g-3 mb-4 mt-1">
       <!-- Enquiries -->
-      <div class="col-6 col-md-4 col-xl-2">
+      <div class="col-6 col-md-4 col-xl-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:#fff3cd;color:#C8972A;"><i class="bi bi-chat-left-text"></i></div>
           <div>
@@ -22,7 +22,7 @@
         </div>
       </div>
       <!-- Quotations -->
-      <div class="col-6 col-md-4 col-xl-2">
+      <div class="col-6 col-md-4 col-xl-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:#dbeafe;color:#1d4ed8;"><i class="bi bi-file-text"></i></div>
           <div>
@@ -32,7 +32,7 @@
         </div>
       </div>
       <!-- Final Bills -->
-      <div class="col-6 col-md-4 col-xl-2">
+      <div class="col-6 col-md-4 col-xl-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-receipt"></i></div>
           <div>
@@ -42,7 +42,7 @@
         </div>
       </div>
       <!-- Pending Payments -->
-      <div class="col-6 col-md-4 col-xl-2">
+      <div class="col-6 col-md-4 col-xl-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-hourglass-split"></i></div>
           <div>
@@ -52,7 +52,7 @@
         </div>
       </div>
       <!-- Monthly Income -->
-      <div class="col-6 col-md-4 col-xl-2">
+      <div class="col-6 col-md-4 col-xl-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-currency-rupee"></i></div>
           <div>
@@ -62,8 +62,19 @@
           </div>
         </div>
       </div>
+      <!-- Total Income -->
+      <div class="col-6 col-md-4 col-xl-3">
+        <div class="stat-card" style="border-left-color:#16a34a;">
+          <div class="stat-icon" style="background:#dcfce7;color:#16a34a;"><i class="bi bi-piggy-bank"></i></div>
+          <div>
+            <div class="stat-num text-success" style="font-size:1.2rem;"
+                 th:text="'₹'+${#numbers.formatDecimal(totalIncome,1,'COMMA',0,'POINT')}">₹0</div>
+            <div class="stat-lbl">Total Income (All Time)</div>
+          </div>
+        </div>
+      </div>
       <!-- Monthly Expenses -->
-      <div class="col-6 col-md-4 col-xl-2">
+      <div class="col-6 col-md-4 col-xl-3">
         <div class="stat-card" style="border-left-color:#dc2626;">
           <div class="stat-icon" style="background:#fee2e2;color:#dc2626;"><i class="bi bi-wallet2"></i></div>
           <div>
@@ -73,11 +84,8 @@
           </div>
         </div>
       </div>
-    </div>
-
-    <!-- ── Project Module Stats (Admin only) ───────────────────────── -->
-    <div class="row g-3 mb-4" sec:authorize="hasRole('ADMIN')">
-      <div class="col-6 col-md-3">
+      <!-- Active Projects -->
+      <div class="col-6 col-md-4 col-xl-3" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW')">
         <div class="stat-card" style="border-left-color:#2563eb;">
           <div class="stat-icon" style="background:#dbeafe;color:#2563eb;"><i class="bi bi-kanban"></i></div>
           <div>
@@ -86,7 +94,11 @@
           </div>
         </div>
       </div>
-      <div class="col-6 col-md-3">
+    </div>
+
+    <!-- ── Pending Approvals & Alerts ───────────────── -->
+    <div class="row g-3 mb-4" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_EXPENSES_APPROVE')">
+      <div class="col-6 col-md-4">
         <div class="stat-card" style="border-left-color:#d97706;">
           <div class="stat-icon" style="background:#fef9c3;color:#d97706;"><i class="bi bi-check2-square"></i></div>
           <div>
@@ -95,7 +107,7 @@
           </div>
         </div>
       </div>
-      <div class="col-12 col-md-6 d-flex align-items-center gap-2 flex-wrap"
+      <div class="col-12 col-md-8 d-flex align-items-center gap-2 flex-wrap"
            th:if="${pendingApprovals > 0}">
         <div class="alert-lv p-3 rounded flex-fill d-flex align-items-center gap-2 mb-0">
           <i class="bi bi-exclamation-triangle" style="color:#d97706;font-size:1.2rem;"></i>
@@ -231,15 +243,15 @@
                 <i class="bi bi-journal-text me-1"></i>Daily Logs
               </a>
               <a href="/admin/approval" class="btn btn-sm btn-outline-secondary"
-                 sec:authorize="hasRole('ADMIN')">
+                 sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_EXPENSES_APPROVE')">
                 <i class="bi bi-check2-square me-1"></i>Approval Queue
               </a>
               <a href="/admin/finance" class="btn btn-sm btn-outline-secondary"
-                 sec:authorize="hasRole('ADMIN')">
+                 sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_FIN_REPORTS_VIEW')">
                 <i class="bi bi-graph-up me-1"></i>P&amp;L Report
               </a>
               <a href="/admin/expenses/new" class="btn btn-sm btn-outline-secondary"
-                 sec:authorize="hasRole('ADMIN')">
+                 sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_FIN_EXPENSES_VIEW')">
                 <i class="bi bi-wallet2 me-1"></i>Add Expense
               </a>
             </div>

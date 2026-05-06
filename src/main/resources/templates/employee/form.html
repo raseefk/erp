@@ -95,9 +95,9 @@
           </div>
           <div class="col-md-4">
             <label class="form-label fw-bold">System Role</label>
-            <select name="role" class="form-select">
-               <option th:each="r : ${roles}" th:value="${r}" th:text="${r.name().replace('ROLE_', '')}"
-                       th:selected="${r.name() == 'ROLE_EMPLOYEE'}"></option>
+            <select name="roleId" class="form-select">
+               <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.name.replace('ROLE_', '')}"
+                       th:selected="${r.name == 'ROLE_EMPLOYEE'}"></option>
             </select>
           </div>
         </div>

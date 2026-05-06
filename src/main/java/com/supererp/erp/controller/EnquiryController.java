@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller @RequestMapping("/admin/enquiries") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SALES")
 public class EnquiryController {
 
     private final EnquiryService service;

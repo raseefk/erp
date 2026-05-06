@@ -15,9 +15,11 @@ import java.util.List;
 @Controller
 @RequestMapping("/settings/holidays")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SYSTEM")
 public class HolidayController {
 
     private final HolidayRepository holidayRepository;
+    private final com.supererp.erp.service.CompanySettingsService settingsService;
 
     @GetMapping
     public String viewHolidays(@RequestParam(required = false) Integer year, Model model) {
@@ -32,8 +34,29 @@ public class HolidayController {
         model.addAttribute("holidays", holidays);
         model.addAttribute("selectedYear", targetYear);
         model.addAttribute("years", java.util.Arrays.asList(targetYear - 1, targetYear, targetYear + 1));
+        model.addAttribute("weeklyOffDays", settingsService.getSettings().getWeeklyOffDaysList());
+        model.addAttribute("allDaysOfWeek", java.time.DayOfWeek.values());
         
         return "settings/holidays";
+    }
+
+    @PostMapping("/weekly-off")
+    public String updateWeeklyOff(
+            @RequestParam(required = false) List<String> offDays,
+            RedirectAttributes redirectAttributes) {
+        try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
+            if (offDays != null && !offDays.isEmpty()) {
+                settings.setWeeklyOffDays(String.join(",", offDays));
+            } else {
+                settings.setWeeklyOffDays("");
+            }
+            settingsService.updateSettings(settings);
+            redirectAttributes.addFlashAttribute("success", "Weekly off days updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "Failed to update weekly off days.");
+        }
+        return "redirect:/settings/holidays";
     }
 
     @PostMapping("/add")

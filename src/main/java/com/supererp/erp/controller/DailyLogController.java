@@ -22,6 +22,7 @@ import java.util.List;
 @Controller
 @RequestMapping("/admin/sitelogs")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("PROJECTS")
 public class DailyLogController {
 
     private final DailyLogService   logService;

@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/settings")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SYSTEM")
 public class CompanySettingsController {
 
     private final CompanySettingsService settingsService;

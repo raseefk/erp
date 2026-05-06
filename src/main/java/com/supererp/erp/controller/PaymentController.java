@@ -16,6 +16,7 @@ import java.time.LocalDate;
 @Controller
 @RequestMapping("/admin/payments")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("FINANCE")
 public class PaymentController {
 
     private final PaymentService paymentService;

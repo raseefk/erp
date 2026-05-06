@@ -15,6 +15,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/approval")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("PROJECTS")
 public class ApprovalController {
 
     private final ApprovalService          approvalService;

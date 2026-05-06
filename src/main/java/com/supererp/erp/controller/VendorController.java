@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller @RequestMapping("/admin/vendors") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SCM")
 public class VendorController {
 
     private final VendorService service;

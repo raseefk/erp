@@ -15,7 +15,23 @@ public final class TenantContext {
     private TenantContext() {}
 
     public static void setTenantId(UUID id)     { TENANT_ID.set(id); }
-    public static UUID  getTenantId()            { return TENANT_ID.get(); }
+    
+    public static UUID getTenantId() {
+        UUID id = TENANT_ID.get();
+        if (id == null) {
+            // Fallback: Try to resolve from SecurityContext if available
+            try {
+                org.springframework.security.core.Authentication auth = 
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getPrincipal() instanceof com.supererp.erp.security.SecurityUser) {
+                    return ((com.supererp.erp.security.SecurityUser) auth.getPrincipal()).getTenantId();
+                }
+            } catch (Exception e) {
+                // Ignore if security context is not available
+            }
+        }
+        return id;
+    }
 
     public static void setTenantSlug(String slug){ TENANT_SLUG.set(slug); }
     public static String getTenantSlug()         { return TENANT_SLUG.get(); }

@@ -19,6 +19,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Controller @RequestMapping("/admin/expenses") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("FINANCE")
 public class ExpenseController {
 
     private final ExpenseService    service;

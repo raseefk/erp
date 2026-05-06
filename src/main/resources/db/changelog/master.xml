@@ -12,5 +12,6 @@
   <include file="classpath:db/changelog/V5__tenant_menu_mapping.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V6__add_tagline.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V7__rls_menu_mapping.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V8__add_employee_hr_fields.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

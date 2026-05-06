@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 
 @Controller @RequestMapping("/admin/scm/po") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SCM")
 public class PurchaseOrderController {
 
     private final ScmService scmService;

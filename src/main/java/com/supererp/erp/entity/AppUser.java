@@ -16,6 +16,7 @@ import java.util.UUID;
 @Table(name = "app_users",
     uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "username"}))
 @Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class AppUser extends TenantAwareEntity {
 
     @Id

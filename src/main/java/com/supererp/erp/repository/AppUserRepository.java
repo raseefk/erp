@@ -24,7 +24,7 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     boolean existsByUsernameAndTenantId(String username, UUID tenantId);
     boolean existsByUsername(String username);
 
-    java.util.List<AppUser> findAllByEnabledTrueOrderByFullNameAsc();
+    java.util.List<AppUser> findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(UUID tenantId);
     long countByTenantId(UUID tenantId);
 
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})

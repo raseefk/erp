@@ -97,7 +97,12 @@ public class BillingService {
     public BigDecimal monthlyIncome() {
         LocalDateTime from = LocalDateTime.now().withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
         LocalDateTime to   = LocalDateTime.now();
-        return txRepo.sumGrandTotalByStatusAndDateRange(TransactionStatus.FINAL_BILL, from, to);
+        // Returning actual amount collected this month
+        return txRepo.sumPaidByStatusAndDateRange(TransactionStatus.FINAL_BILL, from, to);
+    }
+
+    public BigDecimal totalIncome() {
+        return txRepo.sumTotalPaidByStatus(TransactionStatus.FINAL_BILL);
     }
 
     // ── Core builder ──────────────────────────────────────────────────────────

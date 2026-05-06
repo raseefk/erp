@@ -19,6 +19,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/projects")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("PROJECTS")
 public class ProjectController {
 
     private final ProjectService       projectService;

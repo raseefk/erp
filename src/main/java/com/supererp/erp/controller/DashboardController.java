@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.time.LocalDate;
 
 @Controller @RequestMapping("/admin") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SYSTEM")
 public class DashboardController {
 
     private final EnquiryService    enquiryService;
@@ -40,6 +41,7 @@ public class DashboardController {
         m.addAttribute("totalBills",       billingService.count(TransactionStatus.FINAL_BILL));
         m.addAttribute("pendingPayments",  billingService.countPayment(PaymentStatus.PENDING));
         m.addAttribute("monthlyIncome",    billingService.monthlyIncome());
+        m.addAttribute("totalIncome",      billingService.totalIncome());
         m.addAttribute("pendingApprovals", approvalService.countPending());
 
         // Low stock alert (< 10 units)

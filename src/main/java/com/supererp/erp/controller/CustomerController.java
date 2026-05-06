@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller @RequestMapping("/admin/customers") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SALES")
 public class CustomerController {
 
     private final CustomerService service;

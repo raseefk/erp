@@ -16,6 +16,7 @@ import java.time.LocalDate;
 @Controller
 @RequestMapping("/admin/salaries")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("HR")
 public class SalaryController {
 
     private final SalaryService  salaryService;

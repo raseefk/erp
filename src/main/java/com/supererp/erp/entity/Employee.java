@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @Entity @Table(name = "employees")
 @Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public class Employee extends TenantAwareEntity {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -43,6 +44,27 @@ public class Employee extends TenantAwareEntity {
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
     private LocalDate joiningDate;
+
+    @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+    private LocalDate dob;
+
+    @Column(length = 500)
+    private String address;
+
+    @Column(length = 20)
+    private String aadhaarNumber;
+
+    @Column(length = 20)
+    private String panNumber;
+
+    @Column(length = 100)
+    private String bankName;
+
+    @Column(length = 50)
+    private String accountNumber;
+
+    @Column(length = 20)
+    private String ifscCode;
 
     @Column(nullable = false)
     @Builder.Default

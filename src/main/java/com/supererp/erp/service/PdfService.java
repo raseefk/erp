@@ -20,7 +20,7 @@ import java.time.format.DateTimeFormatter;
 @Slf4j
 public class PdfService {
 
-    private final CompanyProperties co;
+    private final com.supererp.erp.service.CompanySettingsService settingsService;
 
     // Colours
     private static final BaseColor NAVY = new BaseColor(15, 35, 56);
@@ -45,13 +45,14 @@ public class PdfService {
 
     public byte[] generate(Transaction tx) {
         try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
             PdfWriter writer = PdfWriter.getInstance(doc, out);
-            writer.setPageEvent(new PageFooter(co));
+            writer.setPageEvent(new PageFooter(settings));
             doc.open();
 
-            header(doc, tx);
+            header(doc, tx, settings);
             infoRow(doc, tx);
             doc.add(Chunk.NEWLINE);
             itemsTable(doc, tx);
@@ -72,7 +73,7 @@ public class PdfService {
     }
 
     // ── Header ──────────────────────────────────────────────────────────────
-    private void header(Document doc, Transaction tx) throws DocumentException {
+    private void header(Document doc, Transaction tx, com.supererp.erp.entity.CompanySettings settings) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100);
         t.setWidths(new float[] { 3.8f, 1.6f });
@@ -86,11 +87,14 @@ public class PdfService {
         left.setPaddingBottom(15);
         left.setPaddingTop(2);
 
-        left.addElement(p(co.getName(), f(22, Font.BOLD, BaseColor.WHITE)));
-        left.addElement(p(co.getTagline(), f(9, Font.NORMAL, BaseColor.WHITE)));
-        left.addElement(p(co.getAddress(), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
-        left.addElement(p(co.getPhone() + "  |  " + co.getEmail(), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
-        left.addElement(p("GSTIN: " + co.getGstNumber(), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
+        left.addElement(p(settings.getCompanyName(), f(22, Font.BOLD, BaseColor.WHITE)));
+        if (settings.getTagline() != null && !settings.getTagline().isBlank()) {
+            left.addElement(p(settings.getTagline(), f(9, Font.NORMAL, BaseColor.WHITE)));
+        }
+        
+        left.addElement(p(settings.getAddress() != null ? settings.getAddress() : "", f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
+        left.addElement(p((settings.getPhone() != null ? settings.getPhone() : "") + "  |  " + (settings.getEmail() != null ? settings.getEmail() : ""), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
+        left.addElement(p("GSTIN: " + (settings.getTaxNumber() != null ? settings.getTaxNumber() : ""), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
 
         t.addCell(left);
 
@@ -397,10 +401,10 @@ public class PdfService {
 
     // ── Page footer ──────────────────────────────────────────────────────────
     static class PageFooter extends PdfPageEventHelper {
-        private final CompanyProperties co;
+        private final com.supererp.erp.entity.CompanySettings settings;
 
-        PageFooter(CompanyProperties co) {
-            this.co = co;
+        PageFooter(com.supererp.erp.entity.CompanySettings settings) {
+            this.settings = settings;
         }
 
         @Override
@@ -416,7 +420,7 @@ public class PdfService {
                 cb.beginText();
                 cb.setFontAndSize(bf, 7.5f);
                 cb.setColorFill(new BaseColor(120, 140, 160));
-                cb.showTextAligned(Element.ALIGN_LEFT, co.getName() + " | " + co.getPhone(), 36, 30, 0);
+                cb.showTextAligned(Element.ALIGN_LEFT, settings.getCompanyName() + " | " + (settings.getPhone() != null ? settings.getPhone() : ""), 36, 30, 0);
                 cb.showTextAligned(Element.ALIGN_RIGHT, "Page " + w.getPageNumber() + " | Thank you for your business!",
                         559, 30, 0);
                 cb.endText();

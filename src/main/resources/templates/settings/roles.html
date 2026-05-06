@@ -51,8 +51,8 @@
                                        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_ROLES_MANAGE')">
                                         <i class="bi bi-shield-lock"></i> Permissions
                                     </a>
-                                    <button th:if="${!role.system}" class="btn btn-sm btn-outline-danger"
-                                            th:onclick="'deleteRole(' + ${role.id} + ', \'' + ${role.name} + '\')'"
+                                    <button th:if="${!role.system}" class="btn btn-sm btn-outline-danger btn-delete-role"
+                                            th:data-id="${role.id}" th:data-name="${role.name}"
                                             sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SETTINGS_ROLES_MANAGE')">
                                         <i class="bi bi-trash"></i>
                                     </button>
@@ -104,13 +104,17 @@
 </div>
 <div th:replace="~{fragments/layout :: scripts}"></div>
 <script>
-    function deleteRole(id, name) {
-        if (confirm('Are you sure you want to delete the role "' + name + '"? This will unassign it from all users.')) {
-            const form = document.getElementById('deleteRoleForm');
-            form.action = '/settings/roles/' + id + '/delete';
-            form.submit();
-        }
-    }
+    document.querySelectorAll('.btn-delete-role').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.getAttribute('data-id');
+            const name = this.getAttribute('data-name');
+            if (confirm('Are you sure you want to delete the role "' + name + '"? This will unassign it from all users.')) {
+                const form = document.getElementById('deleteRoleForm');
+                form.action = '/settings/roles/' + id + '/delete';
+                form.submit();
+            }
+        });
+    });
 </script>
 </body>
 </html>

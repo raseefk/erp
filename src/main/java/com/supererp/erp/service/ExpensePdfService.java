@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class ExpensePdfService {
 
-    private final CompanyProperties co;
+    private final com.supererp.erp.service.CompanySettingsService settingsService;
 
     // ── Colours ───────────────────────────────────────────────────────────────
     private static final BaseColor NAVY = new BaseColor(15, 35, 56);
@@ -59,14 +59,15 @@ public class ExpensePdfService {
     public byte[] generate(List<Expense> expenses, LocalDate from, LocalDate to,
             ExpenseCategory filterCategory) {
         try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
             Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
             PdfWriter writer = PdfWriter.getInstance(doc, out);
-            writer.setPageEvent(new PageFooter(co));
+            writer.setPageEvent(new PageFooter(settings));
             doc.open();
 
             // ── Document Header ───────────────────────────────────────────────
-            addDocHeader(doc, from, to, filterCategory);
+            addDocHeader(doc, from, to, filterCategory, settings);
 
             // ── Summary row (totals per category) ────────────────────────────
             addSummaryTable(doc, expenses, filterCategory);
@@ -93,7 +94,7 @@ public class ExpensePdfService {
 
     // ── Top header with company info + report title ───────────────────────────
     private void addDocHeader(Document doc, LocalDate from, LocalDate to,
-            ExpenseCategory filterCat) throws DocumentException {
+            ExpenseCategory filterCat, com.supererp.erp.entity.CompanySettings settings) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100);
         t.setWidths(new float[] { 3f, 1.6f });
@@ -108,12 +109,14 @@ public class ExpensePdfService {
         left.setPaddingBottom(14);
         left.setPaddingTop(2);
 
-        left.addElement(new Paragraph(co.getName(), f(22, Font.BOLD, BaseColor.WHITE)));
-        left.addElement(new Paragraph(co.getTagline(), f(9, Font.NORMAL, BaseColor.WHITE)));
-        left.addElement(new Paragraph(co.getAddress(), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
-        left.addElement(new Paragraph(co.getPhone() + "  |  " + co.getEmail(),
+        left.addElement(new Paragraph(settings.getCompanyName(), f(22, Font.BOLD, BaseColor.WHITE)));
+        if (settings.getTagline() != null && !settings.getTagline().isBlank()) {
+            left.addElement(new Paragraph(settings.getTagline(), f(9, Font.NORMAL, BaseColor.WHITE)));
+        }
+        left.addElement(new Paragraph(settings.getAddress() != null ? settings.getAddress() : "", f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
+        left.addElement(new Paragraph((settings.getPhone() != null ? settings.getPhone() : "") + "  |  " + (settings.getEmail() != null ? settings.getEmail() : ""),
                 f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
-        left.addElement(new Paragraph("GSTIN: " + co.getGstNumber(), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
+        left.addElement(new Paragraph("GSTIN: " + (settings.getTaxNumber() != null ? settings.getTaxNumber() : ""), f(8, Font.NORMAL, new BaseColor(170, 195, 225))));
 
         t.addCell(left);
 
@@ -355,10 +358,10 @@ public class ExpensePdfService {
     // ── Page footer ───────────────────────────────────────────────────────────
     static class PageFooter extends PdfPageEventHelper {
 
-        private CompanyProperties co;
+        private final com.supererp.erp.entity.CompanySettings settings;
 
-        PageFooter(CompanyProperties co) {
-            this.co = co;
+        PageFooter(com.supererp.erp.entity.CompanySettings settings) {
+            this.settings = settings;
         }
 
         @Override
@@ -375,7 +378,7 @@ public class ExpensePdfService {
                 cb.setFontAndSize(bf, 7.5f);
                 cb.setColorFill(new BaseColor(120, 140, 160));
                 cb.showTextAligned(Element.ALIGN_LEFT,
-                        co.getName() + " | " + co.getPhone(), 36, 30, 0);
+                        settings.getCompanyName() + " | " + (settings.getPhone() != null ? settings.getPhone() : ""), 36, 30, 0);
                 cb.showTextAligned(Element.ALIGN_RIGHT,
                         "Page " + w.getPageNumber() + " | Confidential — Internal Use Only", 559, 30, 0);
                 cb.endText();

@@ -4,6 +4,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import com.supererp.erp.security.SecurityUser;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -70,6 +71,18 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
                     },
                     () -> log.warn("Unknown or inactive tenant slug: {}", slug)
                 );
+            } else {
+                // Fallback: Resolve from SecurityContext if authenticated (useful for localhost/dev)
+                org.springframework.security.core.Authentication auth = 
+                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+                
+                if (auth != null && auth.getPrincipal() instanceof SecurityUser) {
+                    SecurityUser user = (SecurityUser) auth.getPrincipal();
+                    if (user.getTenantId() != null) {
+                        TenantContext.setTenantId(user.getTenantId());
+                        log.debug("Tenant resolved from SecurityContext: {}", user.getTenantId());
+                    }
+                }
             }
             filterChain.doFilter(request, response);
         } finally {
@@ -79,11 +92,19 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
 
     private String resolveSlug(HttpServletRequest request) {
         // 1. Try subdomain
-        String host = request.getServerName(); // e.g., acme.erp.com
-        if (host != null && host.endsWith("." + tenantDomain)) {
-            String subdomain = host.substring(0, host.length() - tenantDomain.length() - 1);
-            if (!subdomain.isEmpty() && !subdomain.equals("www")) {
-                return subdomain.toLowerCase();
+        String host = request.getServerName(); // e.g., acme.erp.com or acme.localhost
+        if (host != null) {
+            if (host.endsWith("." + tenantDomain)) {
+                String subdomain = host.substring(0, host.length() - tenantDomain.length() - 1);
+                if (!subdomain.isEmpty() && !subdomain.equals("www")) {
+                    return subdomain.toLowerCase();
+                }
+            } else if (host.contains(".") && (host.endsWith(".localhost") || host.contains(".127.0.0.1"))) {
+                // Local development support (e.g., acme.localhost)
+                String subdomain = host.substring(0, host.indexOf("."));
+                if (!subdomain.isEmpty() && !subdomain.equals("www")) {
+                    return subdomain.toLowerCase();
+                }
             }
         }
         // 2. Fallback: X-Tenant-ID header (dev/internal)

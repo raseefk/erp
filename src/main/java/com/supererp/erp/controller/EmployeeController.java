@@ -15,6 +15,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Controller @RequestMapping("/admin/employees") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("HR")
 public class EmployeeController {
 
     private final EmployeeService service;
@@ -39,7 +40,7 @@ public class EmployeeController {
     @GetMapping("/new")
     public String newForm(Model m) {
         m.addAttribute("employee", new Employee());
-        m.addAttribute("users", userRepo.findAllByEnabledTrueOrderByFullNameAsc());
+        m.addAttribute("users", userRepo.findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(com.supererp.erp.tenant.TenantContext.getTenantId()));
         m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.tenant.TenantContext.getTenantId()));
         return "employee/form";
     }
@@ -47,12 +48,13 @@ public class EmployeeController {
     @GetMapping("/{id}/edit")
     public String edit(@PathVariable Long id, Model m) {
         m.addAttribute("employee", service.getById(id));
-        m.addAttribute("users", userRepo.findAllByEnabledTrueOrderByFullNameAsc());
+        m.addAttribute("users", userRepo.findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(com.supererp.erp.tenant.TenantContext.getTenantId()));
         m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.tenant.TenantContext.getTenantId()));
         return "employee/form";
     }
 
     @PostMapping("/save")
+    @org.springframework.transaction.annotation.Transactional
     public String save(@ModelAttribute Employee emp, 
                        @RequestParam(required = false) Long userId,
                        @RequestParam(required = false) Boolean createUser,

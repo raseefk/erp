@@ -14,6 +14,8 @@ import java.util.UUID;
 @Table(name = "roles",
     uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "name"}))
 @Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
+@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
+@EqualsAndHashCode(callSuper = true, exclude = {"permissions"})
 public class AppRole extends TenantAwareEntity {
 
     @Id

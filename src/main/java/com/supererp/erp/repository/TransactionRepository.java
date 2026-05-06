@@ -33,6 +33,12 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT COALESCE(SUM(t.grandTotal),0) FROM Transaction t WHERE t.status=:s AND t.createdAt BETWEEN :from AND :to")
     BigDecimal sumGrandTotalByStatusAndDateRange(@Param("s") TransactionStatus s, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
 
+    @Query("SELECT COALESCE(SUM(t.amountPaid),0) FROM Transaction t WHERE t.status=:s")
+    BigDecimal sumTotalPaidByStatus(@Param("s") TransactionStatus s);
+
+    @Query("SELECT COALESCE(SUM(t.amountPaid),0) FROM Transaction t WHERE t.status=:s AND t.createdAt BETWEEN :from AND :to")
+    BigDecimal sumPaidByStatusAndDateRange(@Param("s") TransactionStatus s, @Param("from") LocalDateTime from, @Param("to") LocalDateTime to);
+
     @Query("SELECT MAX(t.quotationNumber) FROM Transaction t WHERE t.quotationNumber LIKE CONCAT(:prefix, '%')")
     String findMaxQuotationNumber(@Param("prefix") String prefix);
 

@@ -17,6 +17,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 
 @Controller @RequestMapping("/admin/billing") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("SALES")
 public class BillingController {
 
     private final BillingService    billingService;

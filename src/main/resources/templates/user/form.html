@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org"
       xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head th:insert="~{fragments/layout :: head('Create User')}"></head>
+<head th:insert="~{fragments/layout :: head(${user.id == null ? 'Create User' : 'Edit User'})}"></head>
 <body>
 <th:block th:insert="~{fragments/layout :: sidebar('users')}"></th:block>
 <div id="main">
-  <th:block th:insert="~{fragments/layout :: topbar('Create New User')}"></th:block>
+  <th:block th:insert="~{fragments/layout :: topbar(${user.id == null ? 'Create New User' : 'Edit User: ' + user.fullName})}"></th:block>
   <div class="pb">
     <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
 
@@ -16,9 +16,11 @@
     <div class="row g-3">
       <div class="col-md-6">
         <div class="card card-levanto">
-          <div class="card-header"><i class="bi bi-person-plus me-2"></i>User Details</div>
+          <div class="card-header"><i class="bi" th:classappend="${user.id == null ? 'bi-person-plus' : 'bi-pencil'}"></i> 
+            <span th:text="${user.id == null ? 'User Details' : 'Edit User Details'}"></span>
+          </div>
           <div class="card-body">
-            <form th:action="@{/admin/users}" th:object="${user}" method="post">
+            <form th:action="${user.id == null ? '/admin/users' : '/admin/users/' + user.id}" th:object="${user}" method="post">
               
               <div class="mb-3">
                 <label class="form-label fw-bold">Full Name <span class="text-danger">*</span></label>
@@ -26,26 +28,36 @@
               </div>
 
               <div class="mb-3">
-                <label class="form-label fw-bold">Username <span class="text-danger">*</span></label>
-                <input type="text" th:field="*{username}" class="form-control" required placeholder="johndoe">
-                <div class="form-text">Must be unique.</div>
+                <label class="form-label fw-bold">Email Address</label>
+                <input type="email" th:field="*{email}" class="form-control" placeholder="john@example.com">
               </div>
 
               <div class="mb-3">
-                <label class="form-label fw-bold">Initial Password <span class="text-danger">*</span></label>
-                <input type="password" th:field="*{password}" class="form-control" required minlength="6">
+                <label class="form-label fw-bold">Username <span class="text-danger">*</span></label>
+                <input type="text" th:field="*{username}" class="form-control" required placeholder="johndoe" th:readonly="${user.id != null}">
+                <div class="form-text" th:if="${user.id == null}">Must be unique.</div>
+                <div class="form-text" th:if="${user.id != null}">Username cannot be changed.</div>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label fw-bold" th:text="${user.id == null ? 'Initial Password *' : 'Change Password (Leave blank to keep current)'}"></label>
+                <input type="password" name="newPassword" class="form-control" th:required="${user.id == null}" minlength="6">
                 <div class="form-text">Must be at least 6 characters.</div>
               </div>
 
               <div class="mb-4">
                 <label class="form-label fw-bold">Role <span class="text-danger">*</span></label>
                 <select name="roleId" class="form-select" required>
-                  <option value="" disabled selected>Select a role...</option>
-                  <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.name}"></option>
+                  <option value="" disabled th:selected="${user.id == null}">Select a role...</option>
+                  <option th:each="r : ${roles}" th:value="${r.id}" th:text="${r.name}" 
+                          th:selected="${user.roles != null and #lists.contains(user.roles.![id], r.id)}"></option>
                 </select>
               </div>
 
-              <button type="submit" class="btn btn-navy"><i class="bi bi-check-circle me-1"></i>Create User</button>
+              <button type="submit" class="btn btn-navy">
+                <i class="bi bi-check-circle me-1"></i>
+                <span th:text="${user.id == null ? 'Create User' : 'Update User'}"></span>
+              </button>
             </form>
           </div>
         </div>

@@ -30,12 +30,13 @@ public class CustomUserDetailsService implements UserDetailsService {
         // 1. If no tenant context, try loading as a System Admin
         if (tenantId == null) {
             return systemUserRepo.findByUsernameAndEnabledTrue(username)
-                .map(sysUser -> new org.springframework.security.core.userdetails.User(
+                .map(sysUser -> new SecurityUser(
                     sysUser.getUsername(),
                     sysUser.getPassword(),
                     sysUser.isEnabled(),
-                    true, true, true,
-                    List.of(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"))
+                    List.of(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN")),
+                    null,
+                    true
                 ))
                 .orElseThrow(() -> new UsernameNotFoundException("System admin not found: " + username));
         }
@@ -52,9 +53,12 @@ public class CustomUserDetailsService implements UserDetailsService {
             .map(p -> new SimpleGrantedAuthority("PERM_" + p))
             .collect(Collectors.toList());
 
-        return new org.springframework.security.core.userdetails.User(
+        // Add role names as authorities too
+        user.getRoles().forEach(r -> authorities.add(new SimpleGrantedAuthority(r.getName())));
+
+        return new SecurityUser(
             user.getUsername(), user.getPassword(), user.isEnabled(),
-            true, true, true, authorities);
+            authorities, user.getTenantId(), false);
     }
 
     @Transactional(readOnly = true)

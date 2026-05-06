@@ -12,11 +12,12 @@ public class CompanySettingsService {
 
     private final CompanySettingsRepository repository;
 
+    @Transactional(propagation = org.springframework.transaction.annotation.Propagation.REQUIRES_NEW)
     public CompanySettings getSettings() {
         return repository.findAll().stream().findFirst().orElseGet(() -> {
             CompanySettings defaultSettings = CompanySettings.builder()
                     .tenantId(com.supererp.erp.tenant.TenantContext.getTenantId())
-                    .companyName("Levanto Flooring")
+                    .companyName("New Organization")
                     .defaultSickLeavesPerYear(10)
                     .defaultCasualLeavesPerYear(10)
                     .build();
@@ -28,6 +29,7 @@ public class CompanySettingsService {
     public CompanySettings updateSettings(CompanySettings settings) {
         CompanySettings existing = getSettings();
         existing.setCompanyName(settings.getCompanyName());
+        existing.setTagline(settings.getTagline());
         existing.setAddress(settings.getAddress());
         existing.setPhone(settings.getPhone());
         existing.setEmail(settings.getEmail());

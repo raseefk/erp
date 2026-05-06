@@ -24,6 +24,7 @@ import java.time.LocalDate;
 @Controller
 @RequestMapping("/admin/finance")
 @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("FINANCE")
 public class FinanceController {
 
     private final ProfitLossService  plService;

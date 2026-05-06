@@ -88,4 +88,29 @@ public class UserController {
         }
         return "redirect:/admin/users";
     }
+
+    @GetMapping("/users/{id}/edit")
+    public String editUserForm(@PathVariable Long id, Model model) {
+        AppUser user = userService.getById(id);
+        model.addAttribute("user", user);
+        model.addAttribute("roles", rbacService.getRolesForCurrentTenant());
+        return "user/form";
+    }
+
+    @PostMapping("/users/{id}")
+    @org.springframework.transaction.annotation.Transactional
+    public String updateUser(@PathVariable Long id, 
+                             @ModelAttribute AppUser userDetails,
+                             @RequestParam(required = false) Long roleId,
+                             @RequestParam(required = false) String newPassword,
+                             RedirectAttributes ra) {
+        try {
+            userService.updateUser(id, userDetails, roleId, newPassword);
+            ra.addFlashAttribute("success", "User updated successfully.");
+            return "redirect:/admin/users";
+        } catch (Exception e) {
+            ra.addFlashAttribute("error", "Error updating user: " + e.getMessage());
+            return "redirect:/admin/users/" + id + "/edit";
+        }
+    }
 }

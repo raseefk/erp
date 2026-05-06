@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 
 @Controller @RequestMapping("/admin/inventory") @RequiredArgsConstructor
+@com.supererp.erp.rbac.annotation.RequiresFeature("OPERATIONS")
 public class InventoryController {
 
     private final InventoryService service;

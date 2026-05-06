@@ -16,6 +16,7 @@ public class UserService {
     private final AppUserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final com.supererp.erp.tenant.TenantService tenantService;
+    private final com.supererp.erp.rbac.service.RbacService rbacService;
 
     public List<AppUser> getAllUsers() {
         java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
@@ -72,6 +73,29 @@ public class UserService {
     public void toggleStatus(Long id) {
         AppUser user = getById(id);
         user.setEnabled(!user.isEnabled());
+        userRepository.save(user);
+    }
+
+    @Transactional
+    public void updateUser(Long id, AppUser details, Long roleId, String newPassword) {
+        AppUser user = getById(id);
+        
+        user.setFullName(details.getFullName());
+        user.setEmail(details.getEmail());
+        
+        if (newPassword != null && !newPassword.isBlank()) {
+            if (newPassword.trim().length() < 6) {
+                throw new IllegalArgumentException("New password must be at least 6 characters long");
+            }
+            user.setPassword(passwordEncoder.encode(newPassword));
+        }
+
+        if (roleId != null) {
+            // Update role if changed
+            user.getRoles().clear();
+            rbacService.getRole(roleId).ifPresent(role -> user.getRoles().add(role));
+        }
+        
         userRepository.save(user);
     }
 }
