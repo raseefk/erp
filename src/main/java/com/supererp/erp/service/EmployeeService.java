@@ -62,6 +62,10 @@ public class EmployeeService {
 
     @Transactional
     public void delete(Long id) { empRepo.deleteById(id); }
+ 
+    public Employee getByUsername(String username) {
+        return empRepo.findByAppUserUsername(username).orElse(null);
+    }
 
 
 }

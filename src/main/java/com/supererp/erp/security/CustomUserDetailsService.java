@@ -62,9 +62,11 @@ public class CustomUserDetailsService implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority(roleName));
         });
 
+        boolean hasSystemRole = user.getRoles().stream().anyMatch(com.supererp.erp.rbac.entity.AppRole::isSystem);
+ 
         return new SecurityUser(
             user.getUsername(), user.getPassword(), user.isEnabled(),
-            authorities, user.getTenantId(), false);
+            authorities, user.getTenantId(), hasSystemRole);
     }
 
     @Transactional(readOnly = true)

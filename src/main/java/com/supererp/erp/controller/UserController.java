@@ -66,8 +66,10 @@ public class UserController {
     @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String createUser(@ModelAttribute AppUser user, 
                              @RequestParam Long roleId,
+                             @RequestParam String newPassword,
                              RedirectAttributes ra) {
         try {
+            user.setPassword(newPassword);
             if (user.getRoles() == null) user.setRoles(new java.util.HashSet<>());
             rbacService.getRoleWithPermissions(roleId).ifPresent(role -> {
                 user.getRoles().add(role);

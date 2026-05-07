@@ -88,7 +88,25 @@ public class SecurityConfig {
             )
             .logout(l -> l
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
-                .logoutSuccessUrl("/login?logout=true")
+                .logoutSuccessHandler((request, response, authentication) -> {
+                    boolean isSystem = false;
+                    if (authentication != null) {
+                        isSystem = authentication.getAuthorities().stream()
+                            .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
+                    } else {
+                        // Fallback check based on referer if authentication is already gone
+                        String referer = request.getHeader("Referer");
+                        if (referer != null && referer.contains("/system/")) {
+                            isSystem = true;
+                        }
+                    }
+                    
+                    if (isSystem) {
+                        response.sendRedirect("/system/login?logout=true");
+                    } else {
+                        response.sendRedirect("/login?logout=true");
+                    }
+                })
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID", "erp_token")
                 .permitAll()

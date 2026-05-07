@@ -18,5 +18,8 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
 
     java.util.List<Employee> findByActiveTrueOrderByNameAsc();
     java.util.Optional<Employee> findTopByOrderByIdDesc();
+ 
+    @org.springframework.data.jpa.repository.Query("SELECT e FROM Employee e JOIN e.appUser u WHERE u.username = :username")
+    java.util.Optional<Employee> findByAppUserUsername(@org.springframework.data.repository.query.Param("username") String username);
 }
 

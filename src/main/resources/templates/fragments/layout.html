@@ -152,13 +152,14 @@
     <!-- ── PROJECTS ──────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('PROJECTS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW', 'PERM_PROJ_DAILYLOG_VIEW', 'PERM_PROJ_EXPENSES_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseProjects"
         th:attr="aria-expanded=${#lists.contains({'projects','sitelogs','approval'}, activePage) ? 'true' : 'false'}">
       <span>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseProjects"
          th:classappend="${#lists.contains({'projects','sitelogs','approval'}, activePage)} ? 'show' : ''">
-      <li th:if="${@rbacService.isMenuEnabled('MENU_PROJECTS')}">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PROJECTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW')">
         <a th:href="@{/admin/projects}" th:classappend="${activePage=='projects'}?' active':''">
           <i class="bi bi-folder-open"></i><span>Projects</span>
         </a>

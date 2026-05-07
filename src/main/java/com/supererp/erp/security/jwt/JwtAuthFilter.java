@@ -114,8 +114,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                 authorities.add(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"));
             }
 
+            boolean isSystem = claims.get("isSystem", Boolean.class) != null && claims.get("isSystem", Boolean.class);
+ 
             JwtAuthToken auth = new JwtAuthToken(username, userId,
-                jwtTenantId, authorities, token);
+                jwtTenantId, authorities, token, isSystem);
             SecurityContextHolder.getContext().setAuthentication(auth);
 
             // ── 4. Populate TenantContext (Critical for RLS/Filters) ───────

@@ -38,16 +38,29 @@ public class HrController {
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Long employeeId,
             Model model) {
-        
+
         LocalDate today = LocalDate.now();
         int targetYear = (year != null) ? year : today.getYear();
         int targetMonth = (month != null) ? month : today.getMonthValue();
+
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isPrivileged = isSystemUser(auth) || auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
-        List<Employee> employees = employeeService.getActive();
-        Long targetEmployeeId = (employeeId != null) ? employeeId : (!employees.isEmpty() ? employees.get(0).getId() : null);
+        List<Employee> employees;
+        if (isPrivileged) {
+            employees = employeeService.getActive();
+        } else {
+            Employee mappedEmployee = employeeService.getByUsername(auth.getName());
+            employees = (mappedEmployee != null) ? List.of(mappedEmployee) : List.of();
+        }
+
+        Long targetEmployeeId = (employeeId != null) ? employeeId
+                : (!employees.isEmpty() ? employees.get(0).getId() : null);
 
         if (targetEmployeeId != null) {
-            List<com.supererp.erp.dto.CalendarDayDto> calendar = hrService.getAttendanceCalendar(targetEmployeeId, targetYear, targetMonth);
+            List<com.supererp.erp.dto.CalendarDayDto> calendar = hrService.getAttendanceCalendar(targetEmployeeId,
+                    targetYear, targetMonth);
             model.addAttribute("calendar", calendar);
             if (!calendar.isEmpty()) {
                 model.addAttribute("startOffset", calendar.get(0).getDate().getDayOfWeek().getValue() - 1);
@@ -70,10 +83,13 @@ public class HrController {
                         totalWorkingDays++;
                         if (day.isLeave()) {
                             totalLeaves++;
-                        } else if (day.getAttendance() != null && 
-                                  (day.getAttendance().getClockInTime() != null || 
-                                   day.getAttendance().getStatus() == com.supererp.erp.entity.Attendance.AttendanceStatus.PRESENT || 
-                                   day.getAttendance().getStatus() == com.supererp.erp.entity.Attendance.AttendanceStatus.HALF_DAY)) {
+                        } else if (day.getAttendance() != null &&
+                                (day.getAttendance().getClockInTime() != null ||
+                                        day.getAttendance()
+                                                .getStatus() == com.supererp.erp.entity.Attendance.AttendanceStatus.PRESENT
+                                        ||
+                                        day.getAttendance()
+                                                .getStatus() == com.supererp.erp.entity.Attendance.AttendanceStatus.HALF_DAY)) {
                             totalPresent++;
                         }
                     }
@@ -92,7 +108,7 @@ public class HrController {
         model.addAttribute("selectedEmployeeId", targetEmployeeId);
         model.addAttribute("years", java.util.Arrays.asList(targetYear - 1, targetYear, targetYear + 1));
         model.addAttribute("months", java.time.Month.values());
-        
+
         return "hr/attendance-ledger";
     }
 
@@ -104,20 +120,36 @@ public class HrController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             Model model) {
-        
-        if (year == null) year = LocalDate.now().getYear();
-        if (month == null) month = LocalDate.now().getMonthValue();
 
-        org.springframework.data.domain.Page<com.supererp.erp.dto.AttendanceReportDto> attendancesPage = hrService.getAttendanceReportPaginated(year, month, employeeId, page, size);
+        if (year == null)
+            year = LocalDate.now().getYear();
+        if (month == null)
+            month = LocalDate.now().getMonthValue();
+
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isPrivileged = isSystemUser(auth) || auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
         
+        List<Employee> employees;
+        org.springframework.data.domain.Page<com.supererp.erp.dto.AttendanceReportDto> attendancesPage;
+        if (isPrivileged) {
+            employees = employeeService.getAll();
+            attendancesPage = hrService.getAttendanceReportPaginated(year, month, employeeId, page, size);
+        } else {
+            Employee mappedEmployee = employeeService.getByUsername(auth.getName());
+            employees = (mappedEmployee != null) ? List.of(mappedEmployee) : List.of();
+            employeeId = (mappedEmployee != null) ? mappedEmployee.getId() : -1L;
+            attendancesPage = hrService.getAttendanceReportPaginated(year, month, employeeId, page, size);
+        }
+
         model.addAttribute("attendancesPage", attendancesPage);
         model.addAttribute("attendances", attendancesPage.getContent());
-        model.addAttribute("employees", employeeService.getAll());
+        model.addAttribute("employees", employees);
         model.addAttribute("selectedYear", year);
         model.addAttribute("selectedMonth", month);
         model.addAttribute("selectedEmployeeId", employeeId);
         model.addAttribute("currentPage", page);
-        
+
         return "hr/attendance-report";
     }
 
@@ -126,11 +158,23 @@ public class HrController {
             @RequestParam(required = false) Integer year,
             @RequestParam(required = false) Integer month,
             @RequestParam(required = false) Long employeeId) {
-        
-        if (year == null) year = LocalDate.now().getYear();
-        if (month == null) month = LocalDate.now().getMonthValue();
 
-        List<com.supererp.erp.dto.AttendanceReportDto> attendances = hrService.getAttendanceReport(year, month, employeeId);
+        if (year == null)
+            year = LocalDate.now().getYear();
+        if (month == null)
+            month = LocalDate.now().getMonthValue();
+
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        boolean isPrivileged = isSystemUser(auth) || auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        
+        if (!isPrivileged) {
+            Employee mappedEmployee = employeeService.getByUsername(auth.getName());
+            employeeId = (mappedEmployee != null) ? mappedEmployee.getId() : -1L;
+        }
+
+        List<com.supererp.erp.dto.AttendanceReportDto> attendances = hrService.getAttendanceReport(year, month,
+                employeeId);
         String employeeName = null;
         if (employeeId != null) {
             try {
@@ -140,15 +184,15 @@ public class HrController {
                 // Ignore
             }
         }
-        
+
         byte[] pdf = attendancePdfService.generate(attendances, year, month, employeeName);
-        
+
         String name = "Attendance_Report_" + String.format("%02d", month) + "_" + year + ".pdf";
 
         return ResponseEntity.ok()
-            .contentType(MediaType.APPLICATION_PDF)
-            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
-            .body(pdf);
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + name + "\"")
+                .body(pdf);
     }
 
     @PostMapping("/attendance/clock-in")
@@ -162,7 +206,8 @@ public class HrController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/hr/attendance?year=" + date.getYear() + "&month=" + date.getMonthValue() + "&employeeId=" + employeeId;
+        return "redirect:/hr/attendance?year=" + date.getYear() + "&month=" + date.getMonthValue() + "&employeeId="
+                + employeeId;
     }
 
     @PostMapping("/attendance/clock-out")
@@ -176,7 +221,8 @@ public class HrController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/hr/attendance?year=" + date.getYear() + "&month=" + date.getMonthValue() + "&employeeId=" + employeeId;
+        return "redirect:/hr/attendance?year=" + date.getYear() + "&month=" + date.getMonthValue() + "&employeeId="
+                + employeeId;
     }
 
     @PostMapping("/attendance/manual-correction")
@@ -187,7 +233,7 @@ public class HrController {
             @RequestParam Attendance.AttendanceStatus status,
             @RequestParam(required = false) String adminNotes,
             RedirectAttributes redirectAttributes) {
-        
+
         try {
             hrService.manualCorrection(attendanceId, clockInTime, clockOutTime, status, adminNotes);
             redirectAttributes.addFlashAttribute("successMessage", "Attendance manually corrected.");
@@ -197,8 +243,6 @@ public class HrController {
         return "redirect:/hr/attendance";
     }
 
-
-
     // --- Leave Management ---
 
     @GetMapping("/leaves")
@@ -206,7 +250,8 @@ public class HrController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,
             Model model) {
-        org.springframework.data.domain.Page<LeaveApplication> leavePage = hrService.getAllLeaveApplicationsPaginated(page, size);
+        org.springframework.data.domain.Page<LeaveApplication> leavePage = hrService
+                .getAllLeaveApplicationsPaginated(page, size);
         model.addAttribute("leavePage", leavePage);
         model.addAttribute("leaveApplications", leavePage.getContent());
         model.addAttribute("employees", employeeService.getAll());
@@ -222,15 +267,14 @@ public class HrController {
             int year = LocalDate.now().getYear();
             com.supererp.erp.entity.LeaveBalance balance = hrService.getOrCreateLeaveBalance(employeeId, year);
             return org.springframework.http.ResponseEntity.ok(
-                com.supererp.erp.dto.LeaveBalanceDto.builder()
-                    .allocatedSickLeaves(balance.getAllocatedSickLeaves())
-                    .usedSickLeaves(balance.getUsedSickLeaves())
-                    .remainingSickLeaves(balance.getRemainingSickLeaves())
-                    .allocatedCasualLeaves(balance.getAllocatedCasualLeaves())
-                    .usedCasualLeaves(balance.getUsedCasualLeaves())
-                    .remainingCasualLeaves(balance.getRemainingCasualLeaves())
-                    .build()
-            );
+                    com.supererp.erp.dto.LeaveBalanceDto.builder()
+                            .allocatedSickLeaves(balance.getAllocatedSickLeaves())
+                            .usedSickLeaves(balance.getUsedSickLeaves())
+                            .remainingSickLeaves(balance.getRemainingSickLeaves())
+                            .allocatedCasualLeaves(balance.getAllocatedCasualLeaves())
+                            .usedCasualLeaves(balance.getUsedCasualLeaves())
+                            .remainingCasualLeaves(balance.getRemainingCasualLeaves())
+                            .build());
         } catch (Exception e) {
             return org.springframework.http.ResponseEntity.badRequest().body("Error fetching balance.");
         }
@@ -245,7 +289,8 @@ public class HrController {
             hrService.applyForLeave(employeeId, application);
             redirectAttributes.addFlashAttribute("success", "Leave application submitted successfully.");
         } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("error", e.getMessage() != null ? e.getMessage() : "Error submitting leave application.");
+            redirectAttributes.addFlashAttribute("error",
+                    e.getMessage() != null ? e.getMessage() : "Error submitting leave application.");
         }
         return "redirect:/hr/leaves";
     }
@@ -262,5 +307,15 @@ public class HrController {
             redirectAttributes.addFlashAttribute("errorMessage", "Error updating leave status.");
         }
         return "redirect:/hr/leaves";
+    }
+    private boolean isSystemUser(org.springframework.security.core.Authentication auth) {
+        if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken token) {
+            return token.isSystemRole();
+        }
+        if (auth.getPrincipal() instanceof com.supererp.erp.security.SecurityUser user) {
+            return user.isSystemAdmin();
+        }
+        return auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
     }
 }
