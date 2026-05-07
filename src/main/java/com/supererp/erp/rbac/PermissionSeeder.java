@@ -20,7 +20,6 @@ import java.util.*;
 @Order(1)
 @RequiredArgsConstructor
 @Slf4j
-@org.springframework.transaction.annotation.Transactional
 public class PermissionSeeder implements CommandLineRunner {
 
     private final FeatureRepository     featureRepo;

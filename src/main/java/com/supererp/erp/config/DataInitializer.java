@@ -60,7 +60,6 @@ public class DataInitializer implements CommandLineRunner {
     private String tenantAdminPassword;
 
     @Override
-    @Transactional
     public void run(String... args) {
         // 1. Seed System Admin (Superuser) - This table has NO RLS, so it's always safe
         seedSystemAdmin();
