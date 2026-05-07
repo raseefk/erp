@@ -40,8 +40,14 @@ public class Vendor extends TenantAwareEntity {
     @Column(name = "bank_account_number", length = 50)
     private String bankAccountNumber;
 
+    @Column(name = "bank_account_name", length = 200)
+    private String bankAccountName;
+
     @Column(name = "ifsc_code", length = 20)
     private String ifscCode;
+
+    @Column(columnDefinition = "TEXT")
+    private String notes;
 
     @Column(nullable = false)
     @Builder.Default

@@ -16,5 +16,6 @@
   <include file="classpath:db/changelog/V9__fix_rls_functions.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V10__fix_audit_rls.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V11__fix_multi_tenant_unique_constraints.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V12__add_vendor_fields.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

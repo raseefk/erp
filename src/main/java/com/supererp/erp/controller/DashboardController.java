@@ -21,6 +21,8 @@ public class DashboardController {
     private final ExpenseService    expenseService;
     private final ApprovalService   approvalService;
     private final ProjectService    projectService;
+    private final FileStorageService fileStorageService;
+    private final com.supererp.erp.tenant.TenantService tenantService;
 
     @GetMapping({"/dashboard", ""})
     public String dashboard(Model m, org.springframework.security.core.Authentication auth) {
@@ -59,6 +61,22 @@ public class DashboardController {
         // Project module stats
         m.addAttribute("activeProjects",   projectService.countActive());
         m.addAttribute("pendingApprovals", approvalService.countPending());
+
+        // Storage Usage
+        com.supererp.erp.tenant.TenantContext.getTenantId();
+        java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+        double usedGb = fileStorageService.getTenantUploadSizeInGB(tenantId);
+        double maxGb = 5.0; // Default
+        
+        var tenantOpt = tenantService.findById(tenantId);
+        if (tenantOpt.isPresent()) {
+            maxGb = tenantOpt.get().getMaxStorageGb();
+        }
+        
+        double storagePercent = (usedGb / maxGb) * 100.0;
+        m.addAttribute("storageUsedGb", usedGb);
+        m.addAttribute("storageMaxGb", maxGb);
+        m.addAttribute("storagePercent", storagePercent);
 
         return "admin/dashboard";
     }
