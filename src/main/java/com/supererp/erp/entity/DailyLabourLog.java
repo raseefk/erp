@@ -22,7 +22,6 @@ public class DailyLabourLog extends TenantAwareEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_labour_id", nullable = false)
-    @EqualsAndHashCode.Exclude
     @ToString.Exclude
     private ProjectLabour projectLabour;
 

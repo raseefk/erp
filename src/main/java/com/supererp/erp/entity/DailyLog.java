@@ -21,6 +21,8 @@ public class DailyLog extends TenantAwareEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "job_card_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private JobCard jobCard;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
@@ -49,6 +51,8 @@ public class DailyLog extends TenantAwareEntity {
     // ── Logged by ─────────────────────────────────────────────────────
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "logged_by_id")
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private AppUser loggedBy;
 
     @Column(updatable = false)

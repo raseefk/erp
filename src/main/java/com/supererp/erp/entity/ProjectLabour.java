@@ -15,6 +15,8 @@ public class ProjectLabour extends TenantAwareEntity {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "project_id", nullable = false)
+    @EqualsAndHashCode.Exclude
+    @ToString.Exclude
     private Project project;
 
     @Column(nullable = false)
