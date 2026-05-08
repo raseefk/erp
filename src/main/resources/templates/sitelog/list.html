@@ -36,7 +36,7 @@
               <thead>
                 <tr>
                   <th>Date</th><th>Progress</th><th>Work Value ₹</th>
-                  <th>Labours</th><th>Labour Cost ₹</th><th>Expenses</th><th>Actions</th>
+                  <th>Labours</th><th>Expenses</th><th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -51,10 +51,15 @@
                   <td class="text-success fw-bold"
                       th:text="'₹ '+${#numbers.formatDecimal(l.workValue,1,'COMMA',2,'POINT')}">-</td>
                   <td th:text="${l.numberOfLabours}">0</td>
-                  <td class="text-danger fw-bold"
-                      th:text="'₹ '+${#numbers.formatDecimal(l.totalLabourCost,1,'COMMA',2,'POINT')}">-</td>
-                  <td>
-                    <span class="badge badge-warn" th:text="${#lists.size(l.projectExpenses)}+' item(s)'">0</span>
+                  <td style="min-width:140px; font-size: 0.85rem; line-height: 1.2;">
+                    <div th:each="entry : ${l.categorySums}" class="d-flex justify-content-between">
+                      <span class="text-muted" th:text="${entry.key}">LABOUR</span>
+                      <span th:text="${#numbers.formatDecimal(entry.value, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                    </div>
+                    <div class="border-top mt-1 pt-1 d-flex justify-content-between fw-bold text-danger">
+                      <span>Total</span>
+                      <span th:text="'₹ ' + ${#numbers.formatDecimal(l.totalExpensesSum, 1, 'COMMA', 2, 'POINT')}">0.00</span>
+                    </div>
                   </td>
                   <td>
                     <div class="btn-group btn-group-sm">
@@ -69,7 +74,7 @@
                   </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(logs)}">
-                  <td colspan="7" class="text-center text-muted py-5">
+                  <td colspan="6" class="text-center text-muted py-5">
                     <i class="bi bi-journal" style="font-size:2rem;display:block;margin-bottom:.5rem;"></i>
                     No logs yet.
                     <a th:href="'/admin/sitelogs/new?jobCardId='+${jobCard.id}"

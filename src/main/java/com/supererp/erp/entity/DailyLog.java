@@ -72,5 +72,22 @@ public class DailyLog extends TenantAwareEntity {
     private java.util.Set<DailyLabourLog> labourLogs = new java.util.LinkedHashSet<>();
 
     @PrePersist void onCreate() { createdAt = LocalDateTime.now(); }
+
+    @Transient
+    public java.util.Map<com.supererp.erp.enums.ProjectExpenseCategory, BigDecimal> getCategorySums() {
+        return projectExpenses.stream()
+            .collect(java.util.stream.Collectors.groupingBy(
+                ProjectExpense::getCategory,
+                java.util.stream.Collectors.reducing(BigDecimal.ZERO, ProjectExpense::getAmount, BigDecimal::add)
+            ));
+    }
+
+    @Transient
+    public BigDecimal getTotalExpensesSum() {
+        return projectExpenses.stream()
+            .map(ProjectExpense::getAmount)
+            .filter(java.util.Objects::nonNull)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 }
 

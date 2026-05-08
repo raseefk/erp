@@ -55,9 +55,16 @@
                   </div>
                 </dd>
 
-                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Labour Cost</dt>
-                <dd class="col-8 fw-bold text-danger"
-                    th:text="'₹ '+${#numbers.formatDecimal(log.totalLabourCost,1,'COMMA',2,'POINT')}">-</dd>
+                <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Expenses Breakdown</dt>
+                <dd class="col-8">
+                  <div th:each="entry : ${log.categorySums}" class="small">
+                    <span th:text="${entry.key}">LABOUR</span>: 
+                    <span th:text="'₹ '+${#numbers.formatDecimal(entry.value,1,'COMMA',2,'POINT')}">0.00</span>
+                  </div>
+                  <div class="mt-1 fw-bold text-danger">
+                    Total: <span th:text="'₹ '+${#numbers.formatDecimal(log.totalExpensesSum,1,'COMMA',2,'POINT')}">0.00</span>
+                  </div>
+                </dd>
 
                 <dt class="col-4" style="color:#C8972A;font-size:.72rem;text-transform:uppercase;letter-spacing:.1em;">Logged By</dt>
                 <dd class="col-8" th:text="${log.loggedBy != null ? log.loggedBy.fullName : '—'}">-</dd>
