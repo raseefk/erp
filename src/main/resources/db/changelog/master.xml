@@ -18,5 +18,6 @@
   <include file="classpath:db/changelog/V11__fix_multi_tenant_unique_constraints.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V12__add_vendor_fields.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V13__add_advance_payments.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V15__fix_advance_payments_rls.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>
