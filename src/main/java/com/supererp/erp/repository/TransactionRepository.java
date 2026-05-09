@@ -23,6 +23,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
 
     Optional<Transaction> findByInvoiceNumber(String invoiceNumber);
 
+    @EntityGraph(attributePaths = {"advancePayment"})
     List<Transaction> findByProject_IdOrderByCreatedAtDesc(Long projectId);
 
     @EntityGraph(attributePaths = {"customer"})

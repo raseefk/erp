@@ -28,6 +28,8 @@ public class ProjectController {
     private final LabourWagePdfService labourPdfService;
     private final AdvancePaymentService advanceService;
     private final com.supererp.erp.repository.TransactionRepository transactionRepo;
+    private final PaymentService paymentService;
+    private final PdfService pdfService;
 
     // ── Project list ─────────────────────────────────────────────────────────
     @GetMapping
@@ -58,6 +60,93 @@ public class ProjectController {
         m.addAttribute("JobCardStatus",   JobCardStatus.values());
         m.addAttribute("ProjectStatus",   ProjectStatus.values());
         return "project/detail";
+    }
+
+    @GetMapping("/{id}/income-report")
+    public String getIncomeReport(@PathVariable Long id, Model m) {
+        Project p = projectService.getById(id);
+        java.util.Map<String, Object> data = collectIncomeData(id);
+        
+        m.addAttribute("project",       p);
+        m.addAttribute("entries",       data.get("entries"));
+        m.addAttribute("totalReceived", data.get("totalReceived"));
+        m.addAttribute("totalPending",  data.get("totalPending"));
+        return "project/income-report";
+    }
+
+    @GetMapping("/{id}/income-report/pdf")
+    public ResponseEntity<byte[]> getIncomeReportPdf(@PathVariable Long id) {
+        Project p = projectService.getById(id);
+        java.util.Map<String, Object> data = collectIncomeData(id);
+        
+        byte[] pdf = pdfService.generateProjectIncomeReport(
+            p, 
+            (java.util.List<java.util.Map<String, Object>>) data.get("entries"), 
+            (java.math.BigDecimal) data.get("totalReceived"), 
+            (java.math.BigDecimal) data.get("totalPending")
+        );
+        
+        String fn = "Income_Report_" + p.getName().replaceAll("\\s+", "_") + ".pdf";
+        return ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fn + "\"")
+            .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+            .body(pdf);
+    }
+
+    private java.util.Map<String, Object> collectIncomeData(Long id) {
+        List<AdvancePayment> advances = advanceService.getAdvancesForProject(id);
+        List<Transaction> bills = transactionRepo.findByProject_IdOrderByCreatedAtDesc(id);
+        
+        java.util.List<java.util.Map<String, Object>> entries = new java.util.ArrayList<>();
+        java.math.BigDecimal totalReceived = java.math.BigDecimal.ZERO;
+        java.math.BigDecimal totalPending = java.math.BigDecimal.ZERO;
+
+        // Bills
+        for (Transaction b : bills) {
+            java.math.BigDecimal cash = paymentService.totalReceivedForTransaction(b.getId());
+            java.math.BigDecimal adv  = b.getAdvanceSettledAmount() != null ? b.getAdvanceSettledAmount() : java.math.BigDecimal.ZERO;
+            java.math.BigDecimal received = cash.add(adv);
+            java.math.BigDecimal pending = b.getGrandTotal().subtract(received);
+            if (pending.compareTo(java.math.BigDecimal.ZERO) < 0) pending = java.math.BigDecimal.ZERO;
+
+            java.lang.String desc = "Invoice: " + b.getInvoiceNumber();
+            if (adv.compareTo(java.math.BigDecimal.ZERO) > 0 && b.getAdvancePayment() != null) {
+                desc += " | Adv Settled: " + b.getAdvancePayment().getAdvanceNumber() + " (₹" + adv + ")";
+            }
+
+            entries.add(new java.util.HashMap<>(java.util.Map.of(
+                "date",     b.getCreatedAt(),
+                "title",    desc,
+                "total",    b.getGrandTotal(),
+                "received", received,
+                "pending",  pending
+            )));
+            totalReceived = totalReceived.add(received);
+            totalPending = totalPending.add(pending);
+        }
+
+        // Unsettled Advances
+        for (AdvancePayment a : advances) {
+            if (a.getStatus() == AdvancePaymentStatus.SETTLED) continue;
+            
+            entries.add(new java.util.HashMap<>(java.util.Map.of(
+                "date",     a.getCreatedAt(),
+                "title",    "Advance: " + a.getAdvanceNumber(),
+                "total",    a.getAmount(),
+                "received", a.getAmount(),
+                "pending",  java.math.BigDecimal.ZERO
+            )));
+            totalReceived = totalReceived.add(a.getAmount());
+        }
+
+        // Sort by date desc
+        entries.sort((e1, e2) -> ((java.time.LocalDateTime)e2.get("date")).compareTo((java.time.LocalDateTime)e1.get("date")));
+
+        return java.util.Map.of(
+            "entries",       entries,
+            "totalReceived", totalReceived,
+            "totalPending",  totalPending
+        );
     }
 
     // ── New / Edit form ───────────────────────────────────────────────────────

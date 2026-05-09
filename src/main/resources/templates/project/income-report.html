@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Project Income Report')}"></head>
+<body class="bg-light">
+<th:block th:insert="~{fragments/layout :: sidebar('projects')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Income Report')}"></th:block>
+  <div class="pb-5">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    
+    <div class="container-fluid mt-3">
+      <!-- Back Link -->
+      <div class="mb-3">
+        <a th:href="'/admin/projects/'+${project.id}" class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-left me-1"></i>Back to Project
+        </a>
+      </div>
+
+      <!-- Header Card -->
+      <div class="card card-lv mb-4 border-0 shadow-sm">
+        <div class="card-body p-4" style="background: linear-gradient(135deg, #0F2338 0%, #1a3a5a 100%); color: white; border-radius: 12px;">
+          <div class="row align-items-center">
+            <div class="col-md-7">
+              <h4 class="mb-1" style="font-family:'Cormorant Garamond',serif; font-size: 1.8rem;" th:text="${project.name}">-</h4>
+              <p class="mb-0 opacity-75 small"><i class="bi bi-person me-1"></i> Client: <span th:text="${project.clientName}">-</span></p>
+            </div>
+            <div class="col-md-5 text-md-end mt-3 mt-md-0">
+              <div class="d-inline-block text-center me-4">
+                <div class="h5 mb-0 fw-bold" th:text="'₹'+${#numbers.formatDecimal(totalReceived,1,'COMMA',2,'POINT')}">₹0.00</div>
+                <small class="opacity-75" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;">Total Received</small>
+              </div>
+              <div class="d-inline-block text-center">
+                <div class="h5 mb-0 fw-bold text-warning" th:text="'₹'+${#numbers.formatDecimal(totalPending,1,'COMMA',2,'POINT')}">₹0.00</div>
+                <small class="opacity-75" style="font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.1em;">Total Pending</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Listing Table -->
+      <div class="card card-lv border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+        <div class="card-header bg-white py-3 border-0 d-flex justify-content-between align-items-center">
+          <h6 class="mb-0 fw-bold text-navy"><i class="bi bi-journal-text me-2"></i>Income Transactions</h6>
+          <a th:href="'/admin/projects/'+${project.id}+'/income-report/pdf'" class="btn btn-sm btn-navy">
+            <i class="bi bi-file-earmark-pdf me-1"></i>Download PDF
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" style="font-size: 0.9rem;">
+              <thead class="bg-light">
+                <tr style="border-bottom: 2px solid #edf2f7;">
+                  <th class="px-4 py-3" style="width: 15%;">Date</th>
+                  <th class="py-3">Description</th>
+                  <th class="py-3 text-end">Grand Total</th>
+                  <th class="py-3 text-end">Received Amount</th>
+                  <th class="px-4 py-3 text-end">Pending Balance</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr th:each="e : ${entries}" style="border-bottom: 1px solid #f1f5f9;">
+                  <td class="px-4 py-3 text-muted" th:text="${#temporals.format(e.date, 'dd MMM yyyy')}">-</td>
+                  <td class="py-3">
+                    <div class="fw-bold text-navy" th:text="${e.title}">-</div>
+                  </td>
+                  <td class="py-3 text-end" th:text="'₹'+${#numbers.formatDecimal(e.total,1,'COMMA',2,'POINT')}">-</td>
+                  <td class="py-3 text-end fw-bold text-success" th:text="'₹'+${#numbers.formatDecimal(e.received,1,'COMMA',2,'POINT')}">-</td>
+                  <td class="px-4 py-3 text-end">
+                    <span th:if="${e.pending > 0}" class="fw-bold text-danger" th:text="'₹'+${#numbers.formatDecimal(e.pending,1,'COMMA',2,'POINT')}">-</span>
+                    <span th:if="${e.pending == 0}" class="badge bg-success bg-opacity-10 text-success">Settled</span>
+                  </td>
+                </tr>
+                <!-- Total Row -->
+                <tr class="bg-light fw-bold" style="border-top: 2px solid #0F2338;">
+                  <td colspan="3" class="px-4 py-3 text-end text-navy">TOTALS</td>
+                  <td class="py-3 text-end text-success" th:text="'₹'+${#numbers.formatDecimal(totalReceived,1,'COMMA',2,'POINT')}">-</td>
+                  <td class="px-4 py-3 text-end text-danger" th:text="'₹'+${#numbers.formatDecimal(totalPending,1,'COMMA',2,'POINT')}">-</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

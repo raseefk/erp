@@ -3,6 +3,7 @@ package com.supererp.erp.service;
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
 import com.supererp.erp.config.CompanyProperties;
+import com.supererp.erp.entity.Project;
 import com.supererp.erp.entity.Transaction;
 import com.supererp.erp.entity.TransactionItem;
 import com.supererp.erp.enums.TransactionStatus;
@@ -152,6 +153,96 @@ public class PdfService {
             log.error("Advance receipt PDF failed: {}", e.getMessage(), e);
             throw new RuntimeException("Advance receipt PDF failed", e);
         }
+    }
+
+    public byte[] generateProjectIncomeReport(Project project, java.util.List<java.util.Map<String, Object>> entries, BigDecimal totalReceived, BigDecimal totalPending) {
+        try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            writer.setPageEvent(new PageFooter(settings));
+            doc.open();
+
+            header(doc, "INCOME REPORT", project.getName(), java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")), true, settings);
+
+            // Project Info
+            PdfPTable info = new PdfPTable(2);
+            info.setWidthPercentage(100);
+            info.setSpacingAfter(15);
+            PdfPCell left = cell(Rectangle.NO_BORDER);
+            left.addElement(p("CLIENT: " + (project.getClientName() != null ? project.getClientName() : "-"), f(9, Font.BOLD, MUTED)));
+            info.addCell(left);
+            PdfPCell right = cell(Rectangle.NO_BORDER);
+            right.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            Paragraph pTotal = p("TOTAL RECEIVED: ₹ " + fmt(totalReceived), f(10, Font.BOLD, GOLD));
+            pTotal.setAlignment(Element.ALIGN_RIGHT);
+            right.addElement(pTotal);
+            info.addCell(right);
+            doc.add(info);
+
+            // Table
+            PdfPTable table = new PdfPTable(5);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{1.2f, 3.5f, 1.5f, 1.5f, 1.5f});
+            table.setSpacingBefore(10);
+
+            // Headers
+            String[] headers = {"Date", "Description", "Grand Total", "Received", "Pending"};
+            for (String h : headers) {
+                PdfPCell hc = new PdfPCell(new Phrase(h, f(9, Font.BOLD, BaseColor.WHITE)));
+                hc.setBackgroundColor(NAVY);
+                hc.setPadding(6);
+                hc.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(hc);
+            }
+
+            // Rows
+            for (java.util.Map<String, Object> e : entries) {
+                java.time.LocalDateTime dt = (java.time.LocalDateTime) e.get("date");
+                table.addCell(cellTable(dt.format(DateTimeFormatter.ofPattern("dd-MM-yyyy")), Element.ALIGN_CENTER));
+                table.addCell(cellTable(e.get("title").toString(), Element.ALIGN_LEFT));
+                table.addCell(cellTable(fmt((BigDecimal) e.get("total")), Element.ALIGN_RIGHT));
+                table.addCell(cellTable(fmt((BigDecimal) e.get("received")), Element.ALIGN_RIGHT));
+                table.addCell(cellTable(fmt((BigDecimal) e.get("pending")), Element.ALIGN_RIGHT));
+            }
+
+            // Totals Row
+            PdfPCell tc = new PdfPCell(new Phrase("TOTALS", f(9, Font.BOLD, DARK)));
+            tc.setColspan(3);
+            tc.setBackgroundColor(LIGHT);
+            tc.setPadding(6);
+            tc.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            table.addCell(tc);
+            
+            PdfPCell tr = new PdfPCell(new Phrase(fmt(totalReceived), f(9, Font.BOLD, new BaseColor(22, 163, 74))));
+            tr.setBackgroundColor(LIGHT);
+            tr.setPadding(6);
+            tr.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            table.addCell(tr);
+
+            PdfPCell tp = new PdfPCell(new Phrase(fmt(totalPending), f(9, Font.BOLD, new BaseColor(220, 38, 38))));
+            tp.setBackgroundColor(LIGHT);
+            tp.setPadding(6);
+            tp.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            table.addCell(tp);
+
+            doc.add(table);
+
+            doc.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            log.error("Income report PDF failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Income report PDF failed", e);
+        }
+    }
+
+    private PdfPCell cellTable(String txt, int align) {
+        PdfPCell c = new PdfPCell(new Phrase(txt, f(8, Font.NORMAL, DARK)));
+        c.setPadding(5);
+        c.setHorizontalAlignment(align);
+        c.setBorderColor(BORDER);
+        return c;
     }
 
     // ── Header ──────────────────────────────────────────────────────────────
