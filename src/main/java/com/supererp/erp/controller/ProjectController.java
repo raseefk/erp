@@ -26,6 +26,8 @@ public class ProjectController {
     private final AppUserRepository    userRepo;
     private final com.supererp.erp.repository.EmployeeRepository employeeRepo;
     private final LabourWagePdfService labourPdfService;
+    private final AdvancePaymentService advanceService;
+    private final com.supererp.erp.repository.TransactionRepository transactionRepo;
 
     // ── Project list ─────────────────────────────────────────────────────────
     @GetMapping
@@ -44,9 +46,11 @@ public class ProjectController {
     @GetMapping("/{id}")
     public String detail(@PathVariable Long id, Model m) {
         Project p = projectService.getById(id);
-        m.addAttribute("project",        p);
+        m.addAttribute("project",         p);
         m.addAttribute("jobCards",        projectService.getJobCards(id));
         m.addAttribute("projectLabours",  projectService.getProjectLabours(id));
+        m.addAttribute("advances",        advanceService.getAdvancesForProject(id));
+        m.addAttribute("bills",           transactionRepo.findByProject_IdOrderByCreatedAtDesc(id));
         m.addAttribute("totalWork",       projectService.totalWorkValue(id));
         m.addAttribute("totalApproved",   projectService.totalApprovedExpenses(id));
         m.addAttribute("totalPending",    projectService.totalPendingExpenses(id));

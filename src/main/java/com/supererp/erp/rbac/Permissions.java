@@ -25,6 +25,11 @@ public final class Permissions {
     public static final String BILLING_PAYMENTS_VIEW        = "BILLING_PAYMENTS_VIEW";
     public static final String BILLING_PAYMENTS_RECORD      = "BILLING_PAYMENTS_RECORD";
 
+    // ── ADVANCE PAYMENTS Feature ─────────────────────────────────────────────
+    public static final String ADVANCE_PAYMENTS_VIEW        = "ADVANCE_PAYMENTS_VIEW";
+    public static final String ADVANCE_PAYMENTS_CREATE      = "ADVANCE_PAYMENTS_CREATE";
+
+
     // ── CRM Feature ──────────────────────────────────────────────────────────
     public static final String CRM_CUSTOMERS_VIEW           = "CRM_CUSTOMERS_VIEW";
     public static final String CRM_CUSTOMERS_CREATE         = "CRM_CUSTOMERS_CREATE";

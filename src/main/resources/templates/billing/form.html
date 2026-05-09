@@ -59,6 +59,29 @@
       </div>
     </div>
 
+    <!-- Mapping -->
+    <div class="card card-levanto mb-3">
+      <div class="card-header"><i class="bi bi-diagram-2 me-2"></i>Project & Advance Mapping</div>
+      <div class="card-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Project Mapping</label>
+            <select id="projectId" name="projectId" class="form-select" onchange="fetchAdvances()">
+              <option value="">-- No Project --</option>
+              <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.name}"></option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Advance Settlement <span class="badge bg-warning text-dark ms-1">Auto-Settled on Final Bill</span></label>
+            <select id="advancePaymentId" name="advancePaymentId" class="form-select">
+              <option value="">-- No Advance Selected --</option>
+            </select>
+            <small class="text-muted d-block mt-1">Select an unsettled advance to apply.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- GST Controls -->
     <div class="card card-levanto mb-3">
       <div class="card-header"><i class="bi bi-percent me-2"></i>GST Settings</div>
@@ -336,11 +359,13 @@ function saveDoc(docType) {
   if (!valid) return;
 
   const payload = {
-    customerId:   parseInt(customerId),
-    gstEnabled:   document.getElementById('gstEnabled').checked,
-    taxAllItems:  document.getElementById('taxAllItems').checked,
-    gstType:      document.querySelector('input[name="gstType"]:checked').value,
-    notes:        document.getElementById('notes').value,
+    customerId:       parseInt(customerId),
+    projectId:        document.getElementById('projectId').value ? parseInt(document.getElementById('projectId').value) : null,
+    advancePaymentId: document.getElementById('advancePaymentId').value ? parseInt(document.getElementById('advancePaymentId').value) : null,
+    gstEnabled:       document.getElementById('gstEnabled').checked,
+    taxAllItems:      document.getElementById('taxAllItems').checked,
+    gstType:          document.querySelector('input[name="gstType"]:checked').value,
+    notes:            document.getElementById('notes').value,
     items
   };
 
@@ -365,6 +390,26 @@ document.getElementById('gstEnabled').addEventListener('change', () => {
 document.getElementById('taxAllItems').addEventListener('change', () => {
   recalc();
   toggleGstType();
+});
+
+function fetchAdvances() {
+  const projectId = document.getElementById('projectId').value;
+  const url = '/admin/billing/api/advances/unsettled' + (projectId ? '?projectId=' + projectId : '');
+  fetch(url)
+    .then(r => r.json())
+    .then(advances => {
+      const select = document.getElementById('advancePaymentId');
+      select.innerHTML = '<option value="">-- No Advance Selected --</option>';
+      advances.forEach(adv => {
+        const opt = new Option(`${adv.advanceNumber} (₹${adv.amount.toFixed(2)}) - ${adv.paymentFrom}`, adv.id);
+        select.appendChild(opt);
+      });
+    })
+    .catch(console.error);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    fetchAdvances();
 });
 </script>
 </body></html>

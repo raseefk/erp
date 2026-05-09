@@ -23,8 +23,13 @@ public class IncomeTransaction extends TenantAwareEntity {
 
     // ── Link to the parent invoice/bill ─────────────────────────────────────
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transaction_id", nullable = false)
+    @JoinColumn(name = "transaction_id", nullable = true)
     private Transaction transaction;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "advance_payment_id")
+    private AdvancePayment advancePayment;
+
 
     /** Mirrors Transaction.invoiceNumber for quick lookup / reporting */
     @Column(nullable = false, length = 50)

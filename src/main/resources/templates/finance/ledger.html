@@ -50,10 +50,14 @@
                   <td th:text="${idx.count}">1</td>
                   <td><small th:text="${#temporals.format(inc.date,'dd MMM yyyy')}">-</small></td>
                   <td>
-                    <a th:href="'/admin/billing/'+${inc.transaction.id}"
+                    <a th:if="${inc.transaction != null}" th:href="'/admin/billing/'+${inc.transaction.id}"
                        th:text="${inc.inventoryNumber}" style="color:#C8972A;font-weight:600;">-</a>
+                    <span th:if="${inc.transaction == null}" th:text="${inc.inventoryNumber}" style="font-weight:600;">-</span>
                   </td>
-                  <td th:text="${inc.transaction.customer.name}">-</td>
+                  <td>
+                    <span th:if="${inc.transaction != null}" th:text="${inc.transaction.customer.name}">-</span>
+                    <span th:if="${inc.transaction == null && inc.advancePayment != null}" th:text="${inc.advancePayment.paymentFrom}">-</span>
+                  </td>
                   <td>
                     <span class="badge"
                           th:text="${inc.title}"

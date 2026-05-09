@@ -38,6 +38,19 @@ public class Transaction extends TenantAwareEntity {
     @Builder.Default
     private List<TransactionItem> items = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    private Project project;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "advance_payment_id")
+    private AdvancePayment advancePayment;
+
+    @Column(precision = 14, scale = 2)
+    @Builder.Default
+    private BigDecimal advanceSettledAmount = BigDecimal.ZERO;
+
+
     // ── GST Toggles ────────────────────────────────────
     /** If false → GST is 0 for ALL items */
     @Column(nullable = false)

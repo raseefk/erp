@@ -20,11 +20,14 @@ import java.math.BigDecimal;
 @com.supererp.erp.rbac.annotation.RequiresFeature("SALES")
 public class BillingController {
 
-    private final BillingService    billingService;
-    private final CustomerService   customerService;
-    private final InventoryService  inventoryService;
-    private final PdfService        pdfService;
-    private final AppUserRepository userRepo;
+    private final BillingService          billingService;
+    private final CustomerService         customerService;
+    private final InventoryService        inventoryService;
+    private final ProjectService          projectService;
+    private final AdvancePaymentService   advanceService;
+    private final PdfService              pdfService;
+    private final PaymentService          paymentService;
+    private final AppUserRepository       userRepo;
 
     // ── List ─────────────────────────────────────────────────────────────────
     @GetMapping
@@ -48,6 +51,7 @@ public class BillingController {
     public String newForm(@RequestParam(defaultValue="QUOTATION") String type, Model m) {
         m.addAttribute("customers", customerService.getAll(0, 500, null).getContent());
         m.addAttribute("products",  inventoryService.getAll());
+        m.addAttribute("projects",  projectService.getActive());
         m.addAttribute("invoiceType", type);
         m.addAttribute("ItemType",  com.supererp.erp.enums.ItemType.class);
         return "billing/form";
@@ -97,7 +101,17 @@ public class BillingController {
     // ── View detail ──────────────────────────────────────────────────────────
     @GetMapping("/{id}")
     public String view(@PathVariable Long id, Model m) {
-        m.addAttribute("tx",                billingService.getById(id));
+        Transaction tx = billingService.getById(id);
+        // Compute cash paid from income transaction history (source of truth)
+        // This correctly handles old records where amountPaid incorrectly included advance
+        BigDecimal cashPaid = paymentService.totalReceivedForTransaction(id);
+        BigDecimal advanceSettled = tx.getAdvanceSettledAmount() != null ? tx.getAdvanceSettledAmount() : BigDecimal.ZERO;
+        BigDecimal balanceDue = tx.getGrandTotal().subtract(advanceSettled).subtract(cashPaid);
+        if (balanceDue.compareTo(BigDecimal.ZERO) < 0) balanceDue = BigDecimal.ZERO;
+
+        m.addAttribute("tx",                tx);
+        m.addAttribute("cashPaid",          cashPaid);
+        m.addAttribute("balanceDue",        balanceDue);
         m.addAttribute("TransactionStatus", TransactionStatus.class);
         m.addAttribute("PaymentStatus",     PaymentStatus.class);
         return "billing/view";
@@ -106,9 +120,11 @@ public class BillingController {
     // ── Download PDF ─────────────────────────────────────────────────────────
     @GetMapping("/{id}/pdf")
     public ResponseEntity<byte[]> pdf(@PathVariable Long id) {
-        Transaction tx  = billingService.getById(id);
-        byte[]      pdf = pdfService.generate(tx);
-        String      fn  = (tx.getStatus() == TransactionStatus.FINAL_BILL
+        Transaction tx = billingService.getById(id);
+        // Use income transaction sum as cashPaid (same as view page — fixes corrupted amountPaid on old records)
+        BigDecimal cashPaid = paymentService.totalReceivedForTransaction(id);
+        byte[]     pdf = pdfService.generate(tx, cashPaid);
+        String     fn  = (tx.getStatus() == TransactionStatus.FINAL_BILL
             ? tx.getInvoiceNumber() : tx.getQuotationNumber())
             + "_" + tx.getCustomer().getName().replaceAll("\\s+", "_") + ".pdf";
         return ResponseEntity.ok()
@@ -124,6 +140,46 @@ public class BillingController {
         return ResponseEntity.ok(ApiResponse.ok("Deleted."));
     }
 
+    // ── Payment history for billing view (accessible under SALES feature) ───────
+    @GetMapping("/{id}/history") @ResponseBody
+    public ResponseEntity<?> paymentHistory(@PathVariable Long id) {
+        Transaction tx = billingService.getById(id);
+        java.util.List<java.util.Map<String, Object>> history = new java.util.ArrayList<>();
+
+        // Prepend advance entry if advance was settled on this bill
+        java.math.BigDecimal advSettled = tx.getAdvanceSettledAmount();
+        if (advSettled != null && advSettled.compareTo(java.math.BigDecimal.ZERO) > 0) {
+            String advLabel = tx.getAdvancePayment() != null
+                ? "Advance Adjusted (" + tx.getAdvancePayment().getAdvanceNumber() + ")"
+                : "Advance Adjusted";
+            String advDate  = tx.getConvertedAt() != null
+                ? tx.getConvertedAt().toLocalDate().toString()
+                : tx.getCreatedAt().toLocalDate().toString();
+            history.add(java.util.Map.of(
+                "id",          0,
+                "title",       advLabel,
+                "amount",      advSettled,
+                "date",        advDate,
+                "description", "Advance payment credited against this bill",
+                "isAdvance",   true
+            ));
+        }
+
+        // Append actual cash payment entries
+        paymentService.getPaymentsForTransaction(id).forEach(inc ->
+            history.add(java.util.Map.of(
+                "id",          inc.getId(),
+                "title",       inc.getTitle() != null ? inc.getTitle() : "",
+                "amount",      inc.getAmount(),
+                "date",        inc.getDate().toString(),
+                "description", inc.getDescription() != null ? inc.getDescription() : "",
+                "isAdvance",   false
+            ))
+        );
+
+        return ResponseEntity.ok(history);
+    }
+
     // ── AJAX helpers ─────────────────────────────────────────────────────────
     @GetMapping("/api/customers/search") @ResponseBody
     public ResponseEntity<?> searchCustomers(@RequestParam String q) {
@@ -133,6 +189,20 @@ public class BillingController {
     @GetMapping("/api/items/search") @ResponseBody
     public ResponseEntity<?> searchItems(@RequestParam String q) {
         return ResponseEntity.ok(inventoryService.searchActive(q));
+    }
+
+    @GetMapping("/api/advances/unsettled") @ResponseBody
+    public ResponseEntity<?> getUnsettledAdvances(@RequestParam(required=false) Long projectId) {
+        return ResponseEntity.ok(
+            advanceService.getUnsettledAdvances(projectId).stream()
+                .map(adv -> java.util.Map.of(
+                    "id",            adv.getId(),
+                    "advanceNumber", adv.getAdvanceNumber(),
+                    "amount",        adv.getAmount().doubleValue(),
+                    "paymentFrom",   adv.getPaymentFrom()
+                ))
+                .toList()
+        );
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

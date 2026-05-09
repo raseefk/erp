@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Collect Advance')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('advances')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Collect Advance')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex align-items-center mb-4">
+        <a href="/admin/advances" class="btn btn-sm btn-light border me-3"><i class="bi bi-arrow-left"></i></a>
+        <h2 class="mb-0">Collect Advance</h2>
+      </div>
+
+  <div class="card border-0 shadow-sm" style="max-width: 600px;">
+    <div class="card-body p-4">
+      <form th:action="@{/admin/advances/create}" method="post">
+        
+        <div class="mb-3">
+          <label class="form-label fw-medium">Payment From <span class="text-danger">*</span></label>
+          <input type="text" name="paymentFrom" class="form-control" required placeholder="Customer or Entity Name">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-medium">Project Mapping (Optional)</label>
+          <select name="projectId" class="form-select">
+            <option value="">-- No Project (General Advance) --</option>
+            <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.name}"></option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-medium">Amount (₹) <span class="text-danger">*</span></label>
+          <input type="number" step="0.01" min="0.01" name="amount" class="form-control" required placeholder="0.00">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-medium">Date <span class="text-danger">*</span></label>
+          <input type="date" name="date" class="form-control" required th:value="${#temporals.format(#temporals.createNow(), 'yyyy-MM-dd')}">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-medium">Description (Optional)</label>
+          <textarea name="description" class="form-control" rows="2" placeholder="Brief details about this advance payment"></textarea>
+        </div>
+
+        <div class="d-flex justify-content-end">
+          <a href="/admin/advances" class="btn btn-light me-2">Cancel</a>
+          <button type="submit" class="btn btn-primary"><i class="bi bi-check2 me-1"></i> Collect Advance</button>
+        </div>
+      </form>
+    </div>
+  </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

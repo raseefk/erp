@@ -28,10 +28,10 @@ public interface IncomeTransactionRepository extends JpaRepository<IncomeTransac
     BigDecimal sumByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
     /** Paged ledger view */
-    @EntityGraph(attributePaths = {"transaction", "transaction.customer"})
+    @EntityGraph(attributePaths = {"transaction", "transaction.customer", "advancePayment"})
     Page<IncomeTransaction> findAllByOrderByDateDesc(Pageable pageable);
 
-    @EntityGraph(attributePaths = {"transaction", "transaction.customer"})
+    @EntityGraph(attributePaths = {"transaction", "transaction.customer", "advancePayment"})
     @Query("SELECT i FROM IncomeTransaction i WHERE i.date BETWEEN :from AND :to ORDER BY i.date DESC")
     Page<IncomeTransaction> findByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
 }

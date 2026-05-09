@@ -254,6 +254,76 @@
         </div>
       </div>
 
+      <!-- Advance Payments -->
+      <div class="card card-lv mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-cash-stack me-2"></i>Advance Payments</span>
+          <a th:href="'/admin/advances/create?projectId='+${project.id}" class="btn btn-sm btn-gold">
+            <i class="bi bi-plus-lg me-1"></i>Collect Advance
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-lv table-sm mb-0">
+              <thead>
+                <tr><th class="ps-3">Advance #</th><th>Date</th><th>From</th><th>Amount</th><th>Status</th><th class="pe-3 text-end">Action</th></tr>
+              </thead>
+              <tbody>
+                <tr th:each="adv : ${advances}">
+                  <td class="ps-3 fw-bold" th:text="${adv.advanceNumber}">-</td>
+                  <td th:text="${#temporals.format(adv.date, 'dd MMM yyyy')}">-</td>
+                  <td th:text="${adv.paymentFrom}">-</td>
+                  <td th:text="'₹' + ${#numbers.formatDecimal(adv.amount, 1, 'COMMA', 2, 'POINT')}">-</td>
+                  <td>
+                    <span th:if="${adv.status.name() == 'RECEIVED'}" class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25">RECEIVED</span>
+                    <span th:if="${adv.status.name() == 'SETTLED'}" class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25">SETTLED</span>
+                  </td>
+                  <td class="pe-3 text-end">
+                    <a th:href="'/admin/advances/'+${adv.id}+'/receipt'" class="btn btn-sm btn-outline-secondary" title="Download Receipt"><i class="bi bi-download"></i></a>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(advances)}">
+                  <td colspan="6" class="text-center text-muted py-4">No advance payments found for this project.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Project Bills -->
+      <div class="card card-lv mt-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-receipt me-2"></i>Project Bills</span>
+          <a href="/admin/billing/new" class="btn btn-sm btn-gold">
+            <i class="bi bi-plus-lg me-1"></i>Create Bill
+          </a>
+        </div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-lv table-sm mb-0">
+              <thead>
+                <tr><th class="ps-3">Bill #</th><th>Date</th><th>Amount</th><th>Status</th><th class="pe-3">Payment</th></tr>
+              </thead>
+              <tbody>
+                <tr th:each="tx : ${bills}">
+                  <td class="ps-3 fw-bold">
+                    <a th:href="'/admin/billing/'+${tx.id}" th:text="${tx.status.name()=='FINAL_BILL' ? tx.invoiceNumber : tx.quotationNumber}">-</a>
+                  </td>
+                  <td th:text="${#temporals.format(tx.createdAt, 'dd MMM yyyy')}">-</td>
+                  <td th:text="'₹' + ${#numbers.formatDecimal(tx.grandTotal, 1, 'COMMA', 2, 'POINT')}">-</td>
+                  <td><span class="badge" th:text="${tx.status}" th:classappend="${tx.status.name()=='FINAL_BILL'}?' badge-gold':' badge-navy'"></span></td>
+                  <td class="pe-3"><span class="badge" th:text="${tx.paymentStatus}" th:classappend="${tx.paymentStatus.name()=='PAID'}?' badge-success':(${tx.paymentStatus.name()=='PARTIALLY_PAID'}?' badge-warn':' badge-danger')">-</span></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(bills)}">
+                  <td colspan="5" class="text-center text-muted py-4">No bills found for this project.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

@@ -85,14 +85,14 @@
 
     <!-- ── SALES ────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
-        th:if="${@rbacService.isFeatureEnabled('SALES')}"
-        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_ENQUIRIES_VIEW', 'PERM_BILLING_INVOICES_VIEW', 'PERM_CRM_CUSTOMERS_VIEW')"
+        th:if="${@rbacService.isFeatureEnabled('SALES') or @rbacService.isFeatureEnabled('ADVANCE_PAYMENTS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_ENQUIRIES_VIEW', 'PERM_BILLING_INVOICES_VIEW', 'PERM_CRM_CUSTOMERS_VIEW', 'PERM_ADVANCE_PAYMENTS_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseSales"
-        th:attr="aria-expanded=${#lists.contains({'enquiries','billing','customers'}, activePage) ? 'true' : 'false'}">
+        th:attr="aria-expanded=${#lists.contains({'enquiries','billing','customers','advances'}, activePage) ? 'true' : 'false'}">
       <span>Sales</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseSales"
-         th:classappend="${#lists.contains({'enquiries','billing','customers'}, activePage)} ? 'show' : ''">
+         th:classappend="${#lists.contains({'enquiries','billing','customers','advances'}, activePage)} ? 'show' : ''">
       <li th:if="${@rbacService.isMenuEnabled('MENU_ENQUIRIES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_ENQUIRIES_VIEW')">
         <a href="/admin/enquiries" th:classappend="${activePage=='enquiries'}?' active':''">
           <i class="bi bi-chat-left-text"></i> Enquiries
@@ -106,6 +106,11 @@
       <li th:if="${@rbacService.isMenuEnabled('MENU_CUSTOMERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CRM_CUSTOMERS_VIEW')">
         <a href="/admin/customers" th:classappend="${activePage=='customers'}?' active':''">
           <i class="bi bi-people"></i> Customers
+        </a>
+      </li>
+      <li th:if="${@rbacService.isMenuEnabled('MENU_ADVANCE_PAYMENTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_ADVANCE_PAYMENTS_VIEW')">
+        <a href="/admin/advances" th:classappend="${activePage=='advances'}?' active':''">
+          <i class="bi bi-cash-stack"></i> Advance Payments
         </a>
       </li>
     </div>
@@ -155,13 +160,13 @@
         sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW', 'PERM_PROJ_DAILYLOG_VIEW', 'PERM_PROJ_EXPENSES_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseProjects"
         th:attr="aria-expanded=${#lists.contains({'projects','sitelogs','approval'}, activePage) ? 'true' : 'false'}">
-      <span>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
+      <span><i class="bi bi-briefcase me-2"></i>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseProjects"
          th:classappend="${#lists.contains({'projects','sitelogs','approval'}, activePage)} ? 'show' : ''">
       <li th:if="${@rbacService.isMenuEnabled('MENU_PROJECTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW')">
         <a th:href="@{/admin/projects}" th:classappend="${activePage=='projects'}?' active':''">
-          <i class="bi bi-folder-open"></i><span>Projects</span>
+          <i class="bi bi-kanban"></i> Projects
         </a>
       </li>
       <li th:if="${@rbacService.isMenuEnabled('MENU_SITELOGS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_DAILYLOG_VIEW')">

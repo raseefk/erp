@@ -59,7 +59,9 @@
                   <span th:if="${!tx.gstEnabled}">Disabled</span>
                   <span th:if="${tx.gstEnabled}" th:text="${tx.gstType}">LOCAL</span>
                 </div>
-                <div th:if="${tx.notes}"><small class="text-muted">Notes: </small><em th:text="${tx.notes}">-</em></div>
+                <div th:if="${tx.project != null}" class="mt-1"><small class="text-muted">Project: </small><span class="badge bg-secondary" th:text="${tx.project.name}">-</span></div>
+                <div th:if="${tx.advancePayment != null}" class="mt-1"><small class="text-muted">Advance Adj: </small><span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25" th:text="${tx.advancePayment.advanceNumber} + ' (₹' + ${#numbers.formatDecimal(tx.advanceSettledAmount,1,'COMMA',2,'POINT')} + ')'">-</span></div>
+                <div th:if="${tx.notes}" class="mt-1"><small class="text-muted">Notes: </small><em th:text="${tx.notes}">-</em></div>
               </div>
             </div>
           </div>
@@ -115,9 +117,16 @@
                     <td class="fw-bold py-2 px-3">GRAND TOTAL</td>
                     <td class="text-end fw-bold py-2 px-3" style="color:#C8972A;" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal,1,'COMMA',2,'POINT')}">-</td>
                   </tr>
-                  <tr><td class="text-muted">Amount Paid</td><td class="text-end text-success fw-bold" th:text="'₹ '+${#numbers.formatDecimal(tx.amountPaid,1,'COMMA',2,'POINT')}">-</td></tr>
+                  <tr th:if="${tx.advanceSettledAmount != null && tx.advanceSettledAmount > 0}">
+                    <td class="text-muted">Advance Adjusted</td>
+                    <td class="text-end fw-bold text-success" th:text="'- ₹ '+${#numbers.formatDecimal(tx.advanceSettledAmount,1,'COMMA',2,'POINT')}">-</td>
+                  </tr>
+                  <tr>
+                    <td class="text-muted">Amount Paid</td>
+                    <td class="text-end text-success fw-bold" th:text="'₹ '+${#numbers.formatDecimal(cashPaid,1,'COMMA',2,'POINT')}">-</td>
+                  </tr>
                   <tr><td class="text-danger fw-bold">Balance Due</td>
-                    <td class="text-end text-danger fw-bold" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal.subtract(tx.amountPaid),1,'COMMA',2,'POINT')}">-</td></tr>
+                    <td class="text-end text-danger fw-bold" th:text="'₹ '+${#numbers.formatDecimal(balanceDue,1,'COMMA',2,'POINT')}">-</td></tr>
                 </table>
               </div>
             </div>
@@ -138,7 +147,12 @@
             </div>
             <!-- PENDING: both buttons -->
             <div th:if="${tx.paymentStatus.name()=='PENDING'}">
-              <p class="text-muted small mb-3">Full amount of <strong th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal,1,'COMMA',2,'POINT')}">₹0</strong> is pending.</p>
+              <p class="text-muted small mb-3" th:with="advAmount=${tx.advanceSettledAmount != null ? tx.advanceSettledAmount : 0}">
+                Cash balance of <strong th:text="'₹ '+${#numbers.formatDecimal(balanceDue,1,'COMMA',2,'POINT')}">₹0</strong> is pending
+                <span th:if="${advAmount > 0}">
+                  (after <span class="text-success fw-bold" th:text="'₹'+${#numbers.formatDecimal(advAmount,1,'COMMA',2,'POINT')}"></span> advance adjusted)
+                </span>.
+              </p>
               <div class="d-grid gap-2">
                 <button class="btn btn-success fw-bold" onclick="payFull()"><i class="bi bi-check2-all me-2"></i>Mark Fully Paid</button>
                 <button class="btn btn-warning text-dark fw-bold" data-bs-toggle="modal" data-bs-target="#partialModal"><i class="bi bi-cash me-2"></i>Record Partial Payment</button>
@@ -147,14 +161,18 @@
             <!-- PARTIALLY_PAID: only partial -->
             <div th:if="${tx.paymentStatus.name()=='PARTIALLY_PAID'}">
               <div class="mb-3 p-3 rounded" style="background:#fffbeb;border:1px solid #fbbf24;">
-                <div class="row g-2 text-center">
-                  <div class="col-6">
-                    <small class="text-muted d-block">Paid So Far</small>
-                    <strong class="text-success" th:text="'₹ '+${#numbers.formatDecimal(tx.amountPaid,1,'COMMA',2,'POINT')}">-</strong>
+                <div class="row g-2 text-center" th:with="advAmount=${tx.advanceSettledAmount != null ? tx.advanceSettledAmount : 0}">
+                  <div class="col-4">
+                    <small class="text-muted d-block">Advance</small>
+                    <strong class="text-info" th:text="'₹ '+${#numbers.formatDecimal(advAmount,1,'COMMA',2,'POINT')}">-</strong>
                   </div>
-                  <div class="col-6">
+                  <div class="col-4">
+                    <small class="text-muted d-block">Cash Received</small>
+                    <strong class="text-success" th:text="'₹ '+${#numbers.formatDecimal(cashPaid,1,'COMMA',2,'POINT')}">-</strong>
+                  </div>
+                  <div class="col-4">
                     <small class="text-muted d-block">Balance</small>
-                    <strong class="text-danger" th:text="'₹ '+${#numbers.formatDecimal(tx.grandTotal.subtract(tx.amountPaid),1,'COMMA',2,'POINT')}">-</strong>
+                    <strong class="text-danger" th:text="'₹ '+${#numbers.formatDecimal(balanceDue,1,'COMMA',2,'POINT')}">-</strong>
                   </div>
                 </div>
               </div>
@@ -190,7 +208,7 @@
       <div class="mb-3 p-3 rounded" style="background:#f8f9fa;border:1px solid #e2e8f0;">
         <div class="row g-2 text-center">
           <div class="col-4"><small class="text-muted d-block">Bill Total</small><strong id="mBillTotal">-</strong></div>
-          <div class="col-4"><small class="text-muted d-block">Already Paid</small><strong class="text-success" id="mPaid">-</strong></div>
+          <div class="col-4"><small class="text-muted d-block">Amount Paid</small><strong class="text-success" id="mPaid">-</strong></div>
           <div class="col-4"><small class="text-muted d-block">Balance</small><strong class="text-danger" id="mBalance">-</strong></div>
         </div>
       </div>
@@ -218,15 +236,17 @@
 <script th:inline="javascript">
 const TX_ID       = /*[[${tx.id}]]*/ 0;
 const GRAND_TOTAL = parseFloat(/*[[${tx.grandTotal}]]*/ 0);
-const PAID_INIT   = parseFloat(/*[[${tx.amountPaid}]]*/ 0);
+const PAID_INIT   = parseFloat(/*[[${cashPaid}]]*/ 0);   // server-computed cash from income history
+const ADV_AMOUNT  = parseFloat(/*[[${tx.advanceSettledAmount != null ? tx.advanceSettledAmount : 0}]]*/ 0) || 0;
 const IS_FINAL    = /*[[${tx.status.name()=='FINAL_BILL'}]]*/ false;
 const fmt = n => '₹ '+parseFloat(n).toLocaleString('en-IN',{minimumFractionDigits:2,maximumFractionDigits:2});
 
 document.getElementById('partialModal')?.addEventListener('show.bs.modal', () => {
   loadPaid().then(paid => {
-    const balance = GRAND_TOTAL - paid;
+    const totalPaid = paid + ADV_AMOUNT;        // cash + advance = total settled
+    const balance   = GRAND_TOTAL - totalPaid;
     document.getElementById('mBillTotal').textContent = fmt(GRAND_TOTAL);
-    document.getElementById('mPaid').textContent      = fmt(paid);
+    document.getElementById('mPaid').textContent      = fmt(totalPaid);
     document.getElementById('mBalance').textContent   = fmt(balance);
     const amtInput = document.getElementById('partialAmt');
     amtInput.max   = balance;
@@ -237,8 +257,8 @@ document.getElementById('partialModal')?.addEventListener('show.bs.modal', () =>
 
 function calcRem() {
   loadPaid().then(paid => {
-    const entered = parseFloat(document.getElementById('partialAmt').value)||0;
-    const after   = GRAND_TOTAL - paid - entered;
+    const entered = parseFloat(document.getElementById('partialAmt').value) || 0;
+    const after   = GRAND_TOTAL - ADV_AMOUNT - paid - entered;
     const div     = document.getElementById('afterDiv');
     if (entered > 0) {
       div.style.display = 'block';
@@ -251,9 +271,9 @@ function calcRem() {
 async function loadPaid() {
   if (!IS_FINAL) return PAID_INIT;
   try {
-    const r = await fetch('/admin/payments/transactions/'+TX_ID+'/history');
+    const r = await fetch('/admin/billing/'+TX_ID+'/history');
     const d = await r.json();
-    return d.reduce((s,i) => s+parseFloat(i.amount), 0);
+    return d.filter(i => !i.isAdvance).reduce((s,i) => s+parseFloat(i.amount), 0);
   } catch { return PAID_INIT; }
 }
 
@@ -278,7 +298,7 @@ function payFull(){
 
 function loadHistory(){
   if(!IS_FINAL)return;
-  fetch('/admin/payments/transactions/'+TX_ID+'/history')
+  fetch('/admin/billing/'+TX_ID+'/history')
     .then(r=>r.json()).then(items=>{
       const el = document.getElementById('payHistoryList');
       if(!items||!items.length){el.innerHTML='<div class="text-center text-muted py-3 small">No payments yet.</div>';return;}

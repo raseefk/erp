@@ -44,6 +44,10 @@ public class PdfService {
     }
 
     public byte[] generate(Transaction tx) {
+        return generate(tx, BigDecimal.ZERO);
+    }
+
+    public byte[] generate(Transaction tx, BigDecimal cashPaid) {
         try {
             com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -52,11 +56,14 @@ public class PdfService {
             writer.setPageEvent(new PageFooter(settings));
             doc.open();
 
-            header(doc, tx, settings);
+            String title = tx.getStatus() == TransactionStatus.FINAL_BILL ? "TAX INVOICE" : "QUOTATION";
+            String number = tx.getStatus() == TransactionStatus.FINAL_BILL ? tx.getInvoiceNumber() : tx.getQuotationNumber();
+            String date = tx.getCreatedAt() != null ? tx.getCreatedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) : "";
+            header(doc, title, number, date, tx.getStatus() == TransactionStatus.FINAL_BILL, settings);
             infoRow(doc, tx);
             doc.add(Chunk.NEWLINE);
             itemsTable(doc, tx);
-            totals(doc, tx);
+            totals(doc, tx, cashPaid);
             if (tx.getNotes() != null && !tx.getNotes().isBlank())
                 notes(doc, tx.getNotes());
             terms(doc);
@@ -72,8 +79,83 @@ public class PdfService {
         }
     }
 
+    public byte[] generateAdvanceReceipt(com.supererp.erp.entity.AdvancePayment advance) {
+        try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            writer.setPageEvent(new PageFooter(settings));
+            doc.open();
+
+            // Header
+            String dt = advance.getDate() != null ? advance.getDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) : "";
+            header(doc, "ADVANCE RECEIPT", advance.getAdvanceNumber(), dt, true, settings);
+
+            // Details
+            PdfPTable t = new PdfPTable(1);
+            t.setWidthPercentage(100);
+            t.setSpacingAfter(15);
+            
+            PdfPCell c = cell(Rectangle.BOX);
+            c.setBorderColor(BORDER);
+            c.setBackgroundColor(LIGHT);
+            c.setPadding(15);
+            
+            c.addElement(p("RECEIVED WITH THANKS FROM:", f(8, Font.BOLD, GOLD)));
+            c.addElement(p(advance.getPaymentFrom(), f(12, Font.BOLD, DARK)));
+            
+            if (advance.getProject() != null) {
+                c.addElement(Chunk.NEWLINE);
+                c.addElement(p("FOR PROJECT:", f(8, Font.BOLD, GOLD)));
+                c.addElement(p(advance.getProject().getName(), f(10, Font.NORMAL, DARK)));
+            }
+            
+            if (s(advance.getDescription())) {
+                c.addElement(Chunk.NEWLINE);
+                c.addElement(p("DESCRIPTION:", f(8, Font.BOLD, GOLD)));
+                c.addElement(p(advance.getDescription(), f(10, Font.NORMAL, DARK)));
+            }
+            
+            t.addCell(c);
+            doc.add(t);
+
+            // Amount Box
+            PdfPTable aTable = new PdfPTable(1);
+            aTable.setWidthPercentage(50);
+            aTable.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            PdfPCell ac = cell(Rectangle.BOX);
+            ac.setBackgroundColor(NAVY);
+            ac.setPadding(12);
+            Paragraph ap = p("Amount Received: ₹ " + fmt(advance.getAmount()), f(14, Font.BOLD, BaseColor.WHITE));
+            ap.setAlignment(Element.ALIGN_RIGHT);
+            ac.addElement(ap);
+            aTable.addCell(ac);
+            doc.add(aTable);
+
+            doc.add(Chunk.NEWLINE);
+            Paragraph words = p("Amount in words: " + inWords(advance.getAmount()) + " Only", f(9, Font.ITALIC, MUTED));
+            words.setAlignment(Element.ALIGN_RIGHT);
+            doc.add(words);
+
+            // Signature
+            Paragraph sig = p("Authorised Signatory", f(9, Font.BOLD, DARK));
+            sig.setAlignment(Element.ALIGN_RIGHT);
+            sig.setSpacingBefore(60);
+            doc.add(sig);
+
+            terms(doc);
+
+            doc.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            log.error("Advance receipt PDF failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Advance receipt PDF failed", e);
+        }
+    }
+
     // ── Header ──────────────────────────────────────────────────────────────
-    private void header(Document doc, Transaction tx, com.supererp.erp.entity.CompanySettings settings) throws DocumentException {
+    private void header(Document doc, String title, String number, String date, boolean isGold, com.supererp.erp.entity.CompanySettings settings) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100);
         t.setWidths(new float[] { 3.8f, 1.6f });
@@ -99,25 +181,20 @@ public class PdfService {
         t.addCell(left);
 
         // Right: doc badge
-        boolean isBill = tx.getStatus() == TransactionStatus.FINAL_BILL;
         PdfPCell right = cell(Rectangle.NO_BORDER);
-        right.setBackgroundColor(isBill ? GOLD : NAVY2);
+        right.setBackgroundColor(isGold ? GOLD : NAVY2);
         right.setVerticalAlignment(Element.ALIGN_MIDDLE);
         right.setPaddingLeft(16);
         right.setPaddingRight(16);
         right.setPaddingBottom(16);
         right.setPaddingTop(2);
-        Paragraph docType = p(isBill ? "TAX INVOICE" : "QUOTATION", f(14, Font.BOLD, BaseColor.WHITE));
+        Paragraph docType = p(title, f(14, Font.BOLD, BaseColor.WHITE));
         docType.setAlignment(Element.ALIGN_CENTER);
         right.addElement(docType);
-        String num = isBill ? tx.getInvoiceNumber() : tx.getQuotationNumber();
-        Paragraph numP = p(num != null ? num : "-", f(9, Font.NORMAL, BaseColor.WHITE));
+        Paragraph numP = p(number != null ? number : "-", f(9, Font.NORMAL, BaseColor.WHITE));
         numP.setAlignment(Element.ALIGN_CENTER);
         right.addElement(numP);
-        String dateStr = tx.getCreatedAt() != null
-                ? tx.getCreatedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                : "";
-        Paragraph dateP = p(dateStr, f(8, Font.NORMAL, BaseColor.WHITE));
+        Paragraph dateP = p(date != null ? date : "", f(8, Font.NORMAL, BaseColor.WHITE));
         dateP.setAlignment(Element.ALIGN_CENTER);
         right.addElement(dateP);
         t.addCell(right);
@@ -237,7 +314,7 @@ public class PdfService {
     }
 
     // ── Totals ───────────────────────────────────────────────────────────────
-    private void totals(Document doc, Transaction tx) throws DocumentException {
+    private void totals(Document doc, Transaction tx, BigDecimal cashPaid) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(40);
         t.setHorizontalAlignment(Element.ALIGN_RIGHT);
@@ -282,9 +359,16 @@ public class PdfService {
         gv.setHorizontalAlignment(Element.ALIGN_RIGHT);
         t.addCell(gv);
 
-        // Amount paid
-        totalRow(t, "Amount Paid", "₹ " + fmt(tx.getAmountPaid()), false);
-        BigDecimal balance = tx.getGrandTotal().subtract(tx.getAmountPaid());
+        // Advance + cash paid rows (cashPaid = sum from income transactions, not tx.amountPaid)
+        BigDecimal advAmount = tx.getAdvanceSettledAmount() != null ? tx.getAdvanceSettledAmount() : BigDecimal.ZERO;
+        if (advAmount.compareTo(BigDecimal.ZERO) > 0) {
+            totalRow(t, "Advance Adjusted", "-₹ " + fmt(advAmount), false);
+        }
+        if (cashPaid.compareTo(BigDecimal.ZERO) > 0) {
+            totalRow(t, "Amount Paid", "₹ " + fmt(cashPaid), false);
+        }
+        BigDecimal balance = tx.getGrandTotal().subtract(advAmount).subtract(cashPaid);
+        if (balance.compareTo(BigDecimal.ZERO) < 0) balance = BigDecimal.ZERO;
         totalRow(t, "Balance Due", "₹ " + fmt(balance), true);
 
         doc.add(t);

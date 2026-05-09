@@ -21,11 +21,14 @@ import java.util.List;
 @Service @RequiredArgsConstructor @Slf4j
 public class BillingService {
 
-    private final TransactionRepository txRepo;
-    private final CustomerRepository    customerRepo;
-    private final InventoryItemRepository itemRepo;
-    private final NumberGenerator       numGen;
-    private final CompanyProperties     company;
+    private final TransactionRepository       txRepo;
+    private final CustomerRepository          customerRepo;
+    private final InventoryItemRepository     itemRepo;
+    private final ProjectRepository           projectRepo;
+    private final AdvancePaymentRepository    advanceRepo;
+    private final NumberGenerator             numGen;
+    private final CompanyProperties           company;
+
 
     // ── Create Quotation (no stock deduction) ─────────────────────────────────
     @Transactional
@@ -35,13 +38,25 @@ public class BillingService {
         return txRepo.save(tx);
     }
 
-    // ── Create Final Bill directly (with stock deduction) ─────────────────────
     @Transactional
     public Transaction createFinalBill(TransactionRequest req, AppUser createdBy) {
         Transaction tx = buildTransaction(req, TransactionStatus.FINAL_BILL, createdBy);
         tx.setInvoiceNumber(numGen.nextInvoiceNumber());
         tx.setConvertedAt(LocalDateTime.now());
         deductStock(tx.getItems());
+
+        if (tx.getAdvancePayment() != null) {
+            AdvancePayment adv = tx.getAdvancePayment();
+            BigDecimal maxSettle = adv.getAmount().min(tx.getGrandTotal());
+            tx.setAdvanceSettledAmount(maxSettle);
+            adv.setStatus(AdvancePaymentStatus.SETTLED);
+            advanceRepo.save(adv);
+            
+            if (maxSettle.compareTo(tx.getGrandTotal()) >= 0) {
+                tx.setPaymentStatus(PaymentStatus.PAID);
+            }
+        }
+
         return txRepo.save(tx);
     }
 
@@ -56,6 +71,19 @@ public class BillingService {
         tx.setStatus(TransactionStatus.FINAL_BILL);
         tx.setInvoiceNumber(numGen.nextInvoiceNumber());
         tx.setConvertedAt(LocalDateTime.now());
+
+        if (tx.getAdvancePayment() != null) {
+            AdvancePayment adv = tx.getAdvancePayment();
+            BigDecimal maxSettle = adv.getAmount().min(tx.getGrandTotal());
+            tx.setAdvanceSettledAmount(maxSettle);
+            adv.setStatus(AdvancePaymentStatus.SETTLED);
+            advanceRepo.save(adv);
+            
+            if (maxSettle.compareTo(tx.getGrandTotal()) >= 0) {
+                tx.setPaymentStatus(PaymentStatus.PAID);
+            }
+        }
+
         return txRepo.save(tx);
     }
 
@@ -112,9 +140,21 @@ public class BillingService {
         Customer customer = customerRepo.findById(req.getCustomerId())
             .orElseThrow(() -> new IllegalArgumentException("Customer not found"));
 
+        Project project = null;
+        if (req.getProjectId() != null) {
+            project = projectRepo.findById(req.getProjectId()).orElse(null);
+        }
+
+        AdvancePayment advancePayment = null;
+        if (req.getAdvancePaymentId() != null) {
+            advancePayment = advanceRepo.findById(req.getAdvancePaymentId()).orElse(null);
+        }
+
         Transaction tx = Transaction.builder()
             .status(status)
             .customer(customer)
+            .project(project)
+            .advancePayment(advancePayment)
             .gstEnabled(req.isGstEnabled())
             .taxAllItems(req.isTaxAllItems())
             .gstType(GstType.valueOf(req.getGstType() != null ? req.getGstType() : "LOCAL"))

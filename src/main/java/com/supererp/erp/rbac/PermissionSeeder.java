@@ -42,7 +42,8 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertFeature("HR",         "HR",                  "id-card",     5);
         upsertFeature("FINANCE",    "Finance",             "coins",       6);
         upsertFeature("ADMIN",      "Administration",      "shield-lock", 7);
-        upsertFeature("SYSTEM",     "System",              "cog",         8);
+        upsertFeature("ADVANCE_PAYMENTS", "Advance Payments", "cash-coin", 8);
+        upsertFeature("SYSTEM",     "System",              "cog",         9);
     }
 
     private void upsertFeature(String id, String name, String icon, int order) {
@@ -57,6 +58,7 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_ENQUIRIES", "SALES", "Enquiries", "chat-left-text", 1);
         upsertMenu("MENU_BILLING",   "SALES", "Billing & Quotations", "receipt-cutoff", 2);
         upsertMenu("MENU_CUSTOMERS", "SALES", "Customers", "people", 3);
+        upsertMenu("MENU_ADVANCE_PAYMENTS", "ADVANCE_PAYMENTS", "Advance Payments", "cash-stack", 4);
 
         // Operations
         upsertMenu("MENU_INVENTORY", "OPERATIONS", "Inventory", "boxes", 1);
@@ -166,6 +168,7 @@ public class PermissionSeeder implements CommandLineRunner {
     private String resolveMenu(String id) {
         if (id.equals("DASHBOARD_VIEW")) return "MENU_DASHBOARD";
         if (id.startsWith("BILLING_")) return "MENU_BILLING";
+        if (id.startsWith("ADVANCE_PAYMENTS_")) return "MENU_ADVANCE_PAYMENTS";
         if (id.startsWith("CRM_CUSTOMERS_")) return "MENU_CUSTOMERS";
         if (id.startsWith("CRM_ENQUIRIES_")) return "MENU_ENQUIRIES";
         if (id.startsWith("INV_")) return "MENU_INVENTORY";
@@ -194,6 +197,7 @@ public class PermissionSeeder implements CommandLineRunner {
         if (permId.equals("DASHBOARD_VIEW")) return "SYSTEM";
         if (permId.startsWith("CRM_")) return "SALES";
         if (permId.startsWith("BILLING_")) return "SALES";
+        if (permId.startsWith("ADVANCE_PAYMENTS_")) return "ADVANCE_PAYMENTS";
         if (permId.startsWith("INV_")) return "OPERATIONS";
         if (permId.startsWith("PROJ_")) return "PROJECTS";
         if (permId.startsWith("HR_")) return "HR";

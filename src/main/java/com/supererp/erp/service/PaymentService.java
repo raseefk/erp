@@ -36,7 +36,8 @@ public class PaymentService {
         assertNotFullyPaid(tx);
 
         BigDecimal alreadyPaid = incomeRepo.sumByTransactionId(transactionId);
-        BigDecimal remaining   = tx.getGrandTotal().subtract(alreadyPaid).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal advanceSettled = tx.getAdvanceSettledAmount() != null ? tx.getAdvanceSettledAmount() : BigDecimal.ZERO;
+        BigDecimal remaining   = tx.getGrandTotal().subtract(advanceSettled).subtract(alreadyPaid).setScale(2, RoundingMode.HALF_UP);
 
         if (remaining.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalStateException("Invoice is already fully settled.");
@@ -44,7 +45,9 @@ public class PaymentService {
 
         IncomeTransaction income = buildIncome(tx, "Full Payment", remaining, alreadyPaid.add(remaining), tx.getGrandTotal());
 
-        tx.setAmountPaid(tx.getGrandTotal());
+        // amountPaid = cash only (advance is separately tracked in advanceSettledAmount)
+        BigDecimal currentCash = tx.getAmountPaid() != null ? tx.getAmountPaid() : BigDecimal.ZERO;
+        tx.setAmountPaid(currentCash.add(remaining));
         tx.setPaymentStatus(PaymentStatus.PAID);
         txRepo.save(tx);
 
@@ -66,13 +69,14 @@ public class PaymentService {
         }
 
         BigDecimal alreadyPaid = incomeRepo.sumByTransactionId(transactionId);
+        BigDecimal advanceSettled = tx.getAdvanceSettledAmount() != null ? tx.getAdvanceSettledAmount() : BigDecimal.ZERO;
         BigDecimal newTotal    = alreadyPaid.add(payAmount).setScale(2, RoundingMode.HALF_UP);
         BigDecimal grandTotal  = tx.getGrandTotal();
+        BigDecimal actualPending = grandTotal.subtract(advanceSettled).subtract(alreadyPaid).setScale(2, RoundingMode.HALF_UP);
 
-        if (newTotal.compareTo(grandTotal) > 0) {
+        if (payAmount.compareTo(actualPending) > 0) {
             throw new IllegalArgumentException(
-                "Payment of ₹" + payAmount + " exceeds remaining balance of ₹" +
-                grandTotal.subtract(alreadyPaid).setScale(2, RoundingMode.HALF_UP)
+                "Payment of ₹" + payAmount + " exceeds remaining balance of ₹" + actualPending
             );
         }
 
@@ -80,12 +84,14 @@ public class PaymentService {
         IncomeTransaction income = buildIncome(tx, effectiveTitle, payAmount, newTotal, grandTotal);
 
         // Auto-transition if balance is now zero
-        if (newTotal.compareTo(grandTotal) == 0) {
+        // Balance = grandTotal - advance - amountPaid (advance is tracked separately)
+        if (newTotal.add(advanceSettled).compareTo(grandTotal) >= 0) {
             tx.setPaymentStatus(PaymentStatus.PAID);
             log.info("Auto-transitioned Invoice {} to FULLY_PAID", tx.getInvoiceNumber());
         } else {
             tx.setPaymentStatus(PaymentStatus.PARTIALLY_PAID);
         }
+        // amountPaid = only actual cash payments (NOT including advance)
         tx.setAmountPaid(newTotal);
         txRepo.save(tx);
 
@@ -132,15 +138,26 @@ public class PaymentService {
     private IncomeTransaction buildIncome(Transaction tx, String title,
                                           BigDecimal amount, BigDecimal totalReceived,
                                           BigDecimal grandTotal) {
-        BigDecimal pending = grandTotal.subtract(totalReceived).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal advanceSettled = tx.getAdvanceSettledAmount() != null ? tx.getAdvanceSettledAmount() : BigDecimal.ZERO;
+        BigDecimal pending = grandTotal.subtract(advanceSettled).subtract(totalReceived).setScale(2, RoundingMode.HALF_UP);
         if (pending.compareTo(BigDecimal.ZERO) < 0) pending = BigDecimal.ZERO;
 
+        String advanceText = "";
+        if (tx.getAdvancePayment() != null && advanceSettled.compareTo(BigDecimal.ZERO) > 0) {
+            advanceText = String.format(" [Advance No: %s (₹%s)]", tx.getAdvancePayment().getAdvanceNumber(), advanceSettled);
+        }
+
         String description = String.format(
-            "Bill Amount: ₹%s, Total Received: ₹%s, Pending Amount: ₹%s",
+            "Bill Amount: ₹%s, Total Received: ₹%s, Pending Amount: ₹%s%s",
             grandTotal.setScale(2, RoundingMode.HALF_UP),
             totalReceived.setScale(2, RoundingMode.HALF_UP),
-            pending
+            pending,
+            advanceText
         );
+
+        if (tx.getProject() != null) {
+            description += " | Project: " + tx.getProject().getName();
+        }
 
         return IncomeTransaction.builder()
             .transaction(tx)

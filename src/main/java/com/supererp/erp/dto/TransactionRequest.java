@@ -19,6 +19,10 @@ public class TransactionRequest {
 
     private String notes;
 
+    private Long projectId;
+    private Long advancePaymentId;
+
+
     @NotEmpty(message = "At least one line item is required")
     @Valid
     private List<LineItemRequest> items;

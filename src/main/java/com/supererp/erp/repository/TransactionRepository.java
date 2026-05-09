@@ -10,17 +10,20 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 public interface TransactionRepository extends JpaRepository<Transaction, Long> {
     
-    @EntityGraph(attributePaths = {"customer", "items", "items.inventoryItem", "createdBy"})
+    @EntityGraph(attributePaths = {"customer", "items", "items.inventoryItem", "createdBy", "advancePayment", "project"})
     Optional<Transaction> findById(Long id);
 
     @EntityGraph(attributePaths = {"customer"})
     Page<Transaction> findAll(Pageable pageable);
 
     Optional<Transaction> findByInvoiceNumber(String invoiceNumber);
+
+    List<Transaction> findByProject_IdOrderByCreatedAtDesc(Long projectId);
 
     @EntityGraph(attributePaths = {"customer"})
     Page<Transaction> findByStatusOrderByCreatedAtDesc(TransactionStatus s, Pageable p);
