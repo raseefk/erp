@@ -1,221 +1,195 @@
-# Super ERP — Management System
+# Super ERP
 
-A complete, production-ready Spring Boot 3.x application for billing, inventory, CRM, HR and expense management for Super ERP.
+Super ERP is a Spring Boot 3.x multi-tenant ERP application with modules for billing, inventory, CRM, HR, expenses, projects, SCM, approvals, finance, RBAC, tenant administration, and file uploads.
+
+Current status: **not production ready yet**. See [production-readiness-implementation-plan.md](production-readiness-implementation-plan.md) before deploying publicly.
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
+
 - Java 17+
 - Maven 3.8+
+- PostgreSQL 14+ recommended for local development and production-like testing
 
-### Run locally
+### Run Locally
+
 ```bash
-# 1. Clone / unzip the project
-cd super-erp
-
-# 2. Run
 mvn spring-boot:run
-
-# 3. Open browser
-http://localhost:8080          # Public website
-http://localhost:8080/login    # Admin login
 ```
 
-**Default credentials:**
-| Username | Password | Role |
-|---|---|---|
-| `admin` | `Admin@1234` | ROLE_ADMIN |
+Open:
 
-> ⚠️ Change the password immediately after first login (via application.properties or H2 console).
+- App: http://localhost:8085
+- Login: http://localhost:8085/login
+- System login: http://localhost:8085/system/login
+
+The default port is configured in `src/main/resources/application.properties`.
 
 ---
 
-## 🐳 Docker
+## Configuration
+
+The current development configuration lives in:
+
+```text
+src/main/resources/application.properties
+```
+
+Important settings:
+
+```properties
+server.port=8085
+spring.datasource.url=jdbc:postgresql://localhost:5432/super_erp
+spring.datasource.username=erp_app
+spring.datasource.password=admin123
+app.jwt.secret=super-erp-jwt-secret-key-must-be-256-bits-long-for-hs256-algorithm
+app.system.admin.username=superadmin
+app.system.admin.password=SuperAdmin@2026!
+```
+
+Before production, move all secrets to environment variables and rotate any values committed to the repository.
+
+Recommended production pattern:
+
+```properties
+spring.datasource.url=${DB_URL}
+spring.datasource.username=${DB_USERNAME}
+spring.datasource.password=${DB_PASSWORD}
+app.jwt.secret=${APP_JWT_SECRET}
+app.system.admin.username=${SYSTEM_ADMIN_USERNAME}
+app.system.admin.password=${SYSTEM_ADMIN_PASSWORD}
+```
+
+---
+
+## Database
+
+The application is configured for PostgreSQL.
+
+Default local database:
+
+```text
+Database: super_erp
+User: erp_app
+```
+
+Liquibase migrations are loaded from:
+
+```text
+src/main/resources/db/changelog/master.xml
+```
+
+### Required PostgreSQL Extension: `pg_trgm`
+
+`V17__search_indexes.sql` can create optional trigram indexes for faster `LIKE '%query%'` searches. These indexes require the PostgreSQL extension `pg_trgm`.
+
+Normal application users often do not have permission to create extensions. If you see this error:
+
+```text
+ERROR: permission denied to create extension "pg_trgm"
+```
+
+run this once as a privileged PostgreSQL user, usually `postgres`:
 
 ```bash
-# Build and start
+psql -U postgres -d super_erp -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+```
+
+If PostgreSQL is running in Docker:
+
+```bash
+docker exec -it <postgres_container_name> psql -U postgres -d super_erp -c "CREATE EXTENSION IF NOT EXISTS pg_trgm;"
+```
+
+The migration is written so the app can still start without `pg_trgm`; normal B-tree indexes are created, and trigram indexes are skipped unless the extension already exists.
+
+---
+
+## Docker
+
+```bash
 docker-compose up --build -d
-
-# View logs
 docker-compose logs -f
-
-# Stop
 docker-compose down
 ```
 
-The H2 database file is persisted in a Docker volume (`levanto_data`), so data survives container restarts.
+Note: the current Docker Compose file should be reviewed before production use. The production readiness plan recommends switching Compose to a PostgreSQL service and using environment variables or a secret manager for credentials.
 
 ---
 
-## 🏗️ Architecture
+## Build and Test
 
-```
-com.super.erp/
-├── config/
-│   ├── CompanyProperties.java      # app.company.* from application.properties
-│   ├── DataInitializer.java        # Seeds admin + sample data on first run
-│   └── SecurityConfig.java         # RBAC Spring Security
-├── controller/                     # Web + REST controllers
-├── dto/                            # Request/Response DTOs
-├── entity/                         # JPA Entities
-├── enums/                          # Role, TransactionStatus, ItemType, etc.
-├── repository/                     # Spring Data JPA repositories
-├── security/
-│   └── CustomUserDetailsService.java
-├── service/
-│   ├── BillingService.java         # ⭐ Smart GST Engine
-│   ├── PdfService.java             # iText PDF generation
-│   ├── EmployeeService.java        # Pay Salary → auto Expense
-│   └── ...
-└── util/
-    └── NumberGenerator.java        # QUO-2412-0001 / INV-2412-0001
-```
-
----
-
-## 💡 Key Features
-
-### Smart GST Engine (BillingService)
-```
-Toggle A — gstEnabled:
-  OFF → 0% GST on ALL items regardless of type
-
-Toggle B — taxAllItems (only relevant when A is ON):
-  OFF → GST applied only to SERVICE items
-  ON  → GST applied to PRODUCT + SERVICE items
-```
-
-### Quotation → Final Bill Flow
-1. Create a **Quotation** (no stock deducted)
-2. Click **"Convert to Final Bill"**
-3. System deducts stock for PRODUCT line items
-4. Generates unique Invoice Number (`INV-YYMM-XXXX`)
-
-### Square Feet Billing
-- Each line item has a **Square Feet** field
-- `Total = Square Feet × Rate per SqFt`
-- Supports mixed items: SQF tiles + RFT skirting + NOS items
-
-### Pay Salary
-- Go to **Employees → Pay** button
-- Enter amount and date
-- System automatically creates an **Expense** record (category: SALARY)
-
-### PDF Generation
-- Download branded PDFs for Quotations and Final Bills
-- Includes: Company header, Customer info, Line items table, CGST/SGST split, Totals, Terms
-- Quotations have a "QUOTATION" watermark
-
----
-
-## 🔐 Role-Based Access
-
-| Module | ADMIN | EMPLOYEE |
-|---|---|---|
-| Dashboard | ✅ | ✅ |
-| Enquiries | ✅ | ✅ |
-| Billing & Quotations | ✅ | ✅ |
-| Customers | ✅ | ✅ |
-| Inventory | ✅ | ✅ |
-| Vendors | ✅ | ❌ |
-| Employees | ✅ | ❌ |
-| Expenses | ✅ | ❌ |
-| H2 Console | ✅ | ❌ |
-
----
-
-## ⚙️ Configuration
-
-Edit `src/main/resources/application.properties`:
-
-```properties
-# Company branding (used in PDFs and website)
-app.company.name=Lēvanto Flooring
-app.company.address=Your Shop Address, City, State — PIN
-app.company.phone=+91 XXXXX XXXXX
-app.company.email=info@levantoflooring.com
-app.company.gstNumber=YOUR_GSTIN_HERE
-app.company.cgstRate=9
-app.company.sgstRate=9
-
-# Default admin (change after first run)
-app.admin.username=admin
-app.admin.password=Admin@1234
-```
-
----
-
-## 🗄️ Database
-
-- **Engine:** H2 (file-persistent)
-- **File location:** `./data/levanto_db.mv.db`
-- **Console:** http://localhost:8080/h2-console
-  - JDBC URL: `jdbc:h2:file:./data/levanto_db`
-  - Username: `sa`
-  - Password: `SuperErp@2026!`
-
----
-
-## 📄 API Endpoints (REST)
-
-### Public
-| Method | URL | Description |
-|---|---|---|
-| POST | `/api/enquiries/submit` | Submit enquiry from website |
-
-### Billing (requires auth)
-| Method | URL | Description |
-|---|---|---|
-| POST | `/admin/billing/quotation` | Create quotation (JSON) |
-| POST | `/admin/billing/finalbill` | Create final bill (JSON) |
-| POST | `/admin/billing/{id}/convert` | Convert quotation → bill |
-| POST | `/admin/billing/{id}/payment` | Update payment status |
-| GET  | `/admin/billing/{id}/pdf` | Download PDF |
-| DELETE | `/admin/billing/{id}` | Delete quotation |
-
-### Inventory
-| Method | URL | Description |
-|---|---|---|
-| POST | `/admin/inventory/{id}/stock?qty=N` | Add stock |
-| POST | `/admin/inventory/{id}/price?price=X` | Update price |
-| POST | `/admin/inventory/{id}/toggle` | Activate/deactivate |
-
-### Employee
-| Method | URL | Description |
-|---|---|---|
-| POST | `/admin/employees/{id}/pay?amount=X&payDate=Y` | Pay salary |
-
----
-
-## 🏗️ Building for Production
+Run tests:
 
 ```bash
-# Build fat JAR
-mvn clean package -DskipTests
-
-# Run JAR
-java -jar target/erp-1.0.0.jar \
-  --app.admin.password=YOUR_SECURE_PASSWORD \
-  --app.company.gstNumber=YOUR_GSTIN
+mvn test
 ```
+
+Build the JAR:
+
+```bash
+mvn clean package -DskipTests
+```
+
+Run the JAR:
+
+```bash
+java -jar target/erp-1.0.0.jar
+```
+
+The current test suite is mostly a Spring context-load check. Add integration tests for authorization, tenant isolation, CSRF, JWT logout, file upload/download, and PostgreSQL migrations before production.
 
 ---
 
-## 📦 Tech Stack
+## Key Modules
+
+- Multi-tenant foundation
+- System tenant administration
+- RBAC roles and permissions
+- Billing and quotations
+- Customers and vendors
+- Inventory
+- Employees, salary, HR attendance, leave management
+- Expenses and file attachments
+- Projects and job cards
+- Finance dashboard and ledger
+- SCM purchase orders
+- Approval queue and analytics
+- Public enquiry submission
+
+---
+
+## Security Notes
+
+Before production:
+
+- Remove hardcoded secrets.
+- Disable tenant header fallback for public deployments.
+- Re-enable CSRF for browser-based tenant administration routes.
+- Add explicit permissions to all sensitive business controllers.
+- Fix JWT logout token blacklisting.
+- Harden file upload/download path handling.
+- Use PostgreSQL-backed integration tests.
+
+See [production-readiness-implementation-plan.md](production-readiness-implementation-plan.md) for the full checklist.
+
+---
+
+## Tech Stack
 
 | Component | Technology |
 |---|---|
 | Backend | Java 17, Spring Boot 3.2 |
-| Security | Spring Security (Session, BCrypt) |
-| Database | H2 (file-persistent) |
+| Security | Spring Security, BCrypt, JWT, RBAC |
+| Database | PostgreSQL |
+| Migrations | Liquibase |
 | ORM | Spring Data JPA / Hibernate |
-| UI | Thymeleaf + Bootstrap 5 |
-| PDF | iText 5.5 |
+| UI | Thymeleaf + Bootstrap |
+| Cache | Caffeine |
+| PDF | iText 5 |
 | Build | Maven |
-| Container | Docker + docker-compose |
+| Container | Docker |
 
----
-
-*Generated for Lēvanto Flooring. Update `application.properties` with real company details before going live.*
