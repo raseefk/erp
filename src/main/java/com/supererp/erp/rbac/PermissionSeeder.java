@@ -185,7 +185,7 @@ public class PermissionSeeder implements CommandLineRunner {
         if (id.startsWith("HR_HOLIDAYS_")) return "MENU_HOLIDAYS";
         if (id.startsWith("FIN_EXPENSES_")) return "MENU_EXPENSES";
         if (id.startsWith("FIN_PAYMENTS_")) return "MENU_PAYMENTS";
-        if (id.startsWith("FIN_LEDGER_")) return "MENU_PL_REPORT";
+        if (id.equals("FINANCE_VIEW") || id.startsWith("FIN_LEDGER_")) return "MENU_PL_REPORT";
         if (id.startsWith("FIN_TRANSACTIONS_") || id.startsWith("FIN_REPORTS_")) return "MENU_PL_REPORT";
         if (id.startsWith("SETTINGS_USERS_")) return "MENU_USERS";
         if (id.startsWith("SETTINGS_ROLES_")) return "MENU_ROLES";
@@ -201,7 +201,7 @@ public class PermissionSeeder implements CommandLineRunner {
         if (permId.startsWith("INV_")) return "OPERATIONS";
         if (permId.startsWith("PROJ_")) return "PROJECTS";
         if (permId.startsWith("HR_")) return "HR";
-        if (permId.startsWith("FIN_")) return "FINANCE";
+        if (permId.equals("FINANCE_VIEW") || permId.startsWith("FIN_")) return "FINANCE";
         if (permId.startsWith("SETTINGS_COMPANY_") || permId.startsWith("SETTINGS_FEATURES_")) return "SYSTEM";
         if (permId.startsWith("SETTINGS_")) return "ADMIN";
         if (permId.startsWith("SCM_")) return "SCM";

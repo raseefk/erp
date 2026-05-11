@@ -60,15 +60,21 @@ public class HrService {
         List<com.supererp.erp.dto.AttendanceReportDto> report = new java.util.ArrayList<>();
         List<java.time.DayOfWeek> weeklyOffDays = companySettingsService.getSettings().getWeeklyOffDaysList();
 
+        List<Attendance> allAttendances = attendanceRepository.findByDateBetweenAndEmployeeIdOptional(start, end, employeeId);
+        List<LeaveApplication> allLeaves = leaveApplicationRepository.findApprovedLeavesInPeriod(employeeId, start, end);
+        List<com.supererp.erp.entity.Holiday> holidays = holidayRepository.findByDateBetween(start, end);
+
+        java.util.Map<Long, List<Attendance>> attMap = allAttendances.stream().collect(java.util.stream.Collectors.groupingBy(a -> a.getEmployee().getId()));
+        java.util.Map<Long, List<LeaveApplication>> leaveMap = allLeaves.stream().collect(java.util.stream.Collectors.groupingBy(l -> l.getEmployee().getId()));
+
         for (Employee emp : targetEmployees) {
-            List<Attendance> attendances = attendanceRepository.findByDateBetweenAndEmployeeIdOptional(start, end, emp.getId());
-            List<LeaveApplication> leaves = leaveApplicationRepository.findApprovedLeavesInPeriod(emp.getId(), start, end);
-            List<com.supererp.erp.entity.Holiday> holidays = holidayRepository.findByDateBetween(start, end);
+            List<Attendance> attendances = attMap.getOrDefault(emp.getId(), java.util.Collections.emptyList());
+            List<LeaveApplication> empLeaves = leaveMap.getOrDefault(emp.getId(), java.util.Collections.emptyList());
 
             for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
                 final LocalDate current = d;
                 Attendance att = attendances.stream().filter(a -> a.getDate().equals(current)).findFirst().orElse(null);
-                LeaveApplication leave = leaves.stream().filter(l -> !current.isBefore(l.getStartDate()) && !current.isAfter(l.getEndDate())).findFirst().orElse(null);
+                LeaveApplication leave = empLeaves.stream().filter(l -> !current.isBefore(l.getStartDate()) && !current.isAfter(l.getEndDate())).findFirst().orElse(null);
                 com.supererp.erp.entity.Holiday holiday = holidays.stream().filter(h -> h.getDate().equals(current)).findFirst().orElse(null);
 
                 String status = "ABSENT";

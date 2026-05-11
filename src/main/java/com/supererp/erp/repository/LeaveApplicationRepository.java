@@ -17,6 +17,6 @@ public interface LeaveApplicationRepository extends JpaRepository<LeaveApplicati
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"employee"})
     List<LeaveApplication> findAllByOrderByAppliedAtDesc();
 
-    @org.springframework.data.jpa.repository.Query("SELECT l FROM LeaveApplication l WHERE l.employee.id = :employeeId AND l.status = 'APPROVED' AND l.startDate <= :endDate AND l.endDate >= :startDate")
-    List<LeaveApplication> findApprovedLeavesInPeriod(Long employeeId, java.time.LocalDate startDate, java.time.LocalDate endDate);
+    @org.springframework.data.jpa.repository.Query("SELECT l FROM LeaveApplication l WHERE (:employeeId IS NULL OR l.employee.id = :employeeId) AND l.status = 'APPROVED' AND l.startDate <= :endDate AND l.endDate >= :startDate")
+    List<LeaveApplication> findApprovedLeavesInPeriod(@org.springframework.data.repository.query.Param("employeeId") Long employeeId, @org.springframework.data.repository.query.Param("startDate") java.time.LocalDate startDate, @org.springframework.data.repository.query.Param("endDate") java.time.LocalDate endDate);
 }

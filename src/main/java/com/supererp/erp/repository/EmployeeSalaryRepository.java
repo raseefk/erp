@@ -30,6 +30,9 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
     @Query("SELECT COALESCE(SUM(s.amount), 0) FROM EmployeeSalary s WHERE s.salaryCreditedDate BETWEEN :from AND :to")
     BigDecimal sumSalaryByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    @Query("SELECT YEAR(s.salaryCreditedDate), MONTH(s.salaryCreditedDate), COALESCE(SUM(s.amount), 0) FROM EmployeeSalary s WHERE s.salaryCreditedDate BETWEEN :from AND :to GROUP BY YEAR(s.salaryCreditedDate), MONTH(s.salaryCreditedDate)")
+    List<Object[]> sumGroupedByMonth(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
     @EntityGraph(attributePaths = {"employee"})
     @Query("SELECT s FROM EmployeeSalary s WHERE s.salaryCreditedDate BETWEEN :from AND :to ORDER BY s.salaryCreditedDate DESC")
     Page<EmployeeSalary> findByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);

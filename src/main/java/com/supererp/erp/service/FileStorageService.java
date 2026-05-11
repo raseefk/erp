@@ -73,6 +73,16 @@ public class FileStorageService {
 
         Path dest = dir.resolve(filename);
         file.transferTo(dest.toFile());
+        
+        if (tenantId != null && tenantRepository != null) {
+            com.supererp.erp.tenant.Tenant tenantUpdate = tenantRepository.findById(tenantId).orElse(null);
+            if (tenantUpdate != null) {
+                Long current = tenantUpdate.getUploadSizeBytes();
+                tenantUpdate.setUploadSizeBytes((current == null ? 0L : current) + file.getSize());
+                tenantRepository.save(tenantUpdate);
+            }
+        }
+        
         log.info("Stored file: {}", dest);
         return namespacedSubfolder + "/" + filename;
     }
@@ -80,27 +90,19 @@ public class FileStorageService {
     /** Calculates the total size of uploads for a specific tenant in GB */
     public double getTenantUploadSizeInGB(UUID tenantId) {
         if (tenantId == null) return 0.0;
-        Path tenantPath = Paths.get(uploadDir, tenantId.toString()).toAbsolutePath().normalize();
-        if (!Files.exists(tenantPath)) return 0.0;
-
-        AtomicLong sizeBytes = new AtomicLong(0);
-        try {
-            Files.walkFileTree(tenantPath, new SimpleFileVisitor<Path>() {
-                @Override
-                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    sizeBytes.addAndGet(attrs.size());
-                    return FileVisitResult.CONTINUE;
-                }
-            });
-        } catch (IOException e) {
-            log.error("Failed to calculate upload size for tenant: " + tenantId, e);
-        }
-        return sizeBytes.get() / (1024.0 * 1024.0 * 1024.0);
+        com.supererp.erp.tenant.Tenant tenant = tenantRepository.findById(tenantId).orElse(null);
+        if (tenant == null || tenant.getUploadSizeBytes() == null) return 0.0;
+        return tenant.getUploadSizeBytes() / (1024.0 * 1024.0 * 1024.0);
     }
 
     /** Returns the absolute Path for serving a stored file */
     public Path resolve(String relativePath) {
-        return Paths.get(uploadDir).resolve(relativePath);
+        Path root = Paths.get(uploadDir).toAbsolutePath().normalize();
+        Path resolved = root.resolve(relativePath).normalize();
+        if (!resolved.startsWith(root)) {
+            throw new SecurityException("Path traversal detected");
+        }
+        return resolved;
     }
 
     /** Deletes a stored file silently */
@@ -108,7 +110,25 @@ public class FileStorageService {
         if (relativePath == null)
             return;
         try {
-            Files.deleteIfExists(Paths.get(uploadDir).resolve(relativePath));
+            Path root = Paths.get(uploadDir).toAbsolutePath().normalize();
+            Path resolved = root.resolve(relativePath).normalize();
+            if (!resolved.startsWith(root)) {
+                throw new SecurityException("Path traversal detected");
+            }
+            if (Files.exists(resolved)) {
+                long size = Files.size(resolved);
+                Files.deleteIfExists(resolved);
+                
+                UUID tenantId = TenantContext.getTenantId();
+                if (tenantId != null && tenantRepository != null) {
+                    com.supererp.erp.tenant.Tenant tenantUpdate = tenantRepository.findById(tenantId).orElse(null);
+                    if (tenantUpdate != null) {
+                        Long current = tenantUpdate.getUploadSizeBytes();
+                        tenantUpdate.setUploadSizeBytes(Math.max(0, (current == null ? 0L : current) - size));
+                        tenantRepository.save(tenantUpdate);
+                    }
+                }
+            }
         } catch (IOException e) {
             log.warn("Could not delete file: {}", relativePath);
         }

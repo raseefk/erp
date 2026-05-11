@@ -1,0 +1,43 @@
+version: '3.9'
+
+services:
+  app:
+    build: .
+    container_name: super-erp-app
+    image: raseefk/super-erp:latest
+    ports:
+      - "8085:8085"
+    networks:
+      - erp-network
+    volumes:
+      - super_erp_uploads:/app/uploads
+    environment:
+      - SPRING_PROFILES_ACTIVE=prod
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db:5432/super_erp
+      - SPRING_DATASOURCE_USERNAME=erp_user
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD:-SuperErp@Postgres2026}
+      - APP_JWT_SECRET=${JWT_SECRET:-REPLACE_WITH_SECURE_SECRET_IN_PROD}
+      - APP_SYSTEM_ADMIN_PASSWORD=${SYSTEM_ADMIN_PASSWORD:-Admin@2026}
+      - APP_UPLOAD_DIR=/app/uploads
+      # ── Company Details ──
+      - APP_COMPANY_NAME=${COMPANY_NAME:-Super ERP}
+      - APP_COMPANY_ADDRESS=${COMPANY_ADDRESS:-Main Business District, City, State}
+      - APP_COMPANY_PHONE=${COMPANY_PHONE:-+91 XXXXX XXXXX}
+      - APP_COMPANY_EMAIL=${COMPANY_EMAIL:-info@supererp.com}
+      - APP_COMPANY_GSTNUMBER=${COMPANY_GSTIN:-YOUR_GSTIN_HERE}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health | grep UP || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  erp-network:
+    external: true
+    name: erp-shared-network
+
+volumes:
+  super_erp_uploads:
+    driver: local

@@ -132,4 +132,14 @@ public class TenantService {
             tenantRepository.save(t);
         });
     }
+
+    @Transactional
+    public void incrementUploadSize(UUID id, long bytesDelta) {
+        tenantRepository.findById(id).ifPresent(t -> {
+            Long current = t.getUploadSizeBytes();
+            if (current == null) current = 0L;
+            t.setUploadSizeBytes(Math.max(0, current + bytesDelta));
+            tenantRepository.save(t);
+        });
+    }
 }

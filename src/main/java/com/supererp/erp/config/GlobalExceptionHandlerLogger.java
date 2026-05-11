@@ -27,6 +27,24 @@ public class GlobalExceptionHandlerLogger {
         }
     }
 
+    @ExceptionHandler(org.springframework.security.access.AccessDeniedException.class)
+    public Object handleAccessDenied(org.springframework.security.access.AccessDeniedException ex, WebRequest request) {
+        String acceptHeader = request.getHeader("Accept");
+        boolean isHtmlRequest = acceptHeader != null && acceptHeader.contains("text/html");
+
+        if (isHtmlRequest) {
+            org.springframework.web.servlet.ModelAndView mav = new org.springframework.web.servlet.ModelAndView("error/access-denied");
+            String msg = ex.getMessage();
+            if (msg != null && msg.contains(": ")) {
+                mav.addObject("requiredPermission", msg.substring(msg.indexOf(": ") + 2));
+            }
+            return mav;
+        } else {
+            return ResponseEntity.status(org.springframework.http.HttpStatus.FORBIDDEN)
+                .body(new com.supererp.erp.dto.ApiResponse<>(false, ex.getMessage(), null));
+        }
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         try (FileWriter fw = new FileWriter("error_log.txt", true);

@@ -27,7 +27,7 @@ public class SystemAdminController {
     private final com.supererp.erp.rbac.repository.FeatureRepository featureRepo;
     private final com.supererp.erp.rbac.repository.MenuRepository menuRepo;
     private final jakarta.persistence.EntityManager entityManager;
-    private final com.supererp.erp.service.FileStorageService fileStorageService;
+    private final com.supererp.erp.repository.AppUserRepository appUserRepository;
     
     @InitBinder
     public void initBinder(org.springframework.web.bind.WebDataBinder binder) {
@@ -70,17 +70,21 @@ public class SystemAdminController {
         double dbSizeGb = dbSizeBytes.longValue() / (1024.0 * 1024.0 * 1024.0);
 
         // 3. Tenant Stats (Uploads and Est Rows)
+        List<Object[]> userCounts = appUserRepository.countUsersGroupedByTenant();
+        java.util.Map<UUID, Long> userCountMap = new java.util.HashMap<>();
+        for (Object[] row : userCounts) {
+            userCountMap.put((UUID) row[0], (Long) row[1]);
+        }
+
         List<java.util.Map<String, Object>> tenantStats = tenants.stream()
             .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
             .map(t -> {
-                double uploadSize = fileStorageService.getTenantUploadSizeInGB(t.getId());
-                // Simple row count estimation for UI
-                Number rows = (Number) entityManager.createNativeQuery("SELECT count(*) FROM app_users WHERE tenant_id = :id")
-                        .setParameter("id", t.getId()).getSingleResult();
+                double uploadSize = (t.getUploadSizeBytes() != null ? t.getUploadSizeBytes() : 0L) / (1024.0 * 1024.0 * 1024.0);
+                long activeUsers = userCountMap.getOrDefault(t.getId(), 0L);
                 return java.util.Map.<String, Object>of(
                     "tenant", t,
                     "uploadSizeGb", uploadSize,
-                    "activeUsers", rows.longValue()
+                    "activeUsers", activeUsers
                 );
             }).toList();
 

@@ -84,6 +84,7 @@ public final class Permissions {
     public static final String HR_ATTENDANCE_REPORT_VIEW   = "HR_ATTENDANCE_REPORT_VIEW";
 
     // ── FINANCE Feature ───────────────────────────────────────────────────────
+    public static final String FINANCE_VIEW                 = "FINANCE_VIEW";
     public static final String FIN_TRANSACTIONS_VIEW        = "FIN_TRANSACTIONS_VIEW";
     public static final String FIN_EXPENSES_VIEW            = "FIN_EXPENSES_VIEW";
     public static final String FIN_EXPENSES_CREATE          = "FIN_EXPENSES_CREATE";

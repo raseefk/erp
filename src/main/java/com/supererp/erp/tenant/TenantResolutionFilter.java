@@ -30,6 +30,7 @@ import java.util.UUID;
 public class TenantResolutionFilter extends OncePerRequestFilter {
 
     private final TenantService tenantService;
+    private final org.springframework.core.env.Environment env;
 
     @Value("${app.tenant.domain:erp.com}")
     private String tenantDomain;
@@ -62,14 +63,14 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
         try {
             String slug = resolveSlug(request);
-            log.info("TenantResolutionFilter: Resolved slug '{}' from request {}", slug, request.getRequestURI());
+            log.debug("TenantResolutionFilter: Resolved slug '{}' from request {}", slug, request.getRequestURI());
             if (slug != null) {
                 tenantService.findBySlug(slug).ifPresentOrElse(
                     tenant -> {
                         TenantContext.setTenantId(tenant.getId());
                         TenantContext.setTenantSlug(tenant.getSlug());
                         request.setAttribute("currentTenant", tenant);
-                        log.info("TenantResolutionFilter: Tenant '{}' resolved to ID {}", slug, tenant.getId());
+                        log.debug("TenantResolutionFilter: Tenant '{}' resolved to ID {}", slug, tenant.getId());
                     },
                     () -> log.warn("TenantResolutionFilter: Unknown or inactive tenant slug: {}", slug)
                 );
@@ -119,9 +120,18 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
             }
         }
         // 2. Fallback: X-Tenant-ID header (dev/internal)
-        String headerVal = request.getHeader(headerFallback);
-        if (headerVal != null && !headerVal.isBlank()) {
-            return headerVal.trim().toLowerCase();
+        boolean isProd = false;
+        for (String profile : env.getActiveProfiles()) {
+            if ("prod".equals(profile)) {
+                isProd = true;
+                break;
+            }
+        }
+        if (!isProd) {
+            String headerVal = request.getHeader(headerFallback);
+            if (headerVal != null && !headerVal.isBlank()) {
+                return headerVal.trim().toLowerCase();
+            }
         }
         return null;
     }

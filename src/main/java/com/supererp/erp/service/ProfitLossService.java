@@ -38,11 +38,34 @@ public class ProfitLossService {
     public List<ProfitLossSummary> last12Months() {
         List<ProfitLossSummary> result = new ArrayList<>();
         LocalDate today = LocalDate.now();
+        LocalDate end = today.withDayOfMonth(today.lengthOfMonth());
+        LocalDate start = today.minusMonths(11).withDayOfMonth(1);
+
+        List<Object[]> incomeGrouped = incomeRepo.sumGroupedByMonth(start, end);
+        List<Object[]> expenseGrouped = expenseRepo.sumGroupedByMonth(start, end);
+        List<Object[]> salaryGrouped = salaryRepo.sumGroupedByMonth(start, end);
+
+        java.util.Map<String, BigDecimal> incomeMap = new java.util.HashMap<>();
+        for (Object[] row : incomeGrouped) incomeMap.put(row[0] + "-" + row[1], (BigDecimal) row[2]);
+
+        java.util.Map<String, BigDecimal> expenseMap = new java.util.HashMap<>();
+        for (Object[] row : expenseGrouped) expenseMap.put(row[0] + "-" + row[1], (BigDecimal) row[2]);
+
+        java.util.Map<String, BigDecimal> salaryMap = new java.util.HashMap<>();
+        for (Object[] row : salaryGrouped) salaryMap.put(row[0] + "-" + row[1], (BigDecimal) row[2]);
+
         for (int i = 11; i >= 0; i--) {
             LocalDate month = today.minusMonths(i);
             LocalDate from  = month.withDayOfMonth(1);
             LocalDate to    = month.withDayOfMonth(month.lengthOfMonth());
-            result.add(calculate(from, to));
+
+            String key = month.getYear() + "-" + month.getMonthValue();
+            BigDecimal inc = incomeMap.getOrDefault(key, BigDecimal.ZERO);
+            BigDecimal exp = expenseMap.getOrDefault(key, BigDecimal.ZERO);
+            BigDecimal sal = salaryMap.getOrDefault(key, BigDecimal.ZERO);
+
+            BigDecimal net = inc.subtract(exp).setScale(2, RoundingMode.HALF_UP);
+            result.add(new ProfitLossSummary(from, to, inc, exp, sal, net));
         }
         return result;
     }

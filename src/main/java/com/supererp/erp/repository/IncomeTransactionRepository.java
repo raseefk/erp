@@ -27,6 +27,9 @@ public interface IncomeTransactionRepository extends JpaRepository<IncomeTransac
     @Query("SELECT COALESCE(SUM(i.amount), 0) FROM IncomeTransaction i WHERE i.date BETWEEN :from AND :to")
     BigDecimal sumByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    @Query("SELECT YEAR(i.date), MONTH(i.date), COALESCE(SUM(i.amount), 0) FROM IncomeTransaction i WHERE i.date BETWEEN :from AND :to GROUP BY YEAR(i.date), MONTH(i.date)")
+    List<Object[]> sumGroupedByMonth(@Param("from") LocalDate from, @Param("to") LocalDate to);
+
     /** Paged ledger view */
     @EntityGraph(attributePaths = {"transaction", "transaction.customer", "advancePayment"})
     Page<IncomeTransaction> findAllByOrderByDateDesc(Pageable pageable);

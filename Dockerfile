@@ -13,7 +13,7 @@ RUN addgroup -S supererp && adduser -S supererp -G supererp
 
 COPY --from=build /app/target/erp-1.0.0.jar app.jar
 
-RUN mkdir -p /app/data && chown -R supererp:supererp /app
+RUN mkdir -p /app/uploads && chown -R supererp:supererp /app
 USER supererp
 
 EXPOSE 8085

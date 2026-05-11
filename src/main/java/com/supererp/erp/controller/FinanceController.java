@@ -36,6 +36,7 @@ public class FinanceController {
 
     // ── P&L Dashboard ─────────────────────────────────────────────────────────
     @GetMapping
+    @com.supererp.erp.rbac.annotation.RequiresPermission("FINANCE_VIEW")
     public String dashboard(
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
@@ -52,6 +53,7 @@ public class FinanceController {
 
     // ── Download expense attachment ───────────────────────────────────────────
     @GetMapping("/expenses/{id}/attachment")
+    @com.supererp.erp.rbac.annotation.RequiresPermission("FINANCE_VIEW")
     public ResponseEntity<Resource> downloadAttachment(@PathVariable Long id) {
         var expense = expenseService.getById(id);
         if (expense.getAttachmentPath() == null) {
@@ -77,6 +79,7 @@ public class FinanceController {
 
     // ── Download project expense attachment ───────────────────────────────────
     @GetMapping("/project-expenses/{id}/attachment")
+    @com.supererp.erp.rbac.annotation.RequiresPermission("FINANCE_VIEW")
     public ResponseEntity<Resource> downloadProjectAttachment(@PathVariable Long id) {
         var pe = projectExpRepo.findById(id).orElse(null);
         if (pe == null || pe.getAttachmentPath() == null) return ResponseEntity.notFound().build();

@@ -19,5 +19,7 @@
   <include file="classpath:db/changelog/V12__add_vendor_fields.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V13__add_advance_payments.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V15__fix_advance_payments_rls.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V16__add_upload_size_bytes.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V17__search_indexes.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

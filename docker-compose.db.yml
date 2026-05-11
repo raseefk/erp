@@ -1,0 +1,29 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: super-erp-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: super_erp
+      POSTGRES_USER: erp_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SuperErp@Postgres2026}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - erp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U erp_user -d super_erp"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  erp-network:
+    name: erp-shared-network
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local

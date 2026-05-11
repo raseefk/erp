@@ -26,6 +26,8 @@ public class SecurityConfig {
     private final JwtAuthFilter            jwtAuthFilter;
     private final TenantResolutionFilter   tenantResolutionFilter;
     private final CustomUserDetailsService userDetailsService;
+    private final com.supererp.erp.security.jwt.JwtTokenProvider jwtTokenProvider;
+    private final com.supererp.erp.repository.TokenBlacklistRepository blacklistRepo;
 
     @Bean
     public DaoAuthenticationProvider authProvider(PasswordEncoder passwordEncoder) {
@@ -55,7 +57,8 @@ public class SecurityConfig {
                     "/api/v1/tenant/metadata",
                     "/api/enquiries/submit",
                     "/css/**", "/js/**", "/images/**", "/static/**",
-                    "/favicon.ico"
+                    "/favicon.ico",
+                    "/actuator/health", "/actuator/info"
                 ).permitAll()
                 // ── System Admin ──────────────────────────────────────────────────
                 .requestMatchers("/system/login").permitAll()
@@ -88,6 +91,29 @@ public class SecurityConfig {
             )
             .logout(l -> l
                 .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                .addLogoutHandler((request, response, authentication) -> {
+                    String token = null;
+                    if (request.getCookies() != null) {
+                        for (var cookie : request.getCookies()) {
+                            if ("erp_token".equals(cookie.getName())) {
+                                token = cookie.getValue();
+                                break;
+                            }
+                        }
+                    }
+                    if (token != null) {
+                        try {
+                            String jti = jwtTokenProvider.extractJti(token);
+                            java.util.Date expDate = jwtTokenProvider.extractExpiration(token);
+                            java.time.OffsetDateTime expiresAt = java.time.OffsetDateTime.ofInstant(expDate.toInstant(), java.time.ZoneId.systemDefault());
+                            blacklistRepo.save(com.supererp.erp.entity.TokenBlacklist.builder()
+                                .jti(jti)
+                                .reason("USER_LOGOUT")
+                                .expiresAt(expiresAt)
+                                .build());
+                        } catch (Exception ignored) {}
+                    }
+                })
                 .logoutSuccessHandler((request, response, authentication) -> {
                     boolean isSystem = false;
                     if (authentication != null) {
@@ -112,17 +138,17 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(c -> c.ignoringRequestMatchers(
-                new AntPathRequestMatcher("/api/**"),
-                new AntPathRequestMatcher("/system/tenants/**")
+                new AntPathRequestMatcher("/api/**")
             ))
             .headers(h -> h
                 .frameOptions(f -> f.sameOrigin())
                 .httpStrictTransportSecurity(s -> s
                     .includeSubDomains(true)
                     .maxAgeInSeconds(31536000))
+                .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
                 .contentSecurityPolicy(c -> c.policyDirectives(
                     "default-src 'self'; " +
-                    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net; " +
+                    "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; " +
                     "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; " +
                     "font-src 'self' https://fonts.gstatic.com https://cdn.jsdelivr.net; " +
                     "img-src 'self' data: https:; " +

@@ -98,10 +98,12 @@ public class AuthApiController {
             String rawToken = (String) jwtAuth.getCredentials();
             try {
                 String jti = jwtProvider.extractJti(rawToken);
+                java.util.Date expDate = jwtProvider.extractExpiration(rawToken);
+                OffsetDateTime expiresAt = OffsetDateTime.ofInstant(expDate.toInstant(), java.time.ZoneId.systemDefault());
                 blacklistRepo.save(TokenBlacklist.builder()
                     .jti(jti)
                     .reason("USER_LOGOUT")
-                    .expiresAt(OffsetDateTime.now().plusDays(1))
+                    .expiresAt(expiresAt)
                     .build());
             } catch (Exception ignored) {}
         }

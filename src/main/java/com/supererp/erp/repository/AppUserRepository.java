@@ -26,6 +26,9 @@ public interface AppUserRepository extends JpaRepository<AppUser, Long> {
     java.util.List<AppUser> findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(UUID tenantId);
     long countByTenantId(UUID tenantId);
 
+    @Query("SELECT u.tenantId, COUNT(u) FROM AppUser u GROUP BY u.tenantId")
+    java.util.List<Object[]> countUsersGroupedByTenant();
+
     @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
     @Query("SELECT u FROM AppUser u WHERE u.tenantId = :tenantId")
     java.util.List<AppUser> findAllWithRoles(@org.springframework.data.repository.query.Param("tenantId") UUID tenantId);
