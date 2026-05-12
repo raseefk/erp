@@ -10,7 +10,7 @@ CREATE DATABASE super_erp;
 
 -- 2. Create the Application User
 -- Replace 'StrongPassword123!' with a secure password.
-CREATE USER erp_user WITH PASSWORD 'StrongPassword123!';
+CREATE USER super_erp_app_user WITH PASSWORD 'StrongPassword123!';
 
 -- 3. Connect to the new database before running the next commands
 -- \c super_erp
@@ -19,11 +19,13 @@ CREATE USER erp_user WITH PASSWORD 'StrongPassword123!';
 -- These are used for UUID generation and password hashing (if done in DB).
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
 
 -- 5. Grant Schema Permissions
 -- The user needs to be able to create tables and manage the schema (Liquibase).
-GRANT ALL PRIVILEGES ON DATABASE super_erp TO erp_user;
-GRANT ALL ON SCHEMA public TO erp_user;
+GRANT ALL PRIVILEGES ON DATABASE super_erp TO super_erp_app_user;
+GRANT USAGE ON SCHEMA public TO super_erp_app_user;
+GRANT ALL ON SCHEMA public TO super_erp_app_user;
 
 -- 6. Important: RLS Policy Permissions
 -- In PostgreSQL, only the table owner or a superuser can create/modify RLS policies.
@@ -32,7 +34,7 @@ GRANT ALL ON SCHEMA public TO erp_user;
 -- No additional 'GRANT' is needed for policies if the user owns the table.
 
 -- 7. Ensure the user can use the extensions
-GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO erp_user;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO super_erp_app_user;
 
 -- =============================================================================
 -- SERVER & FILE SYSTEM SETUP

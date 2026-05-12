@@ -237,6 +237,127 @@ public class PdfService {
         }
     }
 
+    public byte[] generateSubcontractorBill(com.supererp.erp.entity.SubcontractorRunningBill bill) {
+        try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            writer.setPageEvent(new PageFooter(settings));
+            doc.open();
+
+            // Header
+            String dt = bill.getBillDate() != null ? bill.getBillDate().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) : "";
+            header(doc, "RUNNING BILL", bill.getBillNumber(), dt, true, settings);
+
+            // Details Table
+            PdfPTable info = new PdfPTable(2);
+            info.setWidthPercentage(100);
+            info.setSpacingAfter(15);
+            info.setWidths(new float[]{1f, 1f});
+
+            // Left: Subcontractor Info
+            PdfPCell left = cell(Rectangle.BOX);
+            left.setBorderColor(BORDER);
+            left.setBackgroundColor(LIGHT);
+            left.setPadding(12);
+            left.addElement(p("SUBCONTRACTOR / VENDOR", f(8, Font.BOLD, GOLD)));
+            left.addElement(p(bill.getVendor().getName(), f(11, Font.BOLD, DARK)));
+            if (s(bill.getVendor().getPhone())) left.addElement(p("📞 " + bill.getVendor().getPhone(), f(9, Font.NORMAL, DARK)));
+            if (s(bill.getVendor().getAddress())) left.addElement(p(bill.getVendor().getAddress(), f(8, Font.NORMAL, MUTED)));
+            info.addCell(left);
+
+            // Right: Bill Details
+            PdfPCell right = cell(Rectangle.BOX);
+            right.setBorderColor(BORDER);
+            right.setBackgroundColor(LIGHT);
+            right.setPadding(12);
+            right.addElement(p("PROJECT DETAILS", f(8, Font.BOLD, GOLD)));
+            right.addElement(p(bill.getProject().getName(), f(10, Font.BOLD, DARK)));
+            right.addElement(detRow("Status", bill.getStatus().name()));
+            if (bill.getPeriodFrom() != null && bill.getPeriodTo() != null) {
+                right.addElement(detRow("Period", bill.getPeriodFrom().format(DateTimeFormatter.ofPattern("dd/MM/yy")) + " to " + bill.getPeriodTo().format(DateTimeFormatter.ofPattern("dd/MM/yy"))));
+            }
+            info.addCell(right);
+            doc.add(info);
+
+            // Items Table
+            PdfPTable table = new PdfPTable(6);
+            table.setWidthPercentage(100);
+            table.setWidths(new float[]{3.0f, 0.8f, 1.2f, 1.2f, 1.2f, 1.2f});
+            table.setSpacingBefore(10);
+
+            // Headers
+            String[] headers = {"Description", "Rate", "Claim Qty", "Claim Amt", "Cert Qty", "Cert Amt"};
+            for (String h : headers) {
+                PdfPCell hc = new PdfPCell(new Phrase(h, f(8, Font.BOLD, BaseColor.WHITE)));
+                hc.setBackgroundColor(NAVY);
+                hc.setPadding(6);
+                hc.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(hc);
+            }
+
+            // Rows
+            for (com.supererp.erp.entity.SubcontractorRunningBillItem item : bill.getItems()) {
+                table.addCell(cellTable(item.getDescription(), Element.ALIGN_LEFT));
+                table.addCell(cellTable(fmt(item.getRate()), Element.ALIGN_RIGHT));
+                table.addCell(cellTable(fmt(item.getClaimedQuantity()), Element.ALIGN_CENTER));
+                table.addCell(cellTable(fmt(item.getClaimedAmount()), Element.ALIGN_RIGHT));
+                table.addCell(cellTable(fmt(item.getCertifiedQuantity()), Element.ALIGN_CENTER));
+                table.addCell(cellTable(fmt(item.getCertifiedAmount()), Element.ALIGN_RIGHT));
+            }
+
+            // Totals Row
+            PdfPCell tc = new PdfPCell(new Phrase("TOTAL BILL AMOUNT", f(9, Font.BOLD, DARK)));
+            tc.setColspan(5);
+            tc.setBackgroundColor(LIGHT);
+            tc.setPadding(8);
+            tc.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            table.addCell(tc);
+            
+            PdfPCell ta = new PdfPCell(new Phrase(fmt(bill.getCertifiedAmount()), f(10, Font.BOLD, GOLD)));
+            ta.setBackgroundColor(LIGHT);
+            ta.setPadding(8);
+            ta.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            table.addCell(ta);
+
+            doc.add(table);
+
+            // Footer / Signatures
+            PdfPTable sigs = new PdfPTable(2);
+            sigs.setWidthPercentage(100);
+            sigs.setSpacingBefore(40);
+            
+            PdfPCell s1 = cell(Rectangle.NO_BORDER);
+            s1.addElement(p("__________________________", f(10, Font.NORMAL, DARK)));
+            s1.addElement(p("Prepared By / Subcontractor", f(8, Font.BOLD, MUTED)));
+            if (bill.getSubmittedBy() != null) s1.addElement(p(bill.getSubmittedBy().getFullName(), f(8, Font.NORMAL, DARK)));
+            sigs.addCell(s1);
+
+            PdfPCell s2 = cell(Rectangle.NO_BORDER);
+            s2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            Paragraph sp2 = p("__________________________", f(10, Font.NORMAL, DARK));
+            sp2.setAlignment(Element.ALIGN_RIGHT);
+            s2.addElement(sp2);
+            Paragraph sp3 = p("Authorised Signatory", f(8, Font.BOLD, MUTED));
+            sp3.setAlignment(Element.ALIGN_RIGHT);
+            s2.addElement(sp3);
+            if (bill.getCertifiedBy() != null) {
+                Paragraph sp4 = p(bill.getCertifiedBy().getFullName(), f(8, Font.NORMAL, DARK));
+                sp4.setAlignment(Element.ALIGN_RIGHT);
+                s2.addElement(sp4);
+            }
+            sigs.addCell(s2);
+            doc.add(sigs);
+
+            doc.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            log.error("Subcontractor bill PDF failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Subcontractor bill PDF failed", e);
+        }
+    }
+
     private PdfPCell cellTable(String txt, int align) {
         PdfPCell c = new PdfPCell(new Phrase(txt, f(8, Font.NORMAL, DARK)));
         c.setPadding(5);

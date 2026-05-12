@@ -37,7 +37,7 @@ public class ProjectExpense extends TenantAwareEntity {
     private Project project;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "job_card_id", nullable = false)
+    @JoinColumn(name = "job_card_id")
     private JobCard jobCard;
 
     @Enumerated(EnumType.STRING)

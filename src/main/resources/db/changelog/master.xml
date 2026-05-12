@@ -21,5 +21,7 @@
   <include file="classpath:db/changelog/V15__fix_advance_payments_rls.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V16__add_upload_size_bytes.sql" relativeToChangelogFile="false"/>
   <include file="classpath:db/changelog/V17__search_indexes.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V18__asset_construction_foundation.sql" relativeToChangelogFile="false"/>
+  <include file="classpath:db/changelog/V19__subcontract_jobcard_link.sql" relativeToChangelogFile="false"/>
 
 </databaseChangeLog>

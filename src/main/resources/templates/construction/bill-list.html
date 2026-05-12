@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle='Subcontractor Running Bills')}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='subcontractor-bills')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle='Subcontractor Running Bills')}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-3 d-flex justify-content-between align-items-center">
+                <form action="/admin/construction/running-bills" method="get" class="d-flex gap-2">
+                    <input type="text" name="search" th:value="${search}" class="form-control form-control-sm" style="width:220px;" placeholder="Search bills...">
+                    <button type="submit" class="btn btn-sm btn-gold">Search</button>
+                </form>
+                <button th:if="${#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                        class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#newBillModal">
+                    <i class="bi bi-plus-lg me-1"></i> New RA Bill
+                </button>
+            </div>
+
+            <div class="card card-lv mb-4">
+                <div class="card-header">Subcontractor Running Bills</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-lv table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Bill Number</th>
+                                    <th>Project</th>
+                                    <th>Subcontractor</th>
+                                    <th>Date</th>
+                                    <th class="text-end">Certified Amount</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="bill : ${billsPage.content}">
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 font-monospace" th:text="${bill.billNumber}">RA-01</span>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{/admin/projects/{id}(id=${bill.project.id})}" class="text-decoration-none fw-bold text-dark" th:text="${bill.project.name}">Project A</a>
+                                    </td>
+                                    <td>
+                                        <a th:href="@{/admin/vendors/{id}(id=${bill.vendor.id})}" class="text-decoration-none" th:text="${bill.vendor.name}">Vendor X</a>
+                                    </td>
+                                    <td th:text="${#temporals.format(bill.billDate, 'dd MMM yyyy')}">Date</td>
+                                    <td class="text-end fw-bold" th:text="${'₹' + #numbers.formatDecimal(bill.certifiedAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                    <td>
+                                        <span class="badge rounded-pill" 
+                                              th:classappend="${bill.status.name() == 'PAID' ? 'bg-success bg-opacity-10 text-success border border-success border-opacity-25' : 
+                                                             (bill.status.name() == 'CERTIFIED' ? 'bg-info bg-opacity-10 text-info border border-info border-opacity-25' : 
+                                                             (bill.status.name() == 'REJECTED' ? 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25' : 
+                                                             (bill.status.name() == 'SUBMITTED' ? 'bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25' : 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25')))}"
+                                              th:text="${bill.status}">DRAFT</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <a th:href="@{/admin/construction/running-bills/{id}(id=${bill.id})}" class="btn btn-sm btn-navy" title="View Bill">
+                                            <i class="bi bi-eye"></i> View
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr th:if="${billsPage.empty}">
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                                        <p class="mb-0 fs-5">No running bills found.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav th:if="${billsPage.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item" th:classappend="${billsPage.first ? 'disabled' : ''}">
+                                <a class="page-link shadow-sm rounded-start-pill" th:href="@{/admin/construction/running-bills(page=${billsPage.number - 1}, search=${search})}">Previous</a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, billsPage.totalPages - 1)}" th:classappend="${billsPage.number == i ? 'active' : ''}">
+                                <a class="page-link shadow-sm" th:href="@{/admin/construction/running-bills(page=${i}, search=${search})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${billsPage.last ? 'disabled' : ''}">
+                                <a class="page-link shadow-sm rounded-end-pill" th:href="@{/admin/construction/running-bills(page=${billsPage.number + 1}, search=${search})}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Bill Modal -->
+    <div class="modal fade" id="newBillModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/construction/running-bills}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Create Running Bill</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Project <span class="text-danger">*</span></label>
+                        <select name="projectId" class="form-select" required>
+                            <option value="">-- Select Project --</option>
+                            <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Subcontractor (Vendor) <span class="text-danger">*</span></label>
+                        <select name="vendorId" class="form-select" required>
+                            <option value="">-- Select Vendor --</option>
+                            <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"></option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Bill Number <span class="text-danger">*</span></label>
+                            <input type="text" name="billNumber" class="form-control" required placeholder="RA-01">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Bill Date <span class="text-danger">*</span></label>
+                            <input type="date" name="billDate" class="form-control" required th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Period From <span class="text-danger">*</span></label>
+                            <input type="date" name="periodFrom" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Period To <span class="text-danger">*</span></label>
+                            <input type="date" name="periodTo" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Link Job Card <span class="text-muted small">(optional)</span></label>
+                        <select name="jobCardId" class="form-select">
+                            <option value="">-- No Job Card --</option>
+                            <option th:each="jc : ${jobCards}" th:value="${jc.id}" th:text="|${jc.project.name} › ${jc.phase}|"></option>
+                        </select>
+                        <div class="form-text text-muted">Link this bill to a specific job card for cost tracking.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Create Draft Bill</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

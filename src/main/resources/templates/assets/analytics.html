@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle='Asset Analytics')}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='asset-analytics')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle='Asset Analytics')}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-box-seam"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${summary.totalAssets}">0</div>
+                            <div class="stat-lbl">Total Assets</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${summary.activeAssets}">0</div>
+                            <div class="stat-lbl">Active Assets</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-tools"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${summary.maintenanceAssets}">0</div>
+                            <div class="stat-lbl">Under Maintenance</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-exclamation-octagon"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${summary.openBreakdowns}">0</div>
+                            <div class="stat-lbl">Open Breakdowns</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-info bg-opacity-10 text-info">
+                            <i class="bi bi-calendar2-event"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${summary.plannedMaintenance}">0</div>
+                            <div class="stat-lbl">Planned Maintenance</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

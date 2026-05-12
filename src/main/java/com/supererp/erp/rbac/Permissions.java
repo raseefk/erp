@@ -45,6 +45,14 @@ public final class Permissions {
     public static final String INV_ITEMS_DELETE             = "INV_ITEMS_DELETE";
     public static final String INV_ITEMS_ADJUST_STOCK       = "INV_ITEMS_ADJUST_STOCK";
 
+    // Asset Management Feature
+    public static final String ASSETS_VIEW                  = "ASSETS_VIEW";
+    public static final String ASSETS_MANAGE                = "ASSETS_MANAGE";
+    public static final String ASSETS_ASSIGN                = "ASSETS_ASSIGN";
+    public static final String ASSETS_MAINTENANCE           = "ASSETS_MAINTENANCE";
+    public static final String ASSETS_DEPRECIATION          = "ASSETS_DEPRECIATION";
+    public static final String ASSETS_ANALYTICS             = "ASSETS_ANALYTICS";
+
     // ── SCM Feature ───────────────────────────────────────────────────────────
     public static final String SCM_PO_VIEW                  = "SCM_PO_VIEW";
     public static final String SCM_PO_CREATE                = "SCM_PO_CREATE";
@@ -67,6 +75,18 @@ public final class Permissions {
     public static final String PROJ_EXPENSES_VIEW           = "PROJ_EXPENSES_VIEW";
     public static final String PROJ_EXPENSES_ADD            = "PROJ_EXPENSES_ADD";
     public static final String PROJ_EXPENSES_APPROVE        = "PROJ_EXPENSES_APPROVE";
+
+    // Construction Feature
+    public static final String CONSTRUCTION_BOQ_VIEW                         = "CONSTRUCTION_BOQ_VIEW";
+    public static final String CONSTRUCTION_BOQ_MANAGE                       = "CONSTRUCTION_BOQ_MANAGE";
+    public static final String CONSTRUCTION_BOQ_PROGRESS                     = "CONSTRUCTION_BOQ_PROGRESS";
+    public static final String CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW          = "CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW";
+    public static final String CONSTRUCTION_SUBCONTRACTOR_BILL_CERTIFY       = "CONSTRUCTION_SUBCONTRACTOR_BILL_CERTIFY";
+    public static final String CONSTRUCTION_MATERIAL_SITE_VIEW               = "CONSTRUCTION_MATERIAL_SITE_VIEW";
+    public static final String CONSTRUCTION_MATERIAL_SITE_MANAGE             = "CONSTRUCTION_MATERIAL_SITE_MANAGE";
+    public static final String CONSTRUCTION_MILESTONE_VIEW                   = "CONSTRUCTION_MILESTONE_VIEW";
+    public static final String CONSTRUCTION_MILESTONE_APPROVE                = "CONSTRUCTION_MILESTONE_APPROVE";
+    public static final String CONSTRUCTION_MILESTONE_PAYMENT_RELEASE        = "CONSTRUCTION_MILESTONE_PAYMENT_RELEASE";
 
     // ── HR Feature ────────────────────────────────────────────────────────────
     public static final String HR_EMPLOYEES_VIEW            = "HR_EMPLOYEES_VIEW";

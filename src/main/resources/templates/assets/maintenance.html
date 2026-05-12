@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle='Maintenance Calendar')}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='asset-maintenance')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle='Maintenance Calendar')}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-3 d-flex justify-content-end">
+                <button th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_MAINTENANCE'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                        class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#generateModal">
+                    <i class="bi bi-gear-wide-connected me-1"></i> Generate Due Jobs
+                </button>
+            </div>
+
+            <div class="card card-lv mb-4">
+                <div class="card-header">Maintenance Schedule</div>
+                <div class="card-body">
+                    <form action="/admin/assets/maintenance" method="get" class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">From Date</label>
+                            <input type="date" name="from" th:value="${from}" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label text-muted small">To Date</label>
+                            <input type="date" name="to" th:value="${to}" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-sm btn-navy px-4 w-100">Filter Calendar</button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-lv table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Scheduled Date</th>
+                                    <th>Asset</th>
+                                    <th>Technician</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="job : ${jobs}">
+                                    <td th:text="${#temporals.format(job.scheduledDate, 'dd MMM yyyy')}">Date</td>
+                                    <td>
+                                        <a th:href="@{/admin/assets/{id}(id=${job.asset.id})}" class="text-decoration-none fw-bold" th:text="${job.asset.name}">Asset</a>
+                                        <small class="d-block text-muted" th:text="${job.asset.assetCode}"></small>
+                                    </td>
+                                    <td th:text="${job.assignedEmployee != null ? job.assignedEmployee.name : 'Unassigned'}">Tech</td>
+                                    <td>
+                                        <span class="badge rounded-pill" 
+                                              th:classappend="${job.status.name() == 'COMPLETED' ? 'bg-success bg-opacity-10 text-success' : 
+                                                             (job.status.name() == 'IN_PROGRESS' ? 'bg-warning bg-opacity-10 text-warning' : 'bg-secondary bg-opacity-10 text-secondary')}"
+                                              th:text="${job.status}">STATUS</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button th:if="${job.status.name() != 'COMPLETED' and (#authorization.expression('hasAuthority(''PERM_ASSETS_MAINTENANCE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                                                class="btn btn-sm btn-gold" data-bs-toggle="modal" th:data-bs-target="'#completeModal' + ${job.id}">
+                                            <i class="bi bi-check2-circle me-1"></i> Mark Done
+                                        </button>
+
+                                        <!-- Complete Modal -->
+                                        <div class="modal fade text-start" th:id="'completeModal' + ${job.id}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <form th:action="@{/admin/assets/maintenance/{id}/complete(id=${job.id})}" method="post" class="modal-content">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title fw-bold">Complete Maintenance</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Completion Date</label>
+                                                            <input type="date" name="completedDate" class="form-control" th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}" required>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Maintenance Cost (₹)</label>
+                                                            <input type="number" step="0.01" name="cost" class="form-control">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label">Service Notes</label>
+                                                            <textarea name="notes" class="form-control" rows="3"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-sm btn-gold">Save Completion</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(jobs)}">
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                                        <p class="mb-0 fs-5">No maintenance jobs scheduled for this period.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Generate Jobs Modal -->
+    <div class="modal fade" id="generateModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/assets/maintenance/generate}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Generate Due Maintenance</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <p class="text-muted small">Scans preventive plans and creates jobs due by the selected date.</p>
+                    <div class="mb-3">
+                        <label class="form-label">Scan Due Date Up To <span class="text-danger">*</span></label>
+                        <input type="date" name="dueDate" class="form-control" th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}" required>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" name="createJobCards" value="true" id="createJobCardsSwitch">
+                        <label class="form-check-label" for="createJobCardsSwitch">Auto-create Project Job Cards</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Generate Jobs</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

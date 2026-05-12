@@ -1,20 +1,22 @@
-version: '3.9'
-
 services:
-  db:
-    image: postgres:15-alpine
-    container_name: super-erp-db
+  postgres:
+    image: postgres:18-alpine
+    container_name: erp-db
     restart: unless-stopped
     environment:
+      # The Superuser (Use this for your manual setup/migrations)
+      POSTGRES_USER: erp_admin
+      POSTGRES_PASSWORD: -SuperErp@Postgres2026
+      # The specific database name for your ERP
       POSTGRES_DB: super_erp
-      POSTGRES_USER: erp_user
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-SuperErp@Postgres2026}
     volumes:
+      # Persistent data storage for your Ubuntu host
       - postgres_data:/var/lib/postgresql/data
     networks:
       - erp-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U erp_user -d super_erp"]
+      # Matches the user and DB defined above
+      test: ["CMD-SHELL", "pg_isready -U erp_admin -d super_erp"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -25,5 +27,6 @@ networks:
     driver: bridge
 
 volumes:
+  # Docker will manage this volume in /var/lib/docker/volumes/
   postgres_data:
     driver: local

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle=${asset.id == null ? 'Add Asset' : 'Edit Asset'})}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='assets')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle=${asset.id == null ? 'Add Asset' : 'Edit Asset'})}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-3">
+                <a href="/admin/assets" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back to List
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="card card-lv mb-4">
+                        <div class="card-header" th:text="${asset.id == null ? 'New Asset Registration' : 'Edit Asset - ' + asset.name}">
+                            Asset Details
+                        </div>
+                        <div class="card-body">
+                            <form th:action="@{/admin/assets/save}" method="post" th:object="${asset}">
+                                <input type="hidden" th:field="*{id}">
+                                <input type="hidden" th:field="*{tenantId}">
+                                <input type="hidden" th:field="*{currentBookValue}">
+
+                                <h6 class="text-muted fw-bold mb-3">Basic Information</h6>
+                                
+                                <div class="row g-4 mb-4">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Asset Code <span class="text-danger">*</span></label>
+                                        <input type="text" th:field="*{assetCode}" class="form-control bg-light" required placeholder="e.g. LPT-001">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Name <span class="text-danger">*</span></label>
+                                        <input type="text" th:field="*{name}" class="form-control bg-light" required placeholder="Asset Name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Category</label>
+                                        <input type="text" th:field="*{category}" class="form-control bg-light" placeholder="e.g. IT, Furniture, Machinery">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Serial Number</label>
+                                        <input type="text" th:field="*{serialNumber}" class="form-control bg-light" placeholder="Manufacturer SN">
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="form-label fw-medium">Description</label>
+                                        <textarea th:field="*{description}" class="form-control bg-light" rows="2" placeholder="Details about the asset..."></textarea>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Status <span class="text-danger">*</span></label>
+                                        <select th:field="*{status}" class="form-select bg-light" required>
+                                            <option th:each="stat : ${AssetStatus}" th:value="${stat}" th:text="${stat}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Vendor / Supplier</label>
+                                        <select name="vendorId" class="form-select bg-light">
+                                            <option value="">-- Select Vendor --</option>
+                                            <option th:each="vendor : ${vendors}" th:value="${vendor.id}" th:text="${vendor.name}" th:selected="${asset.vendor != null and asset.vendor.id == vendor.id}"></option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <h6 class="text-muted fw-bold mb-3 mt-4">Financial & Depreciation Settings</h6>
+                                
+                                <div class="row g-4 mb-5">
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Purchase Date <span class="text-danger">*</span></label>
+                                        <input type="date" th:field="*{purchaseDate}" class="form-control bg-light" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Purchase Cost (₹) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">₹</span>
+                                            <input type="number" step="0.01" th:field="*{purchaseCost}" class="form-control bg-light border-start-0" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Salvage Value (₹) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-light border-end-0">₹</span>
+                                            <input type="number" step="0.01" th:field="*{salvageValue}" class="form-control bg-light border-start-0" required>
+                                        </div>
+                                        <div class="form-text">Estimated value at the end of its useful life.</div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Useful Life (Months) <span class="text-danger">*</span></label>
+                                        <input type="number" th:field="*{usefulLifeMonths}" class="form-control bg-light" required min="1">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Depreciation Method <span class="text-danger">*</span></label>
+                                        <select th:field="*{depreciationMethod}" class="form-select bg-light" required id="depreciationMethod">
+                                            <option th:each="method : ${DepreciationMethod}" th:value="${method}" th:text="${method}"></option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-medium">Depreciation Rate (%) <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="number" step="0.01" th:field="*{depreciationRatePercent}" class="form-control bg-light" required id="depreciationRate">
+                                            <span class="input-group-text bg-light">%</span>
+                                        </div>
+                                        <div class="form-text">Required for WDV. Ignored for SLM.</div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2 pt-3 border-top mt-4">
+                                    <a href="/admin/assets" class="btn btn-sm btn-outline-secondary">Cancel</a>
+                                    <button type="submit" class="btn btn-sm btn-gold">
+                                        <i class="bi bi-check-lg me-1"></i> Save Asset
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const methodSelect = document.getElementById('depreciationMethod');
+            const rateInput = document.getElementById('depreciationRate');
+            
+            function toggleRateRequired() {
+                if(methodSelect.value === 'STRAIGHT_LINE') {
+                    rateInput.removeAttribute('required');
+                    if(!rateInput.value) rateInput.value = 0;
+                } else {
+                    rateInput.setAttribute('required', 'required');
+                }
+            }
+            
+            methodSelect.addEventListener('change', toggleRateRequired);
+            toggleRateRequired();
+        });
+    </script>
+</body>
+</html>

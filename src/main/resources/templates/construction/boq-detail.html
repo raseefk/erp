@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle=${boq.title + ' - BOQ'})}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='boq')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle=${boq.title})}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-3 d-flex justify-content-end gap-2">
+                <a href="/admin/construction/boq" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+                <form th:if="${boq.status.name() == 'DRAFT' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_BOQ_MANAGE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                      th:action="@{/admin/construction/boq/{id}/approve(id=${boq.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-gold" onclick="return confirm('Approve BOQ?');">
+                        <i class="bi bi-check-circle me-1"></i> Approve
+                    </button>
+                </form>
+            </div>
+
+            <!-- BOQ Info Card -->
+            <div class="card card-lv mb-4">
+                <div class="card-body py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-4">
+                            <label class="text-muted small d-block">Project</label>
+                            <a th:href="@{/admin/projects/{id}(id=${boq.project.id})}" class="fw-bold text-navy" th:text="${boq.project.name}">Project A</a>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <label class="text-muted small d-block">Status</label>
+                            <span class="badge" th:classappend="${boq.status.name() == 'APPROVED' ? 'badge-success' : 'badge-navy'}" th:text="${boq.status}">DRAFT</span>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <label class="text-muted small d-block">Total Items</label>
+                            <span class="fw-bold fs-5" th:text="${items.size()}">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BOQ Items Table -->
+            <div class="card card-lv mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>BOQ Items</span>
+                    <button th:if="${boq.status.name() == 'DRAFT' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_BOQ_MANAGE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                            class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-lv table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Material</th>
+                                    <th>Quantity</th>
+                                    <th>Unit</th>
+                                    <th class="text-end">Rate (₹)</th>
+                                    <th class="text-end">Total Amount (₹)</th>
+                                    <th>Progress</th>
+                                    <th class="text-center">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item : ${items}">
+                                    <td class="fw-medium text-dark" th:text="${item.description}">Earthwork Excavation</td>
+                                    <td>
+                                        <span th:if="${item.inventoryItem != null}" class="badge bg-light text-dark border"><i class="bi bi-box me-1"></i> [[${item.inventoryItem.name}]]</span>
+                                        <span th:unless="${item.inventoryItem != null}" class="text-muted">-</span>
+                                    </td>
+                                    <td th:text="${#numbers.formatDecimal(item.quantity, 1, 2)}">100.00</td>
+                                    <td th:text="${item.unit}">CUM</td>
+                                    <td class="text-end" th:text="${#numbers.formatDecimal(item.rate, 1, 'COMMA', 2, 'POINT')}">350.00</td>
+                                    <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(item.amount, 1, 'COMMA', 2, 'POINT')}">35000.00</td>
+                                    <td style="min-width: 150px;">
+                                        <div class="d-flex justify-content-between small mb-1">
+                                            <span th:text="${#numbers.formatDecimal(item.completedQuantity, 1, 2) + ' / ' + #numbers.formatDecimal(item.quantity, 1, 2)}"></span>
+                                            <span class="fw-bold text-primary" th:text="${#numbers.formatDecimal((item.completedQuantity / item.quantity) * 100, 1, 0) + '%'}"></span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div class="progress-bar" th:classappend="${item.completedQuantity == item.quantity ? 'bg-success' : 'bg-primary'}"
+                                                 role="progressbar" th:style="'width: ' + (${(item.completedQuantity / item.quantity) * 100}) + '%'"></div>
+                                        </div>
+                                        <small class="text-muted mt-1 d-block" th:text="${item.status}">NOT_STARTED</small>
+                                    </td>
+                                    <td class="text-center">
+                                        <button th:if="${boq.status.name() == 'APPROVED' and item.completedQuantity < item.quantity and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_BOQ_PROGRESS'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                                                class="btn btn-sm btn-navy" data-bs-toggle="modal" th:data-bs-target="'#progressModal' + ${item.id}">
+                                            Update
+                                        </button>
+                                        <span th:if="${item.completedQuantity == item.quantity}"><i class="bi bi-check-all text-success fs-5"></i></span>
+
+                                        <!-- Progress Modal -->
+                                        <div th:if="${boq.status.name() == 'APPROVED'}" class="modal fade text-start" th:id="'progressModal' + ${item.id}" tabindex="-1">
+                                            <div class="modal-dialog">
+                                                <form th:action="@{/admin/construction/boq/items/{itemId}/progress(itemId=${item.id})}" method="post" class="modal-content">
+                                                    <input type="hidden" name="boqId" th:value="${boq.id}">
+                                                    <div class="modal-header">
+                                                        <h5 class="modal-title fw-bold">Update Progress</h5>
+                                                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                    </div>
+                                                    <div class="modal-body p-4">
+                                                        <div class="alert alert-info py-2">
+                                                            <strong>Item:</strong> <span th:text="${item.description}"></span><br>
+                                                            <strong>Remaining:</strong> <span class="fw-bold" th:text="${#numbers.formatDecimal(item.quantity - item.completedQuantity, 1, 2)}"></span> <span th:text="${item.unit}"></span>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small">New Completed Qty <span class="text-danger">*</span></label>
+                                                            <div class="input-group">
+                                                                <input type="number" step="0.01" name="completedQuantity" class="form-control" required th:max="${item.quantity - item.completedQuantity}">
+                                                                <span class="input-group-text" th:text="${item.unit}"></span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small">Date</label>
+                                                            <input type="date" name="progressDate" class="form-control" th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                                                        </div>
+                                                        <div class="mb-3">
+                                                            <label class="form-label small">Remarks</label>
+                                                            <textarea name="remarks" class="form-control" rows="2"></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <button type="submit" class="btn btn-sm btn-navy">Save Progress</button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(items)}">
+                                    <td colspan="8" class="text-center text-muted py-4">No items added to this BOQ yet.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add BOQ Item Modal -->
+    <div th:if="${boq.status.name() == 'DRAFT'}" class="modal fade" id="addItemModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form th:action="@{/admin/construction/boq/{id}/items(id=${boq.id})}" method="post" th:object="${newItem}" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add BOQ Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-medium">Item Description <span class="text-danger">*</span></label>
+                            <textarea th:field="*{description}" class="form-control" rows="2" required placeholder="Detailed description of the work..."></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Link Material (Optional)</label>
+                            <select name="inventoryItemId" class="form-select">
+                                <option value="">-- No linked material --</option>
+                                <option th:each="inv : ${inventoryItems}" th:value="${inv.id}" th:text="${inv.name}"></option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Unit of Measurement <span class="text-danger">*</span></label>
+                            <input type="text" th:field="*{unit}" class="form-control" required placeholder="e.g. CUM, NOS">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" th:field="*{quantity}" class="form-control" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-medium">Rate per Unit (₹) <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <span class="input-group-text">₹</span>
+                                <input type="number" step="0.01" th:field="*{rate}" class="form-control" required>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

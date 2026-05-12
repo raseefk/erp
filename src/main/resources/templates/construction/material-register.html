@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle='Material at Site')}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='materials-site')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle='Material at Site')}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-3 d-flex justify-content-end gap-2">
+                <button th:if="${selectedProject != null and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_MATERIAL_SITE_MANAGE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                        class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#newTransactionModal">
+                    <i class="bi bi-plus-lg me-1"></i> Record Transaction
+                </button>
+            </div>
+
+            <!-- Project Selector -->
+            <div class="card card-lv mb-4">
+                <div class="card-body">
+                    <form action="/admin/construction/materials" method="get" class="row g-3 align-items-end">
+                        <div class="col-md-6 col-lg-4">
+                            <label class="form-label text-muted small fw-bold">Select Project</label>
+                            <select name="projectId" class="form-select form-select-sm" required onchange="this.form.submit()">
+                                <option value="">-- Choose Project --</option>
+                                <option th:each="p : ${projects}" th:value="${p.id}" th:text="${p.name}" th:selected="${selectedProject != null and selectedProject.id == p.id}"></option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div th:if="${selectedProject == null}" class="text-center py-5">
+                <i class="bi bi-building fs-1 text-secondary opacity-25 d-block mb-3"></i>
+                <h5 class="text-muted">Please select a project to view its material register.</h5>
+            </div>
+
+            <!-- Stock Summary -->
+            <div th:if="${selectedProject != null and not #lists.isEmpty(stockSummary)}" class="card card-lv mb-4 border-navy border-opacity-25">
+                <div class="card-header bg-navy text-white d-flex align-items-center">
+                    <i class="bi bi-box-seam me-2"></i> Material Stock Summary
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Material / Item</th>
+                                    <th class="text-end">Total Received</th>
+                                    <th class="text-end">Total Consumed</th>
+                                    <th class="text-end">Total Returned</th>
+                                    <th class="text-end">Adjustments</th>
+                                    <th class="text-end">Current Balance</th>
+                                    <th>Unit</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="item : ${stockSummary}">
+                                    <td class="fw-bold text-navy" th:text="${item.name}">Cement</td>
+                                    <td class="text-end text-success" th:text="${#numbers.formatDecimal(item.received, 1, 2)}">100.00</td>
+                                    <td class="text-end text-danger" th:text="${#numbers.formatDecimal(item.consumed, 1, 2)}">40.00</td>
+                                    <td class="text-end text-warning" th:text="${#numbers.formatDecimal(item.returned, 1, 2)}">10.00</td>
+                                    <td class="text-end" th:classappend="${item.adjustments > 0 ? 'text-success' : (item.adjustments < 0 ? 'text-danger' : 'text-muted')}" 
+                                        th:text="${(item.adjustments > 0 ? '+' : '') + #numbers.formatDecimal(item.adjustments, 1, 2)}">0.00</td>
+                                    <td class="text-end">
+                                        <span class="fw-bold fs-6" th:classappend="${item.balance > 0 ? 'text-primary' : 'text-muted'}" 
+                                              th:text="${#numbers.formatDecimal(item.balance, 1, 2)}">60.00</span>
+                                    </td>
+                                    <td class="text-muted small" th:text="${item.unit}">BAGS</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Transaction List -->
+            <div th:if="${selectedProject != null}" class="card card-lv mb-4">
+                <div class="card-header">
+                    Material Transactions - <span class="text-navy" th:text="${selectedProject.name}">Project Name</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-lv table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Material/Item</th>
+                                    <th>Type</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th>Unit</th>
+                                    <th>Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="tx : ${transactions}">
+                                    <td th:text="${#temporals.format(tx.transactionDate, 'dd MMM yyyy')}">Date</td>
+                                    <td class="fw-bold text-dark" th:text="${tx.inventoryItem.name}">Item</td>
+                                    <td>
+                                        <span class="badge rounded-pill"
+                                              th:classappend="${tx.transactionType.name() == 'RECEIPT' ? 'bg-success bg-opacity-10 text-success' : 
+                                                             (tx.transactionType.name() == 'CONSUMPTION' ? 'bg-danger bg-opacity-10 text-danger' : 
+                                                             (tx.transactionType.name() == 'RETURN' ? 'bg-warning bg-opacity-10 text-warning' : 'bg-info bg-opacity-10 text-info'))}"
+                                              th:text="${tx.transactionType}">TYPE</span>
+                                    </td>
+                                    <td class="text-end fw-medium" th:text="${#numbers.formatDecimal(tx.quantity, 1, 2)}"
+                                        th:classappend="${tx.transactionType.name() == 'RECEIPT' ? 'text-success' : 'text-danger'}">10.00</td>
+                                    <td th:text="${tx.unit}">KGS</td>
+                                    <td th:text="${tx.remarks}">Remarks</td>
+                                </tr>
+                                <tr th:if="${#lists.isEmpty(transactions)}">
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="bi bi-box fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                                        <p class="mb-0 fs-5">No material transactions recorded for this project.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Transaction Modal -->
+    <div th:if="${selectedProject != null}" class="modal fade" id="newTransactionModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/construction/materials}" method="post" class="modal-content">
+                <input type="hidden" name="projectId" th:value="${selectedProject.id}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Record Material Transaction</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Material / Item <span class="text-danger">*</span></label>
+                        <select name="inventoryItemId" class="form-select" required>
+                            <option value="">-- Select Material --</option>
+                            <option th:each="inv : ${inventoryItems}" th:value="${inv.id}" th:text="${inv.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Transaction Type <span class="text-danger">*</span></label>
+                        <select name="transactionType" class="form-select" required>
+                            <option th:each="type : ${MaterialSiteTransactionType}" th:value="${type}" th:text="${type}"></option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Quantity <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="quantity" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Unit <span class="text-danger">*</span></label>
+                            <input type="text" name="unit" class="form-control" required placeholder="e.g. KGS, CUM, BAGS">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Transaction Date <span class="text-danger">*</span></label>
+                        <input type="date" name="transactionDate" class="form-control" required th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="2" placeholder="Delivery challan no, issued to..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Save Transaction</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

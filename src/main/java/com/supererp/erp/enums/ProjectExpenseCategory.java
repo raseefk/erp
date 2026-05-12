@@ -1,2 +1,2 @@
 package com.supererp.erp.enums;
-public enum ProjectExpenseCategory { LABOUR, MATERIAL, FUEL, TOOLS, TRANSPORT, MISC,RENT,UTILITY }
+public enum ProjectExpenseCategory { LABOUR, MATERIAL, FUEL, TOOLS, TRANSPORT, MISC, RENT, UTILITY, PROJECT_SUBCONTRACT }

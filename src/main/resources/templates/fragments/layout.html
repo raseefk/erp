@@ -117,17 +117,32 @@
 
     <!-- ── OPERATIONS ───────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
-        th:if="${@rbacService.isFeatureEnabled('OPERATIONS')}"
-        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_VIEW')"
+        th:if="${@rbacService.isFeatureEnabled('OPERATIONS') or @rbacService.isFeatureEnabled('ASSETS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_VIEW', 'PERM_ASSETS_VIEW', 'PERM_ASSETS_MAINTENANCE', 'PERM_ASSETS_ANALYTICS')"
         data-bs-toggle="collapse" data-bs-target="#collapseOperations"
-        th:attr="aria-expanded=${#lists.contains({'inventory'}, activePage) ? 'true' : 'false'}">
+        th:attr="aria-expanded=${#lists.contains({'inventory','assets','asset-maintenance','asset-analytics'}, activePage) ? 'true' : 'false'}">
       <span>Operations</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseOperations"
-         th:classappend="${#lists.contains({'inventory'}, activePage)} ? 'show' : ''">
+         th:classappend="${#lists.contains({'inventory','assets','asset-maintenance','asset-analytics'}, activePage)} ? 'show' : ''">
       <li th:if="${@rbacService.isMenuEnabled('MENU_INVENTORY')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_INV_ITEMS_VIEW')">
         <a href="/admin/inventory" th:classappend="${activePage=='inventory'}?' active':''">
           <i class="bi bi-boxes"></i> Inventory
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('ASSETS') and @rbacService.isMenuEnabled('MENU_ASSETS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_ASSETS_VIEW')">
+        <a href="/admin/assets" th:classappend="${activePage=='assets'}?' active':''">
+          <i class="bi bi-tools"></i> Asset Register
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('ASSETS') and @rbacService.isMenuEnabled('MENU_ASSET_MAINTENANCE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_ASSETS_MAINTENANCE')">
+        <a href="/admin/assets/maintenance" th:classappend="${activePage=='asset-maintenance'}?' active':''">
+          <i class="bi bi-calendar-check"></i> Maintenance
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('ASSETS') and @rbacService.isMenuEnabled('MENU_ASSET_ANALYTICS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_ASSETS_ANALYTICS')">
+        <a href="/admin/assets/analytics" th:classappend="${activePage=='asset-analytics'}?' active':''">
+          <i class="bi bi-bar-chart-line"></i> Asset Analytics
         </a>
       </li>
     </div>
@@ -156,14 +171,14 @@
 
     <!-- ── PROJECTS ──────────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
-        th:if="${@rbacService.isFeatureEnabled('PROJECTS')}"
-        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW', 'PERM_PROJ_DAILYLOG_VIEW', 'PERM_PROJ_EXPENSES_VIEW')"
+        th:if="${@rbacService.isFeatureEnabled('PROJECTS') or @rbacService.isFeatureEnabled('CONSTRUCTION')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW', 'PERM_PROJ_DAILYLOG_VIEW', 'PERM_PROJ_EXPENSES_VIEW', 'PERM_CONSTRUCTION_BOQ_VIEW', 'PERM_CONSTRUCTION_MATERIAL_SITE_VIEW', 'PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW', 'PERM_CONSTRUCTION_MILESTONE_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseProjects"
-        th:attr="aria-expanded=${#lists.contains({'projects','sitelogs','approval'}, activePage) ? 'true' : 'false'}">
+        th:attr="aria-expanded=${#lists.contains({'projects','sitelogs','approval','boq','materials-site','subcontractor-bills','milestones'}, activePage) ? 'true' : 'false'}">
       <span><i class="bi bi-briefcase me-2"></i>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseProjects"
-         th:classappend="${#lists.contains({'projects','sitelogs','approval'}, activePage)} ? 'show' : ''">
+         th:classappend="${#lists.contains({'projects','sitelogs','approval','boq','materials-site','subcontractor-bills','milestones'}, activePage)} ? 'show' : ''">
       <li th:if="${@rbacService.isMenuEnabled('MENU_PROJECTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW')">
         <a th:href="@{/admin/projects}" th:classappend="${activePage=='projects'}?' active':''">
           <i class="bi bi-kanban"></i> Projects
@@ -178,6 +193,26 @@
         <a href="/admin/approval" th:classappend="${activePage=='approval'}?' active':''">
           <i class="bi bi-check2-square"></i> Approval Queue
           <span class="approval-badge" id="approvalBadge">0</span>
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('CONSTRUCTION') and @rbacService.isMenuEnabled('MENU_BOQ')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CONSTRUCTION_BOQ_VIEW')">
+        <a href="/admin/construction/boq" th:classappend="${activePage=='boq'}?' active':''">
+          <i class="bi bi-clipboard-data"></i> BOQ
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('CONSTRUCTION') and @rbacService.isMenuEnabled('MENU_MATERIAL_SITE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CONSTRUCTION_MATERIAL_SITE_VIEW')">
+        <a href="/admin/construction/materials" th:classappend="${activePage=='materials-site'}?' active':''">
+          <i class="bi bi-bricks"></i> Material at Site
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('CONSTRUCTION') and @rbacService.isMenuEnabled('MENU_SUBCONTRACTOR_BILLS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW')">
+        <a href="/admin/construction/running-bills" th:classappend="${activePage=='subcontractor-bills'}?' active':''">
+          <i class="bi bi-file-earmark-check"></i> Subcontractor Bills
+        </a>
+      </li>
+      <li th:if="${@rbacService.isFeatureEnabled('CONSTRUCTION') and @rbacService.isMenuEnabled('MENU_MILESTONES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_CONSTRUCTION_MILESTONE_VIEW')">
+        <a href="/admin/construction/milestones" th:classappend="${activePage=='milestones'}?' active':''">
+          <i class="bi bi-flag"></i> Milestones
         </a>
       </li>
     </div>

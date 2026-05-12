@@ -39,11 +39,13 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertFeature("OPERATIONS", "Operations",          "boxes",       2);
         upsertFeature("SCM",        "Supply Chain",        "truck",       3);
         upsertFeature("PROJECTS",   "Projects",            "folder-open", 4);
-        upsertFeature("HR",         "HR",                  "id-card",     5);
-        upsertFeature("FINANCE",    "Finance",             "coins",       6);
-        upsertFeature("ADMIN",      "Administration",      "shield-lock", 7);
-        upsertFeature("ADVANCE_PAYMENTS", "Advance Payments", "cash-coin", 8);
-        upsertFeature("SYSTEM",     "System",              "cog",         9);
+        upsertFeature("ASSETS",     "Asset Management",    "tools",       5);
+        upsertFeature("CONSTRUCTION", "Construction",       "building",    6);
+        upsertFeature("HR",         "HR",                  "id-card",     7);
+        upsertFeature("FINANCE",    "Finance",             "coins",       8);
+        upsertFeature("ADMIN",      "Administration",      "shield-lock", 9);
+        upsertFeature("ADVANCE_PAYMENTS", "Advance Payments", "cash-coin", 10);
+        upsertFeature("SYSTEM",     "System",              "cog",         11);
     }
 
     private void upsertFeature(String id, String name, String icon, int order) {
@@ -62,6 +64,9 @@ public class PermissionSeeder implements CommandLineRunner {
 
         // Operations
         upsertMenu("MENU_INVENTORY", "OPERATIONS", "Inventory", "boxes", 1);
+        upsertMenu("MENU_ASSETS", "ASSETS", "Asset Register", "tools", 1);
+        upsertMenu("MENU_ASSET_MAINTENANCE", "ASSETS", "Maintenance", "calendar-check", 2);
+        upsertMenu("MENU_ASSET_ANALYTICS", "ASSETS", "Asset Analytics", "bar-chart-line", 3);
 
         // Supply Chain
         upsertMenu("MENU_VENDORS", "SCM", "Vendor Directory", "truck", 1);
@@ -71,6 +76,10 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_PROJECTS", "PROJECTS", "Projects", "kanban", 1);
         upsertMenu("MENU_SITELOGS", "PROJECTS", "Daily Logs", "journal-text", 2);
         upsertMenu("MENU_APPROVALS", "PROJECTS", "Approval Queue", "check2-square", 3);
+        upsertMenu("MENU_BOQ", "CONSTRUCTION", "BOQ", "clipboard-data", 1);
+        upsertMenu("MENU_MATERIAL_SITE", "CONSTRUCTION", "Material at Site", "bricks", 2);
+        upsertMenu("MENU_SUBCONTRACTOR_BILLS", "CONSTRUCTION", "Subcontractor Bills", "file-earmark-check", 3);
+        upsertMenu("MENU_MILESTONES", "CONSTRUCTION", "Milestones", "flag", 4);
 
         // HR
         upsertMenu("MENU_EMPLOYEES", "HR", "Employees", "person-badge", 1);
@@ -172,11 +181,18 @@ public class PermissionSeeder implements CommandLineRunner {
         if (id.startsWith("CRM_CUSTOMERS_")) return "MENU_CUSTOMERS";
         if (id.startsWith("CRM_ENQUIRIES_")) return "MENU_ENQUIRIES";
         if (id.startsWith("INV_")) return "MENU_INVENTORY";
+        if (id.equals("ASSETS_VIEW") || id.equals("ASSETS_MANAGE") || id.equals("ASSETS_ASSIGN") || id.equals("ASSETS_DEPRECIATION")) return "MENU_ASSETS";
+        if (id.equals("ASSETS_MAINTENANCE")) return "MENU_ASSET_MAINTENANCE";
+        if (id.equals("ASSETS_ANALYTICS")) return "MENU_ASSET_ANALYTICS";
         if (id.startsWith("SCM_PO_")) return "MENU_PURCHASE_ORDERS";
         if (id.startsWith("SCM_VENDORS_")) return "MENU_VENDORS";
         if (id.startsWith("PROJ_LIST_")) return "MENU_PROJECTS";
         if (id.startsWith("PROJ_DAILYLOG_")) return "MENU_SITELOGS";
         if (id.startsWith("PROJ_EXPENSES_") || id.startsWith("PROJ_JOBCARD_")) return "MENU_APPROVALS";
+        if (id.startsWith("CONSTRUCTION_BOQ_")) return "MENU_BOQ";
+        if (id.startsWith("CONSTRUCTION_MATERIAL_SITE_")) return "MENU_MATERIAL_SITE";
+        if (id.startsWith("CONSTRUCTION_SUBCONTRACTOR_BILL_")) return "MENU_SUBCONTRACTOR_BILLS";
+        if (id.startsWith("CONSTRUCTION_MILESTONE_")) return "MENU_MILESTONES";
         if (id.startsWith("HR_EMPLOYEES_")) return "MENU_EMPLOYEES";
         if (id.startsWith("HR_ATTENDANCE_")) return "MENU_ATTENDANCE";
         if (id.startsWith("HR_LEAVES_")) return "MENU_LEAVES";
@@ -199,7 +215,9 @@ public class PermissionSeeder implements CommandLineRunner {
         if (permId.startsWith("BILLING_")) return "SALES";
         if (permId.startsWith("ADVANCE_PAYMENTS_")) return "ADVANCE_PAYMENTS";
         if (permId.startsWith("INV_")) return "OPERATIONS";
+        if (permId.startsWith("ASSETS_")) return "ASSETS";
         if (permId.startsWith("PROJ_")) return "PROJECTS";
+        if (permId.startsWith("CONSTRUCTION_")) return "CONSTRUCTION";
         if (permId.startsWith("HR_")) return "HR";
         if (permId.equals("FINANCE_VIEW") || permId.startsWith("FIN_")) return "FINANCE";
         if (permId.startsWith("SETTINGS_COMPANY_") || permId.startsWith("SETTINGS_FEATURES_")) return "SYSTEM";

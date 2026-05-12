@@ -17,4 +17,8 @@ public interface JobCardRepository extends JpaRepository<JobCard, Long> {
 
     @EntityGraph(attributePaths = {"project", "assignedEngineer"})
     List<JobCard> findByAssignedEngineerIdOrderByCreatedAtDesc(Long engineerId);
+
+    @EntityGraph(attributePaths = {"project"})
+    @org.springframework.data.jpa.repository.Query("SELECT j FROM JobCard j ORDER BY j.id DESC")
+    List<JobCard> findAllWithProject();
 }

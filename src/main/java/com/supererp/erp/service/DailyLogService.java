@@ -110,22 +110,26 @@ public class DailyLogService {
     }
 
     // ── Read ──────────────────────────────────────────────────────────────────
+    @Transactional(readOnly = true)
     public List<DailyLog> getByJobCard(Long jobCardId) {
         JobCard jc = jobCardRepo.findById(jobCardId)
             .orElseThrow(() -> new IllegalArgumentException("Job card not found: " + jobCardId));
         return logRepo.findByJobCardOrderByLogDateDesc(jc);
     }
 
+    @Transactional(readOnly = true)
     public Page<DailyLog> getByProject(Long projectId, int page, int size) {
         Pageable pg = PageRequest.of(page, size, Sort.by("logDate").descending());
         return logRepo.findByJobCard_Project_IdOrderByLogDateDesc(projectId, pg);
     }
 
+    @Transactional(readOnly = true)
     public DailyLog getById(Long id) {
         return logRepo.findById(id)
             .orElseThrow(() -> new IllegalArgumentException("Daily log not found: " + id));
     }
 
+    @Transactional(readOnly = true)
     public List<ProjectExpense> getExpensesForLog(Long logId) {
         DailyLog log = getById(logId);
         return new java.util.ArrayList<>(log.getProjectExpenses());

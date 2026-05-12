@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle='Asset Register')}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='assets')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle='Asset Register')}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                <form action="/admin/assets" method="get" class="d-flex gap-2">
+                    <input type="text" name="search" th:value="${search}" class="form-control form-control-sm" style="width:220px;" placeholder="Search assets...">
+                    <button type="submit" class="btn btn-sm btn-gold">Search</button>
+                    <a href="/admin/assets" class="btn btn-sm btn-outline-secondary">Clear</a>
+                </form>
+                <a href="/admin/assets/new" class="btn btn-sm btn-gold" th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_MANAGE'') or hasRole(''SYSTEM_ADMIN'')')}">
+                    <i class="bi bi-plus-lg me-1"></i> Add New Asset
+                </a>
+            </div>
+
+            <div class="card card-lv mb-4">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-lv table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Asset Code</th>
+                                    <th>Name</th>
+                                    <th>Category</th>
+                                    <th>Purchase Date</th>
+                                    <th class="text-end">Current Value</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="asset : ${assetsPage.content}">
+                                    <td>
+                                        <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25 font-monospace" th:text="${asset.assetCode}">AST-001</span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-dark" th:text="${asset.name}">Laptop</div>
+                                        <small class="text-muted" th:text="${asset.serialNumber}">SN-12345</small>
+                                    </td>
+                                    <td th:text="${asset.category}">Electronics</td>
+                                    <td th:text="${#temporals.format(asset.purchaseDate, 'dd MMM yyyy')}">01 Jan 2026</td>
+                                    <td class="text-end fw-medium" th:text="${'₹' + #numbers.formatDecimal(asset.currentBookValue, 1, 'COMMA', 2, 'POINT')}">₹50,000.00</td>
+                                    <td>
+                                        <span class="badge rounded-pill" 
+                                              th:classappend="${asset.status.name() == 'ACTIVE' ? 'bg-success bg-opacity-10 text-success' : 
+                                                             (asset.status.name() == 'UNDER_MAINTENANCE' ? 'bg-warning bg-opacity-10 text-warning border border-warning border-opacity-25' : 
+                                                             (asset.status.name() == 'RETIRED' ? 'bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-25' : 'bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25'))}"
+                                              th:text="${asset.status}">ACTIVE</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <div class="d-flex justify-content-end gap-2">
+                                            <a th:href="@{/admin/assets/{id}(id=${asset.id})}" class="btn btn-sm btn-navy" title="View Details">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_MANAGE'') or hasRole(''SYSTEM_ADMIN'')')}" th:href="@{/admin/assets/{id}/edit(id=${asset.id})}" class="btn btn-sm btn-outline-secondary" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr th:if="${assetsPage.empty}">
+                                    <td colspan="7" class="text-center py-5 text-muted">
+                                        <i class="bi bi-inbox fs-1 d-block mb-3 text-secondary opacity-50"></i>
+                                        <p class="mb-0 fs-5">No assets found.</p>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <nav th:if="${assetsPage.totalPages > 1}" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <li class="page-item" th:classappend="${assetsPage.first ? 'disabled' : ''}">
+                                <a class="page-link shadow-sm rounded-start-pill" th:href="@{/admin/assets(page=${assetsPage.number - 1}, search=${search})}">Previous</a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(0, assetsPage.totalPages - 1)}" th:classappend="${assetsPage.number == i ? 'active' : ''}">
+                                <a class="page-link shadow-sm" th:href="@{/admin/assets(page=${i}, search=${search})}" th:text="${i + 1}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${assetsPage.last ? 'disabled' : ''}">
+                                <a class="page-link shadow-sm rounded-end-pill" th:href="@{/admin/assets(page=${assetsPage.number + 1}, search=${search})}">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

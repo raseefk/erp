@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle=${'RA Bill - ' + bill.billNumber})}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='subcontractor-bills')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle=${'RA Bill - ' + bill.billNumber})}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-3 d-flex justify-content-end gap-2">
+                <a href="/admin/construction/running-bills" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i> Back
+                </a>
+                
+                <a th:href="@{/admin/construction/running-bills/{id}/pdf(id=${bill.id})}" class="btn btn-sm btn-navy">
+                    <i class="bi bi-file-earmark-pdf me-1"></i> Download PDF
+                </a>
+                
+                <form th:if="${bill.status.name() == 'DRAFT' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                      th:action="@{/admin/construction/running-bills/{id}/submit(id=${bill.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-gold" onclick="return confirm('Submit bill?');">
+                        <i class="bi bi-send-fill me-1"></i> Submit
+                    </button>
+                </form>
+
+                <button th:if="${bill.status.name() == 'SUBMITTED' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_CERTIFY'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                        class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#rejectModal">
+                    <i class="bi bi-x-circle me-1"></i> Reject
+                </button>
+                
+                <form th:if="${bill.status.name() == 'CERTIFIED' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_MILESTONE_PAYMENT_RELEASE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                      th:action="@{/admin/construction/running-bills/{id}/pay(id=${bill.id})}" method="post">
+                    <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('Mark paid?');">
+                        <i class="bi bi-cash-stack me-1"></i> Mark Paid
+                    </button>
+                </form>
+            </div>
+
+            <!-- Bill Details Card -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-8">
+                    <div class="card card-lv h-100">
+                        <div class="card-header">Bill Information</div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="text-muted small">Project</label>
+                                    <div class="fw-bold" th:text="${bill.project.name}">Project</div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="text-muted small">Subcontractor</label>
+                                    <div class="fw-bold text-navy" th:text="${bill.vendor.name}">Vendor</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="text-muted small">Bill Date</label>
+                                    <div th:text="${#temporals.format(bill.billDate, 'dd MMM yyyy')}">Date</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="text-muted small">Period From</label>
+                                    <div th:text="${#temporals.format(bill.periodFrom, 'dd MMM yyyy')}">Date</div>
+                                </div>
+                                <div class="col-sm-4">
+                                    <label class="text-muted small">Period To</label>
+                                    <div th:text="${#temporals.format(bill.periodTo, 'dd MMM yyyy')}">Date</div>
+                                </div>
+                                <div class="col-12" th:if="${bill.rejectionReason != null}">
+                                    <label class="text-danger small">Rejection Reason</label>
+                                    <div class="alert alert-danger py-2" th:text="${bill.rejectionReason}">Reason</div>
+                                </div>
+                                <div class="col-sm-6" th:if="${bill.jobCard != null}">
+                                    <label class="text-muted small">Linked Job Card</label>
+                                    <div>
+                                        <a th:href="@{/admin/construction/job-cards/{id}(id=${bill.jobCard.id})}" class="text-decoration-none fw-bold text-navy">
+                                            <i class="bi bi-clipboard-check me-1"></i>
+                                            <span th:text="${bill.jobCard.phase}">Job Card Phase</span>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card h-100 bg-navy text-white">
+                        <div class="text-center w-100">
+                            <div class="text-white-50 small mb-1">Certified Amount</div>
+                            <div class="fs-2 fw-bold mb-2" th:text="${'₹ ' + #numbers.formatDecimal(bill.certifiedAmount, 1, 'COMMA', 2, 'POINT')}">₹ 0.00</div>
+                            <span class="badge badge-gold" th:text="${bill.status}">DRAFT</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Items -->
+            <div class="card card-lv mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Bill Items</span>
+                    <button th:if="${bill.status.name() == 'DRAFT' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                            class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#addItemModal">
+                        <i class="bi bi-plus-lg me-1"></i> Add Item
+                    </button>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/admin/construction/running-bills/{id}/certify(id=${bill.id})}" method="post">
+                        <div class="table-responsive">
+                            <table class="table table-lv table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Description</th>
+                                        <th class="text-end">Claimed Qty</th>
+                                        <th class="text-end">Rate (₹)</th>
+                                        <th class="text-end">Claimed Amt (₹)</th>
+                                        <th class="text-end">Certified Qty</th>
+                                        <th class="text-end">Certified Amt (₹)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr th:each="item : ${bill.items}">
+                                        <td th:text="${item.description}">Work Item</td>
+                                        <td class="text-end" th:text="${#numbers.formatDecimal(item.claimedQuantity, 1, 2)}">10.00</td>
+                                        <td class="text-end" th:text="${#numbers.formatDecimal(item.rate, 1, 'COMMA', 2, 'POINT')}">100.00</td>
+                                        <td class="text-end" th:text="${#numbers.formatDecimal(item.claimedAmount, 1, 'COMMA', 2, 'POINT')}">1000.00</td>
+                                        <td class="text-end" style="width: 150px;">
+                                            <span th:if="${bill.status.name() != 'SUBMITTED'}" th:text="${#numbers.formatDecimal(item.certifiedQuantity, 1, 2)}">10.00</span>
+                                            <div th:if="${bill.status.name() == 'SUBMITTED'}">
+                                                <input th:if="${#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_CERTIFY'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                                                       type="number" step="0.01" th:name="'certQty_' + ${item.id}" class="form-control form-control-sm text-end" th:value="${item.claimedQuantity}" required>
+                                                <span th:unless="${#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_CERTIFY'') or hasRole(''SYSTEM_ADMIN'')')}" th:text="${#numbers.formatDecimal(item.certifiedQuantity, 1, 2)}"></span>
+                                            </div>
+                                        </td>
+                                        <td class="text-end fw-bold" th:text="${#numbers.formatDecimal(item.certifiedAmount, 1, 'COMMA', 2, 'POINT')}">1000.00</td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr>
+                                        <th colspan="3" class="text-end">Total:</th>
+                                        <th class="text-end text-muted" th:text="${'₹ ' + #numbers.formatDecimal(bill.grossAmount, 1, 'COMMA', 2, 'POINT')}">₹ 0.00</th>
+                                        <th></th>
+                                        <th class="text-end text-navy" th:text="${'₹ ' + #numbers.formatDecimal(bill.certifiedAmount, 1, 'COMMA', 2, 'POINT')}">₹ 0.00</th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <div class="text-end mt-3" th:if="${bill.status.name() == 'SUBMITTED' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_CERTIFY'') or hasRole(''SYSTEM_ADMIN'')')) and not #lists.isEmpty(bill.items)}">
+                            <button type="submit" class="btn btn-navy">
+                                <i class="bi bi-shield-check me-1"></i> Certify Bill
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Item Modal -->
+    <div th:if="${bill.status.name() == 'DRAFT'}" class="modal fade" id="addItemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/construction/running-bills/{id}/items(id=${bill.id})}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Add Claim Item</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Description of Work <span class="text-danger">*</span></label>
+                        <textarea name="description" class="form-control" rows="2" required placeholder="e.g. Earthwork excavation..."></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Claimed Qty <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="claimedQuantity" class="form-control" required>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-medium">Rate (₹) <span class="text-danger">*</span></label>
+                            <input type="number" step="0.01" name="rate" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Add Item</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Reject Modal -->
+    <div th:if="${bill.status.name() == 'SUBMITTED'}" class="modal fade" id="rejectModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/construction/running-bills/{id}/reject(id=${bill.id})}" method="post" class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-x-circle-fill me-2"></i>Reject Bill</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Reason for Rejection <span class="text-danger">*</span></label>
+                        <textarea name="reason" class="form-control" rows="3" required placeholder="Explain why this bill is rejected..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Confirm Rejection</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

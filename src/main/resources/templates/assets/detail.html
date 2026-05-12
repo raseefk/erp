@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(pageTitle=${asset.name})}"></head>
+<body class="bg-light">
+    <th:block th:replace="~{fragments/layout :: sidebar(activePage='assets')}"></th:block>
+    <div id="main">
+        <div th:replace="~{fragments/layout :: topbar(pageTitle=${asset.name})}"></div>
+        <div class="pb">
+            <th:block th:replace="~{fragments/layout :: alerts}"></th:block>
+
+            <div class="mb-4">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="/admin/assets" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back
+                    </a>
+                    <a th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_MANAGE'') or hasRole(''SYSTEM_ADMIN'')')}" th:href="@{/admin/assets/{id}/edit(id=${asset.id})}" class="btn btn-sm btn-gold">
+                        <i class="bi bi-pencil me-1"></i> Edit Asset
+                    </a>
+                </div>
+            </div>
+
+            <!-- Info Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-primary bg-opacity-10 text-primary">
+                            <i class="bi bi-currency-rupee"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${#numbers.formatDecimal(asset.currentBookValue, 1, 'COMMA', 0, 'POINT')}">0</div>
+                            <div class="stat-lbl">Book Value</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-success bg-opacity-10 text-success">
+                            <i class="bi bi-check-circle"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${asset.status}">ACTIVE</div>
+                            <div class="stat-lbl">Status</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-clock-history"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${asset.usefulLifeMonths}">0</div>
+                            <div class="stat-lbl">Life (Months)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card">
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-activity"></i>
+                        </div>
+                        <div>
+                            <div class="stat-num" th:text="${mtbfHours > 0 ? #numbers.formatDecimal(mtbfHours, 1, 0) : 'N/A'}">0</div>
+                            <div class="stat-lbl">MTBF (Hrs)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <ul class="nav nav-tabs mb-4" id="assetTabs" role="tablist">
+                <li class="nav-item">
+                    <button class="nav-link active" data-bs-toggle="tab" data-bs-target="#overview" type="button">Overview</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#assignment" type="button">Assignment</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#depreciation" type="button">Depreciation</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#maintenance" type="button">Maintenance</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" data-bs-toggle="tab" data-bs-target="#breakdowns" type="button">Breakdowns</button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="assetTabsContent">
+                
+                <!-- Overview Tab -->
+                <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                    <div class="card card-lv">
+                        <div class="card-header">Asset Overview</div>
+                        <div class="card-body">
+                            <h6 class="text-muted fw-bold mb-3">Specifications</h6>
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block">Category</label>
+                                    <span class="fw-bold" th:text="${asset.category ?: '-'}">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block">Serial Number</label>
+                                    <span class="fw-bold" th:text="${asset.serialNumber ?: '-'}">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block">Vendor</label>
+                                    <span class="fw-bold" th:text="${asset.vendor != null ? asset.vendor.name : '-'}">-</span>
+                                </div>
+                                <div class="col-12">
+                                    <label class="text-muted small d-block">Description</label>
+                                    <span th:text="${asset.description ?: '-'}">-</span>
+                                </div>
+                            </div>
+
+                            <h6 class="text-muted fw-bold mb-3">Financial Profile</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block">Purchase Date</label>
+                                    <span class="fw-bold" th:text="${#temporals.format(asset.purchaseDate, 'dd MMM yyyy')}">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block">Purchase Cost</label>
+                                    <span class="fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(asset.purchaseCost, 1, 'COMMA', 2, 'POINT')}">-</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="text-muted small d-block">Salvage Value</label>
+                                    <span class="fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(asset.salvageValue, 1, 'COMMA', 2, 'POINT')}">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assignment Tab -->
+                <div class="tab-pane fade" id="assignment" role="tabpanel">
+                    <div class="row g-4">
+                        <!-- Current Assignment -->
+                        <div class="col-12">
+                            <div class="card card-lv">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span>Current Assignment</span>
+                                    <button th:if="${currentAssignment == null and (#authorization.expression('hasAuthority(''PERM_ASSETS_ASSIGN'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                                            class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#assignModal">
+                                        <i class="bi bi-person-plus-fill me-1"></i> Assign Asset
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div th:if="${currentAssignment != null}" class="alert alert-lv d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-bold">
+                                                Assigned To: 
+                                                <span th:if="${currentAssignment.assignmentType.name() == 'EMPLOYEE'}" th:text="${currentAssignment.employee.name + ' (Employee)'}"></span>
+                                                <span th:if="${currentAssignment.assignmentType.name() == 'PROJECT'}" th:text="${currentAssignment.project.name + ' (Project)'}"></span>
+                                                <span th:if="${currentAssignment.assignmentType.name() == 'LOCATION'}" th:text="${currentAssignment.location + ' (Location)'}"></span>
+                                            </div>
+                                            <small class="text-muted">Since: [[${#temporals.format(currentAssignment.assignedFrom, 'dd MMM yyyy')}]]</small>
+                                        </div>
+                                        <button th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_ASSIGN'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                                                class="btn btn-sm btn-navy" data-bs-toggle="modal" data-bs-target="#returnModal">
+                                            <i class="bi bi-arrow-counterclockwise me-1"></i> Return Asset
+                                        </button>
+                                    </div>
+                                    <div th:unless="${currentAssignment != null}" class="text-center py-4 text-muted">
+                                        Asset is available in inventory.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+                        
+                        <!-- History -->
+                        <div class="col-12">
+                            <div class="card card-lv">
+                                <div class="card-header">Assignment History</div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-lv table-hover align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Type</th>
+                                                    <th>Assigned To</th>
+                                                    <th>From Date</th>
+                                                    <th>Return Date</th>
+                                                    <th>Notes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr th:each="hist : ${assignmentHistory}">
+                                                    <td th:text="${hist.assignmentType}">Type</td>
+                                                    <td class="fw-bold">
+                                                        <span th:if="${hist.assignmentType.name() == 'EMPLOYEE'}" th:text="${hist.employee.name}"></span>
+                                                        <span th:if="${hist.assignmentType.name() == 'PROJECT'}" th:text="${hist.project.name}"></span>
+                                                        <span th:if="${hist.assignmentType.name() == 'LOCATION'}" th:text="${hist.location}"></span>
+                                                    </td>
+                                                    <td th:text="${#temporals.format(hist.assignedFrom, 'dd MMM yyyy')}">Date</td>
+                                                    <td>
+                                                        <span th:if="${hist.returnedAt != null}" th:text="${#temporals.format(hist.returnedAt, 'dd MMM yyyy')}">Date</span>
+                                                        <span th:unless="${hist.returnedAt != null}" class="badge badge-success">Active</span>
+                                                    </td>
+                                                    <td th:text="${hist.notes}">-</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Depreciation Tab -->
+                <div class="tab-pane fade" id="depreciation" role="tabpanel">
+                    <div class="card card-lv">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Depreciation Schedule</span>
+                            <form th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_DEPRECIATION'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                                  th:action="@{/admin/assets/{id}/depreciation/regenerate(id=${asset.id})}" method="post">
+                                <button type="submit" class="btn btn-sm btn-gold" onclick="return confirm('Recalculate schedule?');">
+                                    <i class="bi bi-arrow-repeat me-1"></i> Regenerate
+                                </button>
+                            </form>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-lv table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Period</th>
+                                            <th class="text-end">Opening Value</th>
+                                            <th class="text-end text-danger">Depreciation</th>
+                                            <th class="text-end">Closing Value</th>
+                                            <th class="text-center">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="row : ${depreciationRows}">
+                                            <td th:text="${#temporals.format(row.periodStart, 'MMM yyyy') + ' - ' + #temporals.format(row.periodEnd, 'MMM yyyy')}">Period</td>
+                                            <td class="text-end" th:text="'₹ ' + ${#numbers.formatDecimal(row.openingValue, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                            <td class="text-end text-danger" th:text="'- ₹ ' + ${#numbers.formatDecimal(row.depreciationAmount, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                            <td class="text-end fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(row.closingValue, 1, 'COMMA', 2, 'POINT')}">₹0.00</td>
+                                            <td class="text-center">
+                                                <span th:if="${row.posted}" class="badge badge-success">Posted</span>
+                                                <span th:unless="${row.posted}" class="badge badge-navy">Scheduled</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Maintenance Tab -->
+                <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                    <div class="row g-4">
+                        <!-- Plans -->
+                        <div class="col-md-12">
+                            <div class="card card-lv mb-4">
+                                <div class="card-header d-flex justify-content-between align-items-center">
+                                    <span>Preventive Maintenance Plans</span>
+                                    <button th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_MAINTENANCE'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                                            class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#planModal">
+                                        <i class="bi bi-plus-lg me-1"></i> Add Plan
+                                    </button>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-lv table-hover align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Frequency</th>
+                                                    <th>Next Due</th>
+                                                    <th>Assigned Tech</th>
+                                                    <th>Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr th:each="plan : ${maintenancePlans}">
+                                                    <td>
+                                                        <span th:text="${plan.frequency}"></span>
+                                                        <small class="text-muted d-block" th:if="${plan.frequency.name() == 'CUSTOM'}" th:text="${'Every ' + plan.customIntervalDays + ' days'}"></small>
+                                                    </td>
+                                                    <td th:text="${#temporals.format(plan.nextDueDate, 'dd MMM yyyy')}">Date</td>
+                                                    <td th:text="${plan.assignedEmployee != null ? plan.assignedEmployee.name : 'Unassigned'}">Tech</td>
+                                                    <td>
+                                                        <span th:if="${plan.active}" class="badge badge-success">Active</span>
+                                                        <span th:unless="${plan.active}" class="badge badge-danger">Inactive</span>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </div>
+
+                        <!-- Jobs -->
+                        <div class="col-md-12">
+                            <div class="card card-lv">
+                                <div class="card-header">Maintenance Jobs History</div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-lv table-hover align-middle">
+                                            <thead>
+                                                <tr>
+                                                    <th>Date</th>
+                                                    <th>Status</th>
+                                                    <th>Cost</th>
+                                                    <th>Tech</th>
+                                                    <th>Notes</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr th:each="job : ${maintenanceJobs}">
+                                                    <td th:text="${#temporals.format(job.scheduledDate, 'dd MMM yyyy')}">Date</td>
+                                                    <td>
+                                                        <span class="badge" 
+                                                              th:classappend="${job.status.name() == 'COMPLETED' ? 'badge-success' : 'badge-navy'}"
+                                                              th:text="${job.status}">Status</span>
+                                                    </td>
+                                                    <td th:text="${job.cost != null ? '₹ ' + #numbers.formatDecimal(job.cost, 1, 2) : '-'}">Cost</td>
+                                                    <td th:text="${job.assignedEmployee != null ? job.assignedEmployee.name : '-'}">Tech</td>
+                                                    <td th:text="${job.notes}">Notes</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breakdowns Tab -->
+                <div class="tab-pane fade" id="breakdowns" role="tabpanel">
+                    <div class="card card-lv">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <span>Breakdown History</span>
+                            <button th:if="${#authorization.expression('hasAuthority(''PERM_ASSETS_MAINTENANCE'') or hasRole(''SYSTEM_ADMIN'')')}" 
+                                    class="btn btn-sm btn-navy" data-bs-toggle="modal" data-bs-target="#breakdownModal">
+                                <i class="bi bi-exclamation-octagon-fill me-1"></i> Report Breakdown
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-lv table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th>Reported At</th>
+                                            <th>Symptom</th>
+                                            <th>Status</th>
+                                            <th>Repaired At</th>
+                                            <th>Cost</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="bd : ${breakdowns}" th:classappend="${bd.status.name() == 'OPEN'} ? 'table-danger' : ''">
+                                            <td th:text="${#temporals.format(bd.reportedAt, 'dd MMM yyyy HH:mm')}">Date</td>
+                                            <td th:text="${bd.symptom}">Symptom</td>
+                                            <td>
+                                                <span class="badge" th:classappend="${bd.status.name() == 'OPEN' ? 'badge-danger' : 'badge-success'}" th:text="${bd.status}">Status</span>
+                                            </td>
+                                            <td th:text="${bd.repairedAt != null ? #temporals.format(bd.repairedAt, 'dd MMM yyyy HH:mm') : '-'}">Date</td>
+                                            <td th:text="${bd.repairCost != null ? '₹ ' + #numbers.formatDecimal(bd.repairCost, 1, 2) : '-'}">Cost</td>
+                                            <td>
+                                                <button th:if="${bd.status.name() == 'OPEN' and (#authorization.expression('hasAuthority(''PERM_ASSETS_MAINTENANCE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                                                        class="btn btn-sm btn-gold" data-bs-toggle="modal" th:data-bs-target="'#closeBreakdownModal' + ${bd.id}">
+                                                    Close
+                                                </button>
+                                                <span th:if="${bd.status.name() != 'OPEN'}"><i class="bi bi-check-all text-success"></i> Fixed</span>
+
+                                                <!-- Close Breakdown Modal -->
+                                                <div class="modal fade" th:id="'closeBreakdownModal' + ${bd.id}" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <form th:action="@{/admin/assets/breakdowns/{bdId}/close(bdId=${bd.id})}" method="post" class="modal-content border-0 rounded-4 shadow">
+                                                            <input type="hidden" name="assetId" th:value="${asset.id}">
+                                                            <div class="modal-header border-bottom-0">
+                                                                <h5 class="modal-title fw-bold text-success">Close Breakdown</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body p-4">
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Root Cause</label>
+                                                                    <textarea name="rootCause" class="form-control" rows="2" required></textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Repair Action</label>
+                                                                    <textarea name="repairAction" class="form-control" rows="2" required></textarea>
+                                                                </div>
+                                                                <div class="mb-3">
+                                                                    <label class="form-label">Repair Cost (₹)</label>
+                                                                    <input type="number" name="repairCost" step="0.01" class="form-control">
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer border-top-0 bg-light rounded-bottom-4">
+                                                                <button type="button" class="btn btn-secondary rounded-pill" data-bs-dismiss="modal">Cancel</button>
+                                                                <button type="submit" class="btn btn-success rounded-pill">Submit & Close</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr th:if="${#lists.isEmpty(breakdowns)}">
+                                            <td colspan="6" class="text-center text-muted py-4">No breakdowns reported.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Modals -->
+
+    <!-- Assign Modal -->
+    <div th:if="${currentAssignment == null}" class="modal fade" id="assignModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/assets/{id}/assign(id=${asset.id})}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Assign Asset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Assignment Type <span class="text-danger">*</span></label>
+                        <select name="assignmentType" class="form-select" id="assignmentType" required onchange="toggleAssignmentFields()">
+                            <option th:each="type : ${AssetAssignmentType}" th:value="${type}" th:text="${type}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="employeeField">
+                        <label class="form-label">Employee</label>
+                        <select name="employeeId" class="form-select">
+                            <option value="">-- Select Employee --</option>
+                            <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="projectField" style="display: none;">
+                        <label class="form-label">Project</label>
+                        <select name="projectId" class="form-select">
+                            <option value="">-- Select Project --</option>
+                            <option th:each="proj : ${projects}" th:value="${proj.id}" th:text="${proj.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="locationField" style="display: none;">
+                        <label class="form-label">Location</label>
+                        <input type="text" name="location" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assigned From Date <span class="text-danger">*</span></label>
+                        <input type="date" name="assignedFrom" class="form-control" required th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Assign Asset</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Return Modal -->
+    <div th:if="${currentAssignment != null}" class="modal fade" id="returnModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/assets/assignments/{aid}/return(aid=${currentAssignment.id})}" method="post" class="modal-content">
+                <input type="hidden" name="assetId" th:value="${asset.id}">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Return Asset</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Return Date <span class="text-danger">*</span></label>
+                        <input type="date" name="returnedAt" class="form-control" required th:value="${#dates.format(#dates.createNow(), 'yyyy-MM-dd')}">
+                    </div>
+                    <div class="alert alert-warning border-0 rounded-3">
+                        <i class="bi bi-info-circle-fill me-2"></i> This will mark the asset as available in inventory.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Confirm Return</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Maintenance Plan Modal -->
+    <div class="modal fade" id="planModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/assets/{id}/maintenance/plans(id=${asset.id})}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">New Maintenance Plan</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label">Frequency <span class="text-danger">*</span></label>
+                        <select name="frequency" class="form-select" id="frequencySelect" required onchange="toggleCustomFreq()">
+                            <option th:each="freq : ${MaintenanceFrequency}" th:value="${freq}" th:text="${freq}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3" id="customFreq" style="display: none;">
+                        <label class="form-label">Interval (Days) <span class="text-danger">*</span></label>
+                        <input type="number" name="customIntervalDays" class="form-control" id="customIntervalInput">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Next Due Date <span class="text-danger">*</span></label>
+                        <input type="date" name="nextDueDate" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assigned Technician</label>
+                        <select name="employeeId" class="form-select">
+                            <option value="">-- Auto-assign or Select --</option>
+                            <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.name}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Instructions / Checklist</label>
+                        <textarea name="instructions" class="form-control" rows="3" placeholder="Steps to perform..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-gold">Create Plan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Breakdown Modal -->
+    <div class="modal fade" id="breakdownModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/admin/assets/{id}/breakdowns(id=${asset.id})}" method="post" class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-exclamation-octagon-fill me-2"></i> Report Breakdown</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div class="alert alert-danger">
+                        Reporting a breakdown will immediately change the asset status to <strong>UNDER_MAINTENANCE</strong>.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Symptom / Issue <span class="text-danger">*</span></label>
+                        <textarea name="symptom" class="form-control" rows="3" required placeholder="Describe what went wrong..."></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Assign Technician</label>
+                        <select name="employeeId" class="form-select">
+                            <option value="">-- Unassigned --</option>
+                            <option th:each="emp : ${employees}" th:value="${emp.id}" th:text="${emp.name}"></option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-sm btn-danger">Report Issue</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/layout :: scripts}"></div>
+    <script>
+        function toggleAssignmentFields() {
+            var type = document.getElementById('assignmentType').value;
+            document.getElementById('employeeField').style.display = type === 'EMPLOYEE' ? 'block' : 'none';
+            document.getElementById('projectField').style.display = type === 'PROJECT' ? 'block' : 'none';
+            document.getElementById('locationField').style.display = type === 'LOCATION' ? 'block' : 'none';
+        }
+        
+        function toggleCustomFreq() {
+            var freq = document.getElementById('frequencySelect').value;
+            var customDiv = document.getElementById('customFreq');
+            var customInput = document.getElementById('customIntervalInput');
+            if (freq === 'CUSTOM') {
+                customDiv.style.display = 'block';
+                customInput.setAttribute('required', 'required');
+            } else {
+                customDiv.style.display = 'none';
+                customInput.removeAttribute('required');
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            var at = document.getElementById('assignmentType');
+            if(at) toggleAssignmentFields();
+        });
+    </script>
+</body>
+</html>
