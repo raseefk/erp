@@ -79,7 +79,8 @@
                       <small th:text="${#temporals.format(exp.expenseDate,'dd MMM yyyy')}">-</small>
                     </td>
                     <td>
-                      <span class="badge badge-navy" th:text="${exp.jobCard.phase}">-</span>
+                      <span class="badge badge-navy" 
+                            th:text="${exp.jobCard != null ? exp.jobCard.phase : 'General'}">-</span>
                     </td>
                     <td>
                       <span class="badge"

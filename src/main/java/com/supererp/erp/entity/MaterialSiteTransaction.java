@@ -31,6 +31,10 @@ public class MaterialSiteTransaction extends TenantAwareEntity {
     @JoinColumn(name = "inventory_item_id", nullable = false)
     private InventoryItem inventoryItem;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "boq_item_id")
+    private BoqItem boqItem;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MaterialSiteTransactionType transactionType;

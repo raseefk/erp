@@ -59,9 +59,10 @@ public class ApprovalService {
         }
 
         // Build reference string
+        String jobPhase = (pe.getJobCard() != null) ? pe.getJobCard().getPhase() : "General";
         String dateStr = pe.getExpenseDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy"));
         String reference = "Project: " + pe.getProject().getName()
-            + " | Job: "  + pe.getJobCard().getPhase()
+            + " | Job: "  + jobPhase
             + " | "       + pe.getCategory().name() + " for " + dateStr;
 
         // Map ProjectExpenseCategory → CompanyExpenseCategory
@@ -131,12 +132,13 @@ public class ApprovalService {
         return switch (cat) {
             case LABOUR    -> ExpenseCategory.LABOUR;
             case MATERIAL  -> ExpenseCategory.MATERIAL;
-            case FUEL  -> ExpenseCategory.FUEL;
+            case FUEL      -> ExpenseCategory.FUEL;
             case TRANSPORT -> ExpenseCategory.TRANSPORT;
             case TOOLS     -> ExpenseCategory.TOOLS;
             case MISC      -> ExpenseCategory.MISC;
-            case UTILITY      -> ExpenseCategory.UTILITY;
+            case UTILITY   -> ExpenseCategory.UTILITY;
             case RENT      -> ExpenseCategory.RENT;
+            case PROJECT_SUBCONTRACT -> ExpenseCategory.PROJECT_SUBCONTRACT;
         };
     }
 }

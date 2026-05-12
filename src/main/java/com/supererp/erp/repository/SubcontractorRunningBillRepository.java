@@ -31,4 +31,8 @@ public interface SubcontractorRunningBillRepository extends JpaRepository<Subcon
     @EntityGraph(attributePaths = {"project", "vendor"})
     @Query("SELECT b FROM SubcontractorRunningBill b WHERE (:q IS NULL OR :q = '' OR LOWER(b.billNumber) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(b.project.name) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(b.vendor.name) LIKE LOWER(CONCAT('%', :q, '%'))) ORDER BY b.billDate DESC, b.id DESC")
     Page<SubcontractorRunningBill> search(@Param("q") String q, Pageable pageable);
+
+    long countByProjectId(Long projectId);
+
+    long countByJobCardId(Long jobCardId);
 }

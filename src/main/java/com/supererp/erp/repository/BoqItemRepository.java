@@ -16,4 +16,7 @@ public interface BoqItemRepository extends JpaRepository<BoqItem, Long> {
     
     @EntityGraph(attributePaths = {"inventoryItem"})
     List<BoqItem> findByProjectIdAndStatusOrderByIdAsc(Long projectId, BoqItemStatus status);
+
+    @EntityGraph(attributePaths = {"inventoryItem", "boq"})
+    List<BoqItem> findByProjectIdOrderByDescriptionAsc(Long projectId);
 }

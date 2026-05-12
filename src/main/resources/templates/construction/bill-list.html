@@ -57,10 +57,14 @@
                                               th:text="${bill.status}">DRAFT</span>
                                     </td>
                                     <td class="text-end">
+                                        <a th:href="@{/admin/construction/running-bills/{id}/pdf(id=${bill.id})}" class="btn btn-sm btn-outline-navy" title="Download PDF">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </a>
                                         <a th:href="@{/admin/construction/running-bills/{id}(id=${bill.id})}" class="btn btn-sm btn-navy" title="View Bill">
                                             <i class="bi bi-eye"></i> View
                                         </a>
                                     </td>
+
                                 </tr>
                                 <tr th:if="${billsPage.empty}">
                                     <td colspan="7" class="text-center py-5 text-muted">

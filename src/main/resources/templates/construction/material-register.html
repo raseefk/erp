@@ -89,6 +89,7 @@
                                     <th>Type</th>
                                     <th class="text-end">Quantity</th>
                                     <th>Unit</th>
+                                    <th>Linked BOQ Item</th>
                                     <th>Remarks</th>
                                 </tr>
                             </thead>
@@ -106,6 +107,10 @@
                                     <td class="text-end fw-medium" th:text="${#numbers.formatDecimal(tx.quantity, 1, 2)}"
                                         th:classappend="${tx.transactionType.name() == 'RECEIPT' ? 'text-success' : 'text-danger'}">10.00</td>
                                     <td th:text="${tx.unit}">KGS</td>
+                                    <td>
+                                        <span th:if="${tx.boqItem != null}" class="text-navy small fw-bold" th:text="${tx.boqItem.description}">BOQ Task</span>
+                                        <span th:if="${tx.boqItem == null}" class="text-muted small italic">-</span>
+                                    </td>
                                     <td th:text="${tx.remarks}">Remarks</td>
                                 </tr>
                                 <tr th:if="${#lists.isEmpty(transactions)}">
@@ -133,8 +138,8 @@
                 </div>
                 <div class="modal-body p-4">
                     <div class="mb-3">
-                        <label class="form-label fw-medium">Material / Item <span class="text-danger">*</span></label>
-                        <select name="inventoryItemId" class="form-select" required>
+                        <label class="form-label fw-medium">Material / Item <span class="text-secondary small">(Auto-filled from BOQ)</span></label>
+                        <select name="inventoryItemId" id="inventoryItemSelector" class="form-select">
                             <option value="">-- Select Material --</option>
                             <option th:each="inv : ${inventoryItems}" th:value="${inv.id}" th:text="${inv.name}"></option>
                         </select>
@@ -144,6 +149,26 @@
                         <select name="transactionType" class="form-select" required>
                             <option th:each="type : ${MaterialSiteTransactionType}" th:value="${type}" th:text="${type}"></option>
                         </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Select BOQ</label>
+                        <select id="boqSelector" class="form-select" onchange="filterBoqItems()">
+                            <option value="">-- Choose BOQ --</option>
+                            <option th:each="b : ${boqs}" th:value="${b.id}" th:text="${b.boqNumber + ' - ' + b.title}"></option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Link to BOQ Item <span class="text-danger">*</span></label>
+                        <select name="boqItemId" id="boqItemSelector" class="form-select" required onchange="updateUnitFromBoq()">
+                            <option value="">-- Select Task --</option>
+                            <option th:each="item : ${boqItems}" 
+                                    th:value="${item.id}" 
+                                    th:text="${item.description + (item.inventoryItem != null ? ' (' + item.inventoryItem.name + ')' : ' [No Material Linked]')}" 
+                                    th:data-boq-id="${item.boq.id}"
+                                    th:data-inventory-id="${item.inventoryItem != null ? item.inventoryItem.id : ''}"
+                                    th:data-unit="${item.unit}"></option>
+                        </select>
+                        <div class="form-text">Choose the project task to record material for.</div>
                     </div>
                     <div class="row mb-3">
                         <div class="col-6">
@@ -173,5 +198,50 @@
     </div>
 
     <div th:replace="~{fragments/layout :: scripts}"></div>
+    <script>
+        function filterBoqItems() {
+            const boqId = document.getElementById('boqSelector').value;
+            const itemSelector = document.getElementById('boqItemSelector');
+            const options = itemSelector.querySelectorAll('option');
+            
+            itemSelector.value = ""; // Reset selection
+            
+            options.forEach(opt => {
+                if (opt.value === "") {
+                    opt.style.display = "block";
+                    return;
+                }
+                
+                const optBoqId = opt.getAttribute('data-boq-id');
+                if (!boqId || optBoqId === boqId) {
+                    opt.style.display = "block";
+                } else {
+                    opt.style.display = "none";
+                }
+            });
+        }
+
+        function updateUnitFromBoq() {
+            const itemSelector = document.getElementById('boqItemSelector');
+            const selectedOption = itemSelector.options[itemSelector.selectedIndex];
+            const unitInput = document.querySelector('input[name="unit"]');
+            const inventorySelector = document.getElementById('inventoryItemSelector');
+            
+            if (selectedOption) {
+                // Update Unit
+                if (selectedOption.getAttribute('data-unit')) {
+                    unitInput.value = selectedOption.getAttribute('data-unit');
+                }
+                
+                // Update Inventory Item
+                const inventoryId = selectedOption.getAttribute('data-inventory-id');
+                if (inventoryId) {
+                    inventorySelector.value = inventoryId;
+                } else {
+                    inventorySelector.value = "";
+                }
+            }
+        }
+    </script>
 </body>
 </html>

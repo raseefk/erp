@@ -358,7 +358,140 @@ public class PdfService {
         }
     }
 
+    public byte[] generateMilestonePdf(com.supererp.erp.entity.ProjectMilestone milestone) {
+        try {
+            com.supererp.erp.entity.CompanySettings settings = settingsService.getSettings();
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
+            PdfWriter writer = PdfWriter.getInstance(doc, out);
+            writer.setPageEvent(new PageFooter(settings));
+            doc.open();
+
+            // Header
+            String dt = milestone.getSubmittedAt() != null 
+                ? milestone.getSubmittedAt().format(DateTimeFormatter.ofPattern("dd-MM-yyyy")) 
+                : java.time.LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"));
+            header(doc, "MILESTONE CERTIFICATE", "MS-" + milestone.getId(), dt, true, settings);
+
+            // Project & Client Info
+            PdfPTable info = new PdfPTable(2);
+            info.setWidthPercentage(100);
+            info.setSpacingAfter(20);
+            info.setWidths(new float[]{1.2f, 0.8f});
+
+            PdfPCell left = cell(Rectangle.BOX);
+            left.setBorderColor(BORDER);
+            left.setBackgroundColor(LIGHT);
+            left.setPadding(15);
+            left.addElement(p("PROJECT DETAILS", f(8, Font.BOLD, GOLD)));
+            left.addElement(p(milestone.getProject().getName(), f(12, Font.BOLD, NAVY)));
+            if (s(milestone.getProject().getClientName())) {
+                left.addElement(Chunk.NEWLINE);
+                left.addElement(p("CLIENT", f(8, Font.BOLD, GOLD)));
+                left.addElement(p(milestone.getProject().getClientName(), f(10, Font.NORMAL, DARK)));
+            }
+            info.addCell(left);
+
+            PdfPCell right = cell(Rectangle.BOX);
+            right.setBorderColor(BORDER);
+            right.setBackgroundColor(LIGHT);
+            right.setPadding(15);
+            right.addElement(p("MILESTONE STATUS", f(8, Font.BOLD, GOLD)));
+            Paragraph statusP = p(milestone.getStatus().name().replace("_", " "), f(10, Font.BOLD, GOLD));
+            right.addElement(statusP);
+            right.addElement(Chunk.NEWLINE);
+            right.addElement(p("DUE DATE", f(8, Font.BOLD, GOLD)));
+            right.addElement(p(milestone.getDueDate() != null ? milestone.getDueDate().format(DateTimeFormatter.ofPattern("dd MMM yyyy")) : "-", f(10, Font.NORMAL, DARK)));
+            info.addCell(right);
+            doc.add(info);
+
+            // Milestone Content
+            doc.add(p("MILESTONE DESCRIPTION", f(10, Font.BOLD, NAVY)));
+            doc.add(new Chunk(new com.itextpdf.text.pdf.draw.LineSeparator(0.5f, 100, BORDER, Element.ALIGN_CENTER, -2)));
+            doc.add(Chunk.NEWLINE);
+            
+            Paragraph title = p(milestone.getName(), f(14, Font.BOLD, DARK));
+            title.setSpacingAfter(10);
+            doc.add(title);
+
+            if (s(milestone.getDescription())) {
+                Paragraph desc = p(milestone.getDescription(), f(10, Font.NORMAL, DARK));
+                desc.setLeading(14);
+                desc.setSpacingAfter(20);
+                doc.add(desc);
+            }
+
+            // Financial Summary
+            PdfPTable fin = new PdfPTable(2);
+            fin.setWidthPercentage(100);
+            fin.setSpacingBefore(20);
+            fin.setWidths(new float[]{1f, 1f});
+
+            PdfPCell f1 = cell(Rectangle.BOX);
+            f1.setPadding(15);
+            f1.setBorderColor(BORDER);
+            f1.addElement(p("RELEASE PERCENTAGE", f(8, Font.BOLD, MUTED)));
+            f1.addElement(p(fmtPct(milestone.getReleasePercent()) + "%", f(16, Font.BOLD, DARK)));
+            fin.addCell(f1);
+
+            PdfPCell f2 = cell(Rectangle.BOX);
+            f2.setPadding(15);
+            f2.setBorderColor(BORDER);
+            f2.setBackgroundColor(NAVY);
+            f2.addElement(p("RELEASE AMOUNT", f(8, Font.BOLD, GOLD)));
+            f2.addElement(p("₹ " + fmt(milestone.getReleaseAmount()), f(16, Font.BOLD, BaseColor.WHITE)));
+            fin.addCell(f2);
+            doc.add(fin);
+
+            // Client Approval Box
+            if (milestone.getClientApprovedAt() != null) {
+                doc.add(Chunk.NEWLINE);
+                PdfPTable app = new PdfPTable(1);
+                app.setWidthPercentage(100);
+                PdfPCell ac = cell(Rectangle.BOX);
+                ac.setPadding(12);
+                ac.setBorderColor(new BaseColor(22, 163, 74));
+                ac.setBackgroundColor(new BaseColor(240, 253, 244));
+                ac.addElement(p("✓ CLIENT APPROVED", f(9, Font.BOLD, new BaseColor(22, 163, 74))));
+                ac.addElement(p("Approved on: " + milestone.getClientApprovedAt().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a")), f(8, Font.NORMAL, DARK)));
+                if (s(milestone.getClientApprovalReference())) {
+                    ac.addElement(p("Reference: " + milestone.getClientApprovalReference(), f(8, Font.ITALIC, MUTED)));
+                }
+                app.addCell(ac);
+                doc.add(app);
+            }
+
+            // Signatures
+            PdfPTable sigs = new PdfPTable(2);
+            sigs.setWidthPercentage(100);
+            sigs.setSpacingBefore(60);
+            
+            PdfPCell s1 = cell(Rectangle.NO_BORDER);
+            s1.addElement(p("__________________________", f(10, Font.NORMAL, DARK)));
+            s1.addElement(p("Project Manager", f(8, Font.BOLD, MUTED)));
+            sigs.addCell(s1);
+
+            PdfPCell s2 = cell(Rectangle.NO_BORDER);
+            s2.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            Paragraph sp2 = p("__________________________", f(10, Font.NORMAL, DARK));
+            sp2.setAlignment(Element.ALIGN_RIGHT);
+            s2.addElement(sp2);
+            Paragraph sp3 = p("Client Representative", f(8, Font.BOLD, MUTED));
+            sp3.setAlignment(Element.ALIGN_RIGHT);
+            s2.addElement(sp3);
+            sigs.addCell(s2);
+            doc.add(sigs);
+
+            doc.close();
+            return out.toByteArray();
+        } catch (Exception e) {
+            log.error("Milestone PDF failed: {}", e.getMessage(), e);
+            throw new RuntimeException("Milestone PDF failed", e);
+        }
+    }
+
     private PdfPCell cellTable(String txt, int align) {
+
         PdfPCell c = new PdfPCell(new Phrase(txt, f(8, Font.NORMAL, DARK)));
         c.setPadding(5);
         c.setHorizontalAlignment(align);

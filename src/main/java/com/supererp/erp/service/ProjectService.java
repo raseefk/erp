@@ -21,6 +21,7 @@ public class ProjectService {
     private final DailyLogRepository   logRepo;
     private final ProjectLabourRepository labourRepo;
     private final DailyLabourLogRepository dailyLabourRepo;
+    private final SubcontractorRunningBillRepository subBillRepo;
 
     // ── Projects ───────────────────────────────────────────────────────────────
     @Transactional(readOnly = true)
@@ -41,13 +42,35 @@ public class ProjectService {
     }
 
     @Transactional
-    public Project saveProject(Project p) { return projectRepo.save(p); }
+    public Project saveProject(Project p) {
+        if (p.getId() != null) {
+            Project existing = getById(p.getId());
+            existing.setName(p.getName());
+            existing.setClientName(p.getClientName());
+            existing.setLocation(p.getLocation());
+            existing.setDescription(p.getDescription());
+            existing.setTotalContractValue(p.getTotalContractValue());
+            existing.setStartDate(p.getStartDate());
+            existing.setEndDate(p.getEndDate());
+            existing.setStatus(p.getStatus());
+            return projectRepo.save(existing);
+        }
+        return projectRepo.save(p);
+    }
 
     @Transactional
     public void deleteProject(Long id) {
         if (expRepo.sumByProjectAndStatus(id, ProjectExpenseStatus.APPROVED).compareTo(BigDecimal.ZERO) > 0) {
-            throw new IllegalStateException("Cannot delete because an associated expense has already been approved.");
+            throw new IllegalStateException("Cannot delete project: approved expenses exist.");
         }
+        if (subBillRepo.countByProjectId(id) > 0) {
+            throw new IllegalStateException("Cannot delete project: subcontractor bills exist.");
+        }
+        // Manual cleanup for any expenses linked to this project 
+        // (Standalone expenses not captured by JobCard/DailyLog cascades)
+        List<ProjectExpense> projectExps = expRepo.findByProject_IdOrderByExpenseDateDesc(id);
+        expRepo.deleteAll(projectExps);
+
         projectRepo.deleteById(id);
     }
 
@@ -69,8 +92,18 @@ public class ProjectService {
     @Transactional
     public void deleteJobCard(Long id) {
         if (expRepo.countByJobCard_IdAndStatus(id, ProjectExpenseStatus.APPROVED) > 0) {
-            throw new IllegalStateException("Cannot delete because an associated expense has already been approved.");
+            throw new IllegalStateException("Cannot delete job card: approved expenses exist.");
         }
+        if (subBillRepo.countByJobCardId(id) > 0) {
+            throw new IllegalStateException("Cannot delete job card: subcontractor bills exist.");
+        }
+        
+        // Manual cleanup for any expenses linked specifically to this job card
+        // JPA cascade from DailyLog handles log-based expenses, but not standalone ones.
+        // We'll just clear them all for safety.
+        List<ProjectExpense> jcExps = expRepo.findByJobCard_Id(id);
+        expRepo.deleteAll(jcExps);
+
         jobCardRepo.deleteById(id);
     }
 
@@ -104,6 +137,11 @@ public class ProjectService {
     @Transactional(readOnly = true)
     public List<DailyLabourLog> getApprovedFilteredLabourWages(Long projectId, java.time.LocalDate from, java.time.LocalDate to, String labourName) {
         return dailyLabourRepo.findApprovedFiltered(projectId, from, to, labourName);
+    }
+
+    @Transactional(readOnly = true)
+    public List<ProjectExpense> getExpenses(Long projectId) {
+        return expRepo.findByProject_IdOrderByExpenseDateDesc(projectId);
     }
 
     // ── Project analytics ──────────────────────────────────────────────────────

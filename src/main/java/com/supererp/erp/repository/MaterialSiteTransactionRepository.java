@@ -11,12 +11,12 @@ import java.util.List;
 @Repository
 public interface MaterialSiteTransactionRepository extends JpaRepository<MaterialSiteTransaction, Long> {
     
-    @EntityGraph(attributePaths = {"inventoryItem"})
+    @EntityGraph(attributePaths = {"inventoryItem", "boqItem"})
     List<MaterialSiteTransaction> findByProjectIdOrderByTransactionDateDesc(Long projectId);
     
-    @EntityGraph(attributePaths = {"inventoryItem"})
+    @EntityGraph(attributePaths = {"inventoryItem", "boqItem"})
     List<MaterialSiteTransaction> findByProjectIdAndInventoryItemIdOrderByTransactionDateDesc(Long projectId, Long inventoryItemId);
     
-    @EntityGraph(attributePaths = {"inventoryItem"})
+    @EntityGraph(attributePaths = {"inventoryItem", "boqItem"})
     List<MaterialSiteTransaction> findByTransactionTypeOrderByTransactionDateDesc(MaterialSiteTransactionType transactionType);
 }

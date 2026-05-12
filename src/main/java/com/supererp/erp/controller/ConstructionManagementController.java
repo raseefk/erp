@@ -83,12 +83,14 @@ public class ConstructionManagementController {
     @RequiresPermission(Permissions.CONSTRUCTION_BOQ_MANAGE)
     public String saveBoqItem(@PathVariable Long boqId,
                               @ModelAttribute BoqItem item,
-                              @RequestParam Long inventoryItemId,
+                              @RequestParam(required = false) Long inventoryItemId,
                               RedirectAttributes ra) {
         try {
             item.setId(null); // Explicitly ensure we are creating a new item
             item.setBoq(constructionService.getBoq(boqId));
-            item.setInventoryItem(inventoryService.getById(inventoryItemId));
+            if (inventoryItemId != null) {
+                item.setInventoryItem(inventoryService.getById(inventoryItemId));
+            }
             item.setAmount(item.getQuantity().multiply(item.getRate()));
             item.setStatus(BoqItemStatus.NOT_STARTED);
             item.setCompletedQuantity(BigDecimal.ZERO);
@@ -183,25 +185,43 @@ public class ConstructionManagementController {
             model.addAttribute("stockSummary", summary.values());
         }
         model.addAttribute("inventoryItems", inventoryService.getAll());
+        if (projectId != null) {
+            model.addAttribute("boqItems", constructionService.getBoqItemsByProject(projectId));
+            model.addAttribute("boqs", constructionService.getBoqsByProject(projectId));
+        }
         model.addAttribute("MaterialSiteTransactionType", MaterialSiteTransactionType.values());
         return "construction/material-register";
     }
 
     @PostMapping("/materials")
     @RequiresPermission(Permissions.CONSTRUCTION_MATERIAL_SITE_MANAGE)
-    public String recordMaterial(@RequestParam Long projectId,
-                                 @RequestParam Long inventoryItemId,
-                                 @RequestParam MaterialSiteTransactionType transactionType,
-                                 @RequestParam BigDecimal quantity,
-                                 @RequestParam String unit,
+    public String recordMaterial(@RequestParam(required = false) Long projectId,
+                                 @RequestParam(required = false) Long inventoryItemId,
+                                 @RequestParam(required = false) Long boqItemId,
+                                 @RequestParam(required = false) MaterialSiteTransactionType transactionType,
+                                 @RequestParam(required = false) BigDecimal quantity,
+                                 @RequestParam(required = false) String unit,
                                  @RequestParam(required = false) LocalDate transactionDate,
                                  @RequestParam(required = false) String remarks,
                                  Authentication auth,
                                  RedirectAttributes ra) {
+        Long finalInventoryItemId = inventoryItemId;
+        if (finalInventoryItemId == null && boqItemId != null) {
+            BoqItem bItem = constructionService.getBoqItem(boqItemId);
+            if (bItem.getInventoryItem() != null) {
+                finalInventoryItemId = bItem.getInventoryItem().getId();
+            }
+        }
+
+        if (projectId == null || finalInventoryItemId == null || transactionType == null || quantity == null || unit == null) {
+            ra.addFlashAttribute("error", "Missing required fields. Please select a BOQ item and enter quantity.");
+            return "redirect:/admin/construction/materials" + (projectId != null ? "?projectId=" + projectId : "");
+        }
         try {
             MaterialSiteTransaction tx = MaterialSiteTransaction.builder()
                 .project(projectService.getById(projectId))
-                .inventoryItem(inventoryService.getById(inventoryItemId))
+                .inventoryItem(inventoryService.getById(finalInventoryItemId))
+                .boqItem(boqItemId != null ? constructionService.getBoqItem(boqItemId) : null)
                 .transactionType(transactionType)
                 .quantity(quantity)
                 .unit(unit)
@@ -426,6 +446,20 @@ public class ConstructionManagementController {
         }
         return "redirect:/admin/construction/milestones";
     }
+
+    @GetMapping("/milestones/{id}/pdf")
+    @RequiresPermission(Permissions.CONSTRUCTION_MILESTONE_VIEW)
+    @ResponseBody
+    public org.springframework.http.ResponseEntity<byte[]> downloadMilestonePdf(@PathVariable Long id) {
+        ProjectMilestone milestone = constructionService.getMilestone(id);
+        byte[] pdf = constructionService.generateMilestonePdf(id);
+        String filename = "Milestone_" + milestone.getId() + ".pdf";
+        return org.springframework.http.ResponseEntity.ok()
+            .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+            .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+            .body(pdf);
+    }
+
 
     private AppUser currentUser(Authentication authentication) {
         if (authentication == null || TenantContext.getTenantId() == null) return null;

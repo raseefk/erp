@@ -49,7 +49,7 @@
                                         <span class="badge rounded-pill" 
                                               th:classappend="${ms.status.name() == 'PAYMENT_RELEASED' ? 'bg-success bg-opacity-10 text-success' : 
                                                              (ms.status.name() == 'CLIENT_APPROVED' ? 'bg-info bg-opacity-10 text-info' : 
-                                                             (ms.status.name() == 'SUBMITTED' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'))}"
+                                                             (ms.status.name() == 'SUBMITTED_FOR_CLIENT_APPROVAL' ? 'bg-primary bg-opacity-10 text-primary' : 'bg-secondary bg-opacity-10 text-secondary'))}"
                                               th:text="${ms.status}">PLANNED</span>
                                     </td>
                                     <td class="text-end">
@@ -61,7 +61,13 @@
                                             </button>
                                         </form>
 
-                                        <button th:if="${ms.status.name() == 'SUBMITTED' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_MILESTONE_APPROVE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
+                                        <a th:if="${ms.status.name() != 'PLANNED'}" 
+                                           th:href="@{/admin/construction/milestones/{id}/pdf(id=${ms.id})}" 
+                                           class="btn btn-sm btn-outline-navy" title="Download PDF">
+                                            <i class="bi bi-file-earmark-pdf"></i>
+                                        </a>
+
+                                        <button th:if="${ms.status.name() == 'SUBMITTED_FOR_CLIENT_APPROVAL' and (#authorization.expression('hasAuthority(''PERM_CONSTRUCTION_MILESTONE_APPROVE'') or hasRole(''SYSTEM_ADMIN'')'))}" 
                                                 class="btn btn-sm btn-gold" data-bs-toggle="modal" th:data-bs-target="'#approveModal' + ${ms.id}">
                                             Approve
                                         </button>
@@ -78,7 +84,7 @@
                                         </span>
 
                                         <!-- Client Approval Modal -->
-                                        <div th:if="${ms.status.name() == 'SUBMITTED'}" class="modal fade text-start" th:id="'approveModal' + ${ms.id}" tabindex="-1">
+                                        <div th:if="${ms.status.name() == 'SUBMITTED_FOR_CLIENT_APPROVAL'}" class="modal fade text-start" th:id="'approveModal' + ${ms.id}" tabindex="-1">
                                             <div class="modal-dialog">
                                                 <form th:action="@{/admin/construction/milestones/{id}/approve(id=${ms.id})}" method="post" class="modal-content">
                                                     <div class="modal-header">

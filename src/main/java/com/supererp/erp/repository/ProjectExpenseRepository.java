@@ -30,6 +30,10 @@ public interface ProjectExpenseRepository extends JpaRepository<ProjectExpense, 
 
     long countByJobCard_IdAndStatus(Long jobCardId, ProjectExpenseStatus status);
 
+    long countByJobCard_Id(Long jobCardId);
+
+    long countByProject_Id(Long projectId);
+
     @Query("SELECT COALESCE(SUM(e.amount),0) FROM ProjectExpense e WHERE e.project.id=:pid AND e.status=:s")
     BigDecimal sumByProjectAndStatus(@Param("pid") Long projectId, @Param("s") ProjectExpenseStatus status);
 
@@ -38,6 +42,11 @@ public interface ProjectExpenseRepository extends JpaRepository<ProjectExpense, 
 
     @Query("SELECT COALESCE(SUM(e.amount),0) FROM ProjectExpense e WHERE e.project.id=:pid AND e.status='APPROVED' AND e.expenseDate BETWEEN :from AND :to")
     BigDecimal sumApprovedByProjectAndDateRange(@Param("pid") Long pid, @Param("from") LocalDate from, @Param("to") LocalDate to);
+
+    @EntityGraph(attributePaths = {"project", "dailyLog", "jobCard", "submittedBy"})
+    List<ProjectExpense> findByProject_IdOrderByExpenseDateDesc(Long projectId);
+
+    List<ProjectExpense> findByJobCard_Id(Long jobCardId);
 
     @EntityGraph(attributePaths = {"project", "dailyLog", "jobCard", "submittedBy"})
     @Query("SELECT e FROM ProjectExpense e WHERE e.project.id=:pid AND e.status='NEW' ORDER BY e.expenseDate DESC")

@@ -41,6 +41,11 @@ public class ConstructionManagementService {
         return boqRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("BOQ not found: " + id));
     }
 
+    @Transactional(readOnly = true)
+    public List<BillOfQuantity> getBoqsByProject(Long projectId) {
+        return boqRepo.findByProjectIdOrderByCreatedAtDesc(projectId);
+    }
+
     @Transactional
     public BillOfQuantity saveBoq(BillOfQuantity boq) {
         if (boq.getTenantId() == null) boq.setTenantId(TenantContext.getTenantId());
@@ -59,6 +64,16 @@ public class ConstructionManagementService {
             item.setProject(item.getBoq().getProject());
         }
         return boqItemRepo.save(item);
+    }
+
+    @Transactional(readOnly = true)
+    public BoqItem getBoqItem(Long id) {
+        return boqItemRepo.findById(id).orElseThrow(() -> new IllegalArgumentException("BOQ Item not found: " + id));
+    }
+
+    @Transactional(readOnly = true)
+    public List<BoqItem> getBoqItemsByProject(Long projectId) {
+        return boqItemRepo.findByProjectIdOrderByDescriptionAsc(projectId);
     }
 
     @Transactional
@@ -180,9 +195,21 @@ public class ConstructionManagementService {
         return runningBillRepo.save(bill);
     }
 
+
     @Transactional
-    public SubcontractorRunningBill payRunningBill(Long id) {
+    public SubcontractorRunningBill rejectRunningBill(Long id, String reason) {
         SubcontractorRunningBill bill = getRunningBill(id);
+        bill.setStatus(SubcontractorBillStatus.REJECTED);
+        bill.setRejectionReason(reason);
+        return runningBillRepo.save(bill);
+    }
+
+    @Transactional
+    public SubcontractorRunningBill markRunningBillPaid(Long id) {
+        SubcontractorRunningBill bill = getRunningBill(id);
+        if (bill.getStatus() != SubcontractorBillStatus.CERTIFIED) {
+            throw new IllegalStateException("Only certified bills can be marked paid.");
+        }
         bill.setStatus(SubcontractorBillStatus.PAID);
 
         // Build a rich description with subcontractor and bill details
@@ -210,24 +237,6 @@ public class ConstructionManagementService {
         }
         expenseRepo.save(expense);
 
-        return runningBillRepo.save(bill);
-    }
-
-    @Transactional
-    public SubcontractorRunningBill rejectRunningBill(Long id, String reason) {
-        SubcontractorRunningBill bill = getRunningBill(id);
-        bill.setStatus(SubcontractorBillStatus.REJECTED);
-        bill.setRejectionReason(reason);
-        return runningBillRepo.save(bill);
-    }
-
-    @Transactional
-    public SubcontractorRunningBill markRunningBillPaid(Long id) {
-        SubcontractorRunningBill bill = getRunningBill(id);
-        if (bill.getStatus() != SubcontractorBillStatus.CERTIFIED) {
-            throw new IllegalStateException("Only certified bills can be marked paid.");
-        }
-        bill.setStatus(SubcontractorBillStatus.PAID);
         return runningBillRepo.save(bill);
     }
 
@@ -275,6 +284,14 @@ public class ConstructionManagementService {
     @Transactional
     public ProjectMilestone saveMilestone(ProjectMilestone milestone) {
         if (milestone.getTenantId() == null) milestone.setTenantId(TenantContext.getTenantId());
+        
+        // If contract amount is not set, inherit from Project
+        if (value(milestone.getContractAmount()).compareTo(BigDecimal.ZERO) == 0 && milestone.getProject() != null) {
+            projectRepo.findById(milestone.getProject().getId()).ifPresent(p -> {
+                milestone.setContractAmount(p.getTotalContractValue());
+            });
+        }
+
         if (value(milestone.getReleaseAmount()).compareTo(BigDecimal.ZERO) == 0
             && value(milestone.getContractAmount()).compareTo(BigDecimal.ZERO) > 0) {
             milestone.setReleaseAmount(value(milestone.getContractAmount())
@@ -287,6 +304,12 @@ public class ConstructionManagementService {
     @Transactional
     public ProjectMilestone submitMilestone(Long id) {
         ProjectMilestone milestone = getMilestone(id);
+        
+        // Ensure amount is calculated before submission if it's currently 0
+        if (value(milestone.getReleaseAmount()).compareTo(BigDecimal.ZERO) == 0) {
+            saveMilestone(milestone);
+        }
+
         milestone.setStatus(ProjectMilestoneStatus.SUBMITTED_FOR_CLIENT_APPROVAL);
         milestone.setSubmittedAt(LocalDateTime.now());
         return milestoneRepo.save(milestone);
@@ -346,7 +369,14 @@ public class ConstructionManagementService {
         return pdfService.generateSubcontractorBill(bill);
     }
 
+    @Transactional(readOnly = true)
+    public byte[] generateMilestonePdf(Long id) {
+        ProjectMilestone milestone = getMilestone(id);
+        return pdfService.generateMilestonePdf(milestone);
+    }
+
     private BigDecimal value(BigDecimal v) {
         return v == null ? BigDecimal.ZERO : v;
     }
 }
+

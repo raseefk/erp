@@ -74,6 +74,16 @@ public class ProjectController {
         return "project/income-report";
     }
 
+    @GetMapping("/{id}/expense-report")
+    public String getExpenseReport(@PathVariable Long id, Model m) {
+        Project p = projectService.getById(id);
+        m.addAttribute("project", p);
+        m.addAttribute("expenses", projectService.getExpenses(id));
+        m.addAttribute("totalApproved", projectService.totalApprovedExpenses(id));
+        m.addAttribute("totalPending", projectService.totalPendingExpenses(id));
+        return "project/expense-report";
+    }
+
     @GetMapping("/{id}/income-report/pdf")
     public ResponseEntity<byte[]> getIncomeReportPdf(@PathVariable Long id) {
         Project p = projectService.getById(id);
