@@ -63,17 +63,19 @@ public class DashboardController {
         m.addAttribute("pendingApprovals", approvalService.countPending());
 
         // Storage Usage
-        com.supererp.erp.tenant.TenantContext.getTenantId();
         java.util.UUID tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
-        double usedGb = fileStorageService.getTenantUploadSizeInGB(tenantId);
-        double maxGb = 5.0; // Default
+        double usedGb = 0;
+        double maxGb = 5.0;
         
-        var tenantOpt = tenantService.findById(tenantId);
-        if (tenantOpt.isPresent()) {
-            maxGb = tenantOpt.get().getMaxStorageGb();
+        if (tenantId != null) {
+            usedGb = fileStorageService.getTenantUploadSizeInGB(tenantId);
+            var tenantOpt = tenantService.findById(tenantId);
+            if (tenantOpt.isPresent()) {
+                maxGb = tenantOpt.get().getMaxStorageGb();
+            }
         }
         
-        double storagePercent = (usedGb / maxGb) * 100.0;
+        double storagePercent = (maxGb > 0) ? (usedGb / maxGb) * 100.0 : 0;
         m.addAttribute("storageUsedGb", usedGb);
         m.addAttribute("storageMaxGb", maxGb);
         m.addAttribute("storagePercent", storagePercent);

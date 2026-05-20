@@ -12,7 +12,11 @@ public class AuthController {
                         @RequestParam(required=false) String logout,
                         @RequestParam(required=false) String expired,
                         Authentication auth, Model model) {
-        if (auth != null && auth.isAuthenticated()) return "redirect:/admin/dashboard";
+        if (auth != null && auth.isAuthenticated()) {
+            boolean isSystem = auth.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
+            return isSystem ? "redirect:/system/tenants" : "redirect:/admin/home";
+        }
         if (error   != null) model.addAttribute("errorMsg",   "Invalid username or password.");
         if (logout  != null) model.addAttribute("logoutMsg",  "Logged out successfully.");
         if (expired != null) model.addAttribute("expiredMsg", "Session expired. Please log in again.");

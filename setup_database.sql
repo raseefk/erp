@@ -10,7 +10,7 @@ CREATE DATABASE super_erp;
 
 -- 2. Create the Application User
 -- Replace 'StrongPassword123!' with a secure password.
-CREATE USER super_erp_app_user WITH PASSWORD 'StrongPassword123!';
+CREATE USER super_erp_app_user WITH PASSWORD 'StrongP@$sword123!';
 
 -- 3. Connect to the new database before running the next commands
 -- \c super_erp

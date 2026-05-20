@@ -29,4 +29,4 @@ DROP POLICY IF EXISTS tenant_isolation ON company_settings;
 CREATE POLICY tenant_isolation ON company_settings USING (is_system_admin() OR tenant_id = current_tenant_id());
 
 -- 3. Grant permissions to erp_app just in case ownership was lost during migration
-GRANT ALL ON audit_log TO erp_app;
+GRANT ALL ON audit_log TO super_erp_app_user;

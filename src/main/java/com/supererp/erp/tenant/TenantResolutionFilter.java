@@ -43,7 +43,7 @@ public class TenantResolutionFilter extends OncePerRequestFilter {
         "/system/",
         "/actuator/",
         "/favicon.ico",
-        "/css/", "/js/", "/images/", "/static/",
+        "/css/", "/js/", "/images/", "/static/", "/webjars/",
         "/api/v1/auth/"
     };
 

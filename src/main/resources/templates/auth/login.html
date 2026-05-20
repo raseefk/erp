@@ -2,53 +2,169 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
   <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Login | Lēvanto Flooring</title>
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <title>Login | Super ERP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:wght@700;800&display=swap" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet"/>
   <style>
-    :root { --navy:#1A3A5C; --navy-deep:#0F2338; --gold:#C8972A; --gold-lt:#E5B84A; }
-    body { font-family:'Jost',sans-serif; background:var(--navy-deep); min-height:100vh;
-           display:flex; align-items:center; justify-content:center;
-           background-image: linear-gradient(rgba(200,151,42,.04) 1px,transparent 1px),
-                             linear-gradient(90deg,rgba(200,151,42,.04) 1px,transparent 1px);
-           background-size:60px 60px; }
-    .login-card { background:var(--navy); border:1px solid rgba(200,151,42,.2);
-                  border-radius:4px; padding:2.8rem 2.4rem; width:100%; max-width:420px;
-                  box-shadow:0 24px 60px rgba(0,0,0,.5); }
-    .brand-name { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:700;
-                  color:#fff; letter-spacing:.04em; }
-    .brand-name span { color:var(--gold); }
-    .brand-sub  { font-size:.62rem; letter-spacing:.22em; text-transform:uppercase; color:#7A9FBF; }
-    .form-label { font-size:.65rem; letter-spacing:.18em; text-transform:uppercase; color:var(--gold); font-weight:600; }
-    .form-control { background:rgba(255,255,255,.05); border:1px solid rgba(200,151,42,.2);
-                    color:#fff; border-radius:2px; padding:.8rem 1rem; font-family:'Jost',sans-serif; }
-    .form-control:focus { background:rgba(255,255,255,.08); border-color:var(--gold);
-                          box-shadow:none; color:#fff; }
-    .form-control::placeholder { color:rgba(255,255,255,.2); }
-    .btn-login { background:var(--gold); color:var(--navy-deep); border:none; font-weight:700;
-                 letter-spacing:.1em; text-transform:uppercase; padding:.85rem; font-size:.85rem;
-                 width:100%; transition:background .2s; border-radius:2px; }
-    .btn-login:hover { background:var(--gold-lt); color:var(--navy-deep); }
-    .alert-err { background:rgba(220,38,38,.15); border:1px solid rgba(220,38,38,.3);
-                 color:#fca5a5; border-radius:2px; font-size:.85rem; }
-    .alert-ok  { background:rgba(22,163,74,.12); border:1px solid rgba(22,163,74,.3);
-                 color:#86efac; border-radius:2px; font-size:.85rem; }
-    .divider   { border-top:1px solid rgba(200,151,42,.15); margin:1.4rem 0; }
+    :root {
+      --purple: #5B21FF;
+      --purple-deep: #3B0FCC;
+      --purple-light: #7C4FFF;
+      --bg-dark: #0D0B1A;
+      --bg-card: #13102A;
+      --border: rgba(91,33,255,.25);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-dark);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(91,33,255,.18) 0%, transparent 65%),
+        linear-gradient(rgba(91,33,255,.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(91,33,255,.04) 1px, transparent 1px);
+      background-size: 100% 100%, 60px 60px, 60px 60px;
+    }
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.8rem 2.4rem;
+      width: 100%;
+      max-width: 430px;
+      box-shadow: 0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(91,33,255,.1);
+    }
+    .brand-logo {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+    .brand-logo .bolt-icon {
+      width: 40px;
+      height: 50px;
+      flex-shrink: 0;
+    }
+    .brand-logo .brand-text {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--purple);
+      letter-spacing: -.01em;
+      line-height: 1;
+    }
+    .brand-tagline {
+      font-size: .68rem;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      text-align: center;
+      margin-bottom: 2px;
+    }
+    .brand-sub {
+      font-size: .7rem;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(91,33,255,.7);
+      text-align: center;
+      font-weight: 500;
+    }
+    .divider-brand {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.6rem 0 1.4rem;
+    }
+    .form-label {
+      font-size: .65rem;
+      letter-spacing: .18em;
+      text-transform: uppercase;
+      color: var(--purple-light);
+      font-weight: 600;
+    }
+    .form-control {
+      background: rgba(255,255,255,.04);
+      border: 1px solid var(--border);
+      color: #fff;
+      border-radius: 8px;
+      padding: .8rem 1rem;
+      font-family: 'Inter', sans-serif;
+      transition: border-color .2s, background .2s;
+    }
+    .form-control:focus {
+      background: rgba(91,33,255,.08);
+      border-color: var(--purple);
+      box-shadow: 0 0 0 3px rgba(91,33,255,.15);
+      color: #fff;
+    }
+    .form-control::placeholder { color: rgba(255,255,255,.2); }
+    .btn-login {
+      background: var(--purple);
+      color: #fff;
+      border: none;
+      font-weight: 600;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+      padding: .85rem;
+      font-size: .85rem;
+      width: 100%;
+      border-radius: 8px;
+      transition: background .2s, transform .1s, box-shadow .2s;
+      box-shadow: 0 4px 20px rgba(91,33,255,.4);
+    }
+    .btn-login:hover {
+      background: var(--purple-light);
+      transform: translateY(-1px);
+      box-shadow: 0 6px 28px rgba(91,33,255,.55);
+    }
+    .btn-login:active { transform: translateY(0); }
+    .alert-err {
+      background: rgba(220,38,38,.12);
+      border: 1px solid rgba(220,38,38,.3);
+      color: #fca5a5;
+      border-radius: 8px;
+      font-size: .85rem;
+    }
+    .alert-ok {
+      background: rgba(22,163,74,.1);
+      border: 1px solid rgba(22,163,74,.3);
+      color: #86efac;
+      border-radius: 8px;
+      font-size: .85rem;
+    }
+    .back-link {
+      color: rgba(91,33,255,.7);
+      text-decoration: none;
+      font-size: .78rem;
+      transition: color .2s;
+    }
+    .back-link:hover { color: var(--purple-light); }
   </style>
 </head>
 <body>
 <div class="login-card">
-  <div class="text-center mb-4">
-    <img src="/images/logo-vertical.jpg" alt="Lēvanto Flooring"
-         class="mb-3" style="height:110px;width:auto;object-fit:contain;border-radius:4px;"/>
-    <div class="brand-sub mt-1">Management Portal</div>
-  </div>
 
+  <!-- Super ERP Logo -->
+  <div class="brand-logo">
+    <svg class="bolt-icon" viewBox="0 0 42 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <polygon points="28,2 6,30 20,30 14,54 36,26 22,26" fill="#5B21FF"/>
+    </svg>
+    <div class="brand-text">Super ERP</div>
+  </div>
+  <div class="brand-tagline">Enterprises Management Reimagined</div>
+  <hr class="divider-brand"/>
+  <div class="brand-sub mb-4">Management Portal</div>
+
+  <!-- Alerts -->
   <div th:if="${errorMsg}"   class="alert-err p-3 mb-3"><i class="bi bi-exclamation-triangle me-2"></i><span th:text="${errorMsg}"></span></div>
   <div th:if="${logoutMsg}"  class="alert-ok  p-3 mb-3"><i class="bi bi-check-circle me-2"></i><span th:text="${logoutMsg}"></span></div>
   <div th:if="${expiredMsg}" class="alert-err p-3 mb-3"><i class="bi bi-clock me-2"></i><span th:text="${expiredMsg}"></span></div>
 
+  <!-- Login Form -->
   <form th:action="@{/login}" method="post">
     <div class="mb-3">
       <label class="form-label">Username</label>
@@ -58,13 +174,14 @@
       <label class="form-label">Password</label>
       <input type="password" name="password" class="form-control" placeholder="Enter password" required/>
     </div>
-    <button type="submit" class="btn-login">Login →</button>
+    <button type="submit" class="btn-login">Sign In &rarr;</button>
   </form>
 
-  <div class="divider"></div>
-  <div class="text-center" style="font-size:.75rem;color:#7A9FBF;">
-    <a href="/" style="color:#C8972A;text-decoration:none;"><i class="bi bi-arrow-left me-1"></i>Back to Website</a>
+  <hr class="divider-brand"/>
+  <div class="text-center">
+    <a href="/" class="back-link"><i class="bi bi-arrow-left me-1"></i>Back to Website</a>
   </div>
+
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>

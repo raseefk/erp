@@ -10,4 +10,6 @@ data/
 .vscode/
 .DS_Store
 *.log
+error_log.txt
+logs/
 application-prod.properties

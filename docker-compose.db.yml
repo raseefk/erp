@@ -3,19 +3,22 @@ services:
     image: postgres:18-alpine
     container_name: erp-db
     restart: unless-stopped
+    ports:
+      # Maps your VM's port 5432 to the container's port 5432
+      - "5432:5432"
     environment:
-      # The Superuser (Use this for your manual setup/migrations)
+      # The Superuser for manual setup/migrations
       POSTGRES_USER: erp_admin
       POSTGRES_PASSWORD: -SuperErp@Postgres2026
       # The specific database name for your ERP
       POSTGRES_DB: super_erp
     volumes:
-      # Persistent data storage for your Ubuntu host
-      - postgres_data:/var/lib/postgresql/data
+      # Updated for Postgres 18: Mount to /var/lib/postgresql 
+      # to avoid the "pg_ctlcluster" directory error
+      - postgres_data:/var/lib/postgresql
     networks:
       - erp-network
     healthcheck:
-      # Matches the user and DB defined above
       test: ["CMD-SHELL", "pg_isready -U erp_admin -d super_erp"]
       interval: 10s
       timeout: 5s
@@ -27,6 +30,5 @@ networks:
     driver: bridge
 
 volumes:
-  # Docker will manage this volume in /var/lib/docker/volumes/
   postgres_data:
     driver: local

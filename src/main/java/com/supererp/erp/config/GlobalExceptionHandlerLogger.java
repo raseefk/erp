@@ -1,15 +1,13 @@
 package com.supererp.erp.config;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.context.request.WebRequest;
 
-import java.io.FileWriter;
-import java.io.PrintWriter;
-import java.time.LocalDateTime;
-
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandlerLogger {
 
     @ExceptionHandler(com.supererp.erp.rbac.exception.FeatureDisabledException.class)
@@ -47,17 +45,11 @@ public class GlobalExceptionHandlerLogger {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
-        try (FileWriter fw = new FileWriter("error_log.txt", true);
-             PrintWriter pw = new PrintWriter(fw)) {
-            pw.println("----- " + LocalDateTime.now() + " -----");
-            pw.println("Request: " + request.getDescription(false));
-            ex.printStackTrace(pw);
-            pw.println("---------------------------------------------------");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        
-        // Return 500 so the frontend fetch() sees it
-        return ResponseEntity.internalServerError().body(new com.supererp.erp.dto.ApiResponse<>(false, ex.getMessage(), null));
+        // Log via SLF4J — output destination is controlled by logging.file.name in application properties.
+        // In production (Docker), this writes to /app/logs/super-erp.log on the VM volume.
+        log.error("Unhandled exception on request [{}]: {}", request.getDescription(false), ex.getMessage(), ex);
+
+        return ResponseEntity.internalServerError()
+            .body(new com.supererp.erp.dto.ApiResponse<>(false, ex.getMessage(), null));
     }
 }

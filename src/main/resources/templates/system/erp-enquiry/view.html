@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/system-layout :: head(${pageTitle})}"></head>
+<body>
+
+<div th:replace="~{fragments/system-layout :: sidebar(activePage='system-enquiries')}"></div>
+
+<div id="sys-main">
+    <div th:replace="~{fragments/system-layout :: topbar(pageTitle=${pageTitle})}"></div>
+    <div th:replace="~{fragments/system-layout :: alerts}"></div>
+
+    <div class="p-4">
+        <!-- Breadcrumb & Back Link -->
+        <div class="mb-4">
+            <a th:href="@{/system/enquiries}" class="btn btn-sm btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Back to Enquiries
+            </a>
+        </div>
+
+        <!-- Detail Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h4 class="mb-1 fw-bold text-primary" th:text="'Enquiry #' + ${enquiry.id}">Enquiry #1</h4>
+                <p class="text-muted small mb-0" th:text="'Submitted on ' + ${#temporals.format(enquiry.submittedAt, 'dd MMM yyyy HH:mm')}">Submitted on 20 May 2026</p>
+            </div>
+            <div>
+                <span th:if="${enquiry.status.name() == 'NEW'}" class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-2 fs-6">NEW</span>
+                <span th:if="${enquiry.status.name() == 'CONTACTED'}" class="badge bg-info-subtle text-info border border-info-subtle px-3 py-2 fs-6">CONTACTED</span>
+                <span th:if="${enquiry.status.name() == 'CLOSED'}" class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6">CLOSED</span>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Side: Enquiry Details -->
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-light border-0 py-3 ps-4">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-person-badge me-2 text-primary"></i>Contact Information</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-12 col-sm-6">
+                                <label class="text-muted small d-block">First Name</label>
+                                <span class="fw-bold text-dark" th:text="${enquiry.firstName}">John</span>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="text-muted small d-block">Last Name</label>
+                                <span class="fw-bold text-dark" th:text="${enquiry.lastName}">Doe</span>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="text-muted small d-block">Email Address</label>
+                                <a th:href="'mailto:' + ${enquiry.email}" class="fw-bold text-primary" th:text="${enquiry.email}">john.doe@example.com</a>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="text-muted small d-block">Phone Number</label>
+                                <a th:href="'tel:' + ${enquiry.phone}" class="fw-bold text-primary" th:text="${enquiry.phone}">+1234567890</a>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="text-muted small d-block">Company Name</label>
+                                <span class="fw-bold text-dark" th:text="${enquiry.company != null && !enquiry.company.isEmpty() ? enquiry.company : 'N/A'}">Acme Inc</span>
+                            </div>
+                            <div class="col-12 col-sm-6">
+                                <label class="text-muted small d-block">Industry Sector</label>
+                                <span class="fw-bold text-dark" th:text="${enquiry.industry != null && !enquiry.industry.isEmpty() ? enquiry.industry : 'N/A'}">Technology</span>
+                            </div>
+                            <div class="col-12">
+                                <label class="text-muted small d-block">Plan of Interest</label>
+                                <span class="badge bg-primary text-white" th:text="${enquiry.plan != null && !enquiry.plan.isEmpty() ? enquiry.plan : 'N/A'}">Starter</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Message Box -->
+                <div class="card border-0 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-light border-0 py-3 ps-4">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-chat-left-text me-2 text-primary"></i>Enquiry Message</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="bg-light p-3 rounded-3" style="min-height: 120px; white-space: pre-wrap;" th:text="${enquiry.message}">
+                            This is the detailed message from the prospect asking for ERP services.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Status Updates & Admin Notes -->
+            <div class="col-12 col-lg-4">
+                <div class="card border-0 shadow-sm mb-4" style="border-radius: 12px; overflow: hidden;">
+                    <div class="card-header bg-light border-0 py-3 ps-4">
+                        <h5 class="mb-0 fw-bold text-dark"><i class="bi bi-gear me-2 text-primary"></i>Process Enquiry</h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <!-- Success and error alerts specific to updates -->
+                        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show small" role="alert">
+                            <span th:text="${successMessage}">Status updated!</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show small" role="alert">
+                            <span th:text="${errorMessage}">Error updated!</span>
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+
+                        <form th:action="@{/system/enquiries/{id}/status(id=${enquiry.id})}" method="POST">
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">Set Status</label>
+                                <select name="status" class="form-select">
+                                    <option th:each="st : ${EnquiryStatus}" 
+                                            th:value="${st.name()}" 
+                                            th:text="${st.name()}" 
+                                            th:selected="${enquiry.status == st}">NEW</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted small fw-bold">Internal Admin Notes</label>
+                                <textarea name="notes" class="form-control" rows="6" placeholder="Add follow-up notes, phone call logs, action items here..." th:text="${enquiry.adminNotes}"></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100"><i class="bi bi-save me-1"></i> Save Changes</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Record Metadata -->
+                <div class="card border-0 shadow-sm text-muted small p-3" style="border-radius: 12px;">
+                    <div><i class="bi bi-info-circle me-2"></i><strong>Record Info:</strong></div>
+                    <hr class="my-2">
+                    <div class="mb-1">Created: <span th:text="${#temporals.format(enquiry.submittedAt, 'dd MMM yyyy HH:mm:ss')}"></span></div>
+                    <div>Last Updated: <span th:text="${#temporals.format(enquiry.updatedAt, 'dd MMM yyyy HH:mm:ss')}"></span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div th:replace="~{fragments/layout :: scripts}"></div>
+</body>
+</html>

@@ -56,6 +56,7 @@ public class SecurityConfig {
                     "/api/v1/auth/**",
                     "/api/v1/tenant/metadata",
                     "/api/enquiries/submit",
+                    "/api/public/erp-enquiries",
                     "/css/**", "/js/**", "/images/**", "/static/**",
                     "/favicon.ico",
                     "/actuator/health", "/actuator/info"
@@ -74,17 +75,17 @@ public class SecurityConfig {
                     boolean isSystemAdmin = authentication.getAuthorities().stream()
                         .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
                     if (isSystemAdmin) {
-                        response.sendRedirect("/system/tenants");
+                        response.sendRedirect(request.getContextPath() + "/system/tenants");
                     } else {
-                        response.sendRedirect("/admin/home");
+                        response.sendRedirect(request.getContextPath() + "/admin/home");
                     }
                 })
                 .failureHandler((request, response, exception) -> {
                     String referer = request.getHeader("Referer");
                     if (referer != null && referer.contains("/system/login")) {
-                        response.sendRedirect("/system/login?error=true");
+                        response.sendRedirect(request.getContextPath() + "/system/login?error=true");
                     } else {
-                        response.sendRedirect("/login?error=true");
+                        response.sendRedirect(request.getContextPath() + "/login?error=true");
                     }
                 })
                 .permitAll()
@@ -128,13 +129,13 @@ public class SecurityConfig {
                     }
                     
                     if (isSystem) {
-                        response.sendRedirect("/system/login?logout=true");
+                        response.sendRedirect(request.getContextPath() + "/system/login?logout=true");
                     } else {
-                        response.sendRedirect("/login?logout=true");
+                        response.sendRedirect(request.getContextPath() + "/login?logout=true");
                     }
                 })
                 .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID", "erp_token")
+                .deleteCookies("JSESSIONID", "erp_token", "SUPERERP_SESSION")
                 .permitAll()
             )
             .csrf(c -> c.ignoringRequestMatchers(
@@ -144,7 +145,7 @@ public class SecurityConfig {
                 .frameOptions(f -> f.sameOrigin())
                 .httpStrictTransportSecurity(s -> s
                     .includeSubDomains(true)
-                    .maxAgeInSeconds(31536000))
+                    .maxAgeInSeconds(0)) // Disable HSTS for now to avoid HTTP/HTTPS loops
                 .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
                 .contentSecurityPolicy(c -> c.policyDirectives(
                     "default-src 'self'; " +

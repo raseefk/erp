@@ -24,10 +24,10 @@ import java.util.*;
 
 /**
  * Runs at startup (Order 2) to seed:
- *  - SYSTEM_ADMIN superuser
- *  - Default "demo" tenant
- *  - System roles (ADMIN, EMPLOYEE) for the demo tenant
- *  - Demo data (inventory, customers, employees, vendors)
+ * - SYSTEM_ADMIN superuser
+ * - Default "demo" tenant
+ * - System roles (ADMIN, EMPLOYEE) for the demo tenant
+ * - Demo data (inventory, customers, employees, vendors)
  */
 @Component
 @Order(2)
@@ -35,17 +35,17 @@ import java.util.*;
 @Slf4j
 public class DataInitializer implements CommandLineRunner {
 
-    private final SystemUserRepository          systemUserRepo;
-    private final TenantRepository              tenantRepo;
-    private final AppUserRepository             userRepo;
-    private final AppRoleRepository             roleRepo;
+    private final SystemUserRepository systemUserRepo;
+    private final TenantRepository tenantRepo;
+    private final AppUserRepository userRepo;
+    private final AppRoleRepository roleRepo;
     private final TenantFeatureMappingRepository featureMapRepo;
-    private final InventoryItemRepository       itemRepo;
-    private final CustomerRepository            customerRepo;
-    private final EmployeeRepository            employeeRepo;
-    private final VendorRepository              vendorRepo;
-    private final PasswordEncoder               encoder;
-    private final EntityManager                 entityManager;
+    private final InventoryItemRepository itemRepo;
+    private final CustomerRepository customerRepo;
+    private final EmployeeRepository employeeRepo;
+    private final VendorRepository vendorRepo;
+    private final PasswordEncoder encoder;
+    private final EntityManager entityManager;
 
     @Value("${app.system.admin.username:superadmin}")
     private String systemAdminUsername;
@@ -64,20 +64,21 @@ public class DataInitializer implements CommandLineRunner {
         // 1. Seed System Admin (Superuser) - This table has NO RLS, so it's always safe
         seedSystemAdmin();
 
-        // 2. Demo Data Seeding (Disabled for stability - Enable if you want a demo environment)
+        // 2. Demo Data Seeding (Disabled for stability - Enable if you want a demo
+        // environment)
         /*
-        setRlsSystemAdmin(true);
-        UUID demoTenantId = seedDemoTenant();
-        if (demoTenantId != null) {
-            seedRoles(demoTenantId);
-            seedTenantAdmin(demoTenantId);
-            seedAllFeatures(demoTenantId);
-            seedInventory(demoTenantId);
-            seedCustomers(demoTenantId);
-            seedEmployees(demoTenantId);
-            seedVendors(demoTenantId);
-        }
-        */
+         * setRlsSystemAdmin(true);
+         * UUID demoTenantId = seedDemoTenant();
+         * if (demoTenantId != null) {
+         * seedRoles(demoTenantId);
+         * seedTenantAdmin(demoTenantId);
+         * seedAllFeatures(demoTenantId);
+         * seedInventory(demoTenantId);
+         * seedCustomers(demoTenantId);
+         * seedEmployees(demoTenantId);
+         * seedVendors(demoTenantId);
+         * }
+         */
     }
 
     private void setRlsSystemAdmin(boolean enabled) {
@@ -91,16 +92,23 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedSystemAdmin() {
-        if (!systemUserRepo.existsByUsername(systemAdminUsername)) {
-            systemUserRepo.save(SystemUser.builder()
-                .username(systemAdminUsername)
-                .password(encoder.encode(systemAdminPassword))
-                .fullName("Super Administrator")
-                .email(systemAdminEmail)
-                .enabled(true).build());
-            log.info("✅ SYSTEM_ADMIN created — login: '{}' / '{}'",
-                systemAdminUsername, systemAdminPassword);
-        }
+        systemUserRepo.findByUsername(systemAdminUsername).ifPresentOrElse(
+                user -> {
+                    user.setPassword(encoder.encode(systemAdminPassword));
+                    user.setEnabled(true);
+                    systemUserRepo.save(user);
+                    log.info("✅ SYSTEM_ADMIN synchronized with current environment variables");
+                },
+                () -> {
+                    systemUserRepo.save(SystemUser.builder()
+                            .username(systemAdminUsername)
+                            .password(encoder.encode(systemAdminPassword))
+                            .fullName("Super Administrator")
+                            .email(systemAdminEmail)
+                            .enabled(true).build());
+                    log.info("✅ SYSTEM_ADMIN created — login: '{}' / '{}'",
+                            systemAdminUsername, systemAdminPassword);
+                });
     }
 
     private UUID seedDemoTenant() {
@@ -108,12 +116,12 @@ public class DataInitializer implements CommandLineRunner {
             return tenantRepo.findBySlug("demo").get().getId();
         }
         Tenant demo = tenantRepo.save(Tenant.builder()
-            .slug("demo")
-            .name("Demo Company")
-            .primaryColor("#3b82f6")
-            .plan("STANDARD")
-            .maxUsers(10)
-            .active(true).build());
+                .slug("demo")
+                .name("Demo Company")
+                .primaryColor("#3b82f6")
+                .plan("STANDARD")
+                .maxUsers(10)
+                .active(true).build());
         log.info("✅ Demo tenant created — slug: 'demo'");
         return demo.getId();
     }
@@ -126,9 +134,9 @@ public class DataInitializer implements CommandLineRunner {
     private void setRlsContext(UUID tenantId) {
         try {
             entityManager.createNativeQuery(
-                "SELECT set_config('app.current_tenant_id', :tid, true)")
-                .setParameter("tid", tenantId != null ? tenantId.toString() : "")
-                .getSingleResult();
+                    "SELECT set_config('app.current_tenant_id', :tid, true)")
+                    .setParameter("tid", tenantId != null ? tenantId.toString() : "")
+                    .getSingleResult();
         } catch (Exception e) {
             log.warn("Could not set RLS context for seeder: {}", e.getMessage());
         }
@@ -138,13 +146,13 @@ public class DataInitializer implements CommandLineRunner {
         setRlsContext(tenantId);
         if (!roleRepo.existsByTenantIdAndName(tenantId, "ADMIN")) {
             roleRepo.save(AppRole.builder()
-                .tenantId(tenantId).name("ADMIN")
-                .description("Full access administrator").system(true).build());
+                    .tenantId(tenantId).name("ADMIN")
+                    .description("Full access administrator").system(true).build());
         }
         if (!roleRepo.existsByTenantIdAndName(tenantId, "EMPLOYEE")) {
             roleRepo.save(AppRole.builder()
-                .tenantId(tenantId).name("EMPLOYEE")
-                .description("Standard employee access").system(true).build());
+                    .tenantId(tenantId).name("EMPLOYEE")
+                    .description("Standard employee access").system(true).build());
         }
     }
 
@@ -152,13 +160,13 @@ public class DataInitializer implements CommandLineRunner {
         setRlsContext(tenantId);
         if (!userRepo.existsByUsernameAndTenantId(tenantAdminUsername, tenantId)) {
             AppRole adminRole = roleRepo.findByTenantIdAndName(tenantId, "ADMIN")
-                .orElseThrow();
+                    .orElseThrow();
             AppUser admin = userRepo.save(AppUser.builder()
-                .tenantId(tenantId)
-                .username(tenantAdminUsername)
-                .password(encoder.encode(tenantAdminPassword))
-                .fullName("Administrator")
-                .enabled(true).build());
+                    .tenantId(tenantId)
+                    .username(tenantAdminUsername)
+                    .password(encoder.encode(tenantAdminPassword))
+                    .fullName("Administrator")
+                    .enabled(true).build());
             admin.getRoles().add(adminRole);
             userRepo.save(admin);
             log.info("✅ Tenant admin created — '{}' / '{}'", tenantAdminUsername, tenantAdminPassword);
@@ -167,67 +175,71 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedAllFeatures(UUID tenantId) {
         setRlsContext(tenantId);
-        List<String> features = List.of("SALES","OPERATIONS","SCM","PROJECTS","HR","FINANCE","ADMIN","SYSTEM");
+        List<String> features = List.of("SALES", "OPERATIONS", "SCM", "PROJECTS", "HR", "FINANCE", "ADMIN", "SYSTEM");
         for (String f : features) {
             if (!featureMapRepo.existsById(new com.supererp.erp.rbac.entity.TenantFeatureId(tenantId, f))) {
                 featureMapRepo.save(TenantFeatureMapping.builder()
-                    .tenantId(tenantId).featureId(f).enabled(true).build());
+                        .tenantId(tenantId).featureId(f).enabled(true).build());
             }
         }
     }
 
     private void seedInventory(UUID tenantId) {
         setRlsContext(tenantId);
-        if (itemRepo.countByTenantId(tenantId) > 0) return;
+        if (itemRepo.countByTenantId(tenantId) > 0)
+            return;
         itemRepo.save(item(tenantId, "Vitrified Tiles 600x600mm", "PRODUCT",
-            "Premium double-charged vitrified tiles", "55.00", 2000, "6908", "SQF"));
+                "Premium double-charged vitrified tiles", "55.00", 2000, "6908", "SQF"));
         itemRepo.save(item(tenantId, "Wooden Laminate Flooring 8mm", "PRODUCT",
-            "AC4 rated click-lock laminate", "72.00", 1500, "4412", "SQF"));
+                "AC4 rated click-lock laminate", "72.00", 1500, "4412", "SQF"));
         itemRepo.save(item(tenantId, "Luxury Vinyl Plank (SPC 5mm)", "PRODUCT",
-            "100% waterproof SPC core vinyl plank", "85.00", 1200, "3918", "SQF"));
+                "100% waterproof SPC core vinyl plank", "85.00", 1200, "3918", "SQF"));
         itemRepo.save(item(tenantId, "Flooring Installation", "SERVICE",
-            "Professional tile laying and fixing", "18.00", 0, "995466", "SQF"));
+                "Professional tile laying and fixing", "18.00", 0, "995466", "SQF"));
         itemRepo.save(item(tenantId, "Waterproofing Treatment", "SERVICE",
-            "Bathroom/terrace waterproofing", "35.00", 0, "995431", "SQF"));
+                "Bathroom/terrace waterproofing", "35.00", 0, "995431", "SQF"));
         log.info("✅ Sample inventory seeded for demo tenant");
     }
 
     private void seedCustomers(UUID tenantId) {
         setRlsContext(tenantId);
-        if (customerRepo.countByTenantId(tenantId) > 0) return;
+        if (customerRepo.countByTenantId(tenantId) > 0)
+            return;
         customerRepo.save(Customer.builder().tenantId(tenantId)
-            .name("Demo Customer").phone("9876543210")
-            .email("customer@demo.com").address("123 Main St, City").build());
+                .name("Demo Customer").phone("9876543210")
+                .email("customer@demo.com").address("123 Main St, City").build());
         log.info("✅ Sample customers seeded for demo tenant");
     }
 
     private void seedEmployees(UUID tenantId) {
         setRlsContext(tenantId);
-        if (employeeRepo.countByTenantId(tenantId) > 0) return;
+        if (employeeRepo.countByTenantId(tenantId) > 0)
+            return;
         employeeRepo.save(Employee.builder().tenantId(tenantId)
-            .name("John Doe").phone("9988776655")
-            .designation("Site Engineer")
-            .monthlySalary(new BigDecimal("22000"))
-            .joiningDate(LocalDate.of(2024, 1, 1)).active(true).build());
+                .name("John Doe").phone("9988776655")
+                .designation("Site Engineer")
+                .monthlySalary(new BigDecimal("22000"))
+                .joiningDate(LocalDate.of(2024, 1, 1)).active(true).build());
         log.info("✅ Sample employees seeded for demo tenant");
     }
 
     private void seedVendors(UUID tenantId) {
         setRlsContext(tenantId);
-        if (vendorRepo.countByTenantId(tenantId) > 0) return;
+        if (vendorRepo.countByTenantId(tenantId) > 0)
+            return;
         vendorRepo.save(Vendor.builder().tenantId(tenantId)
-            .name("Demo Supplier").contactPerson("Supplier Rep")
-            .phone("9900112233").email("supplier@demo.com")
-            .materialSupplied("Tiles, Adhesive").active(true).build());
+                .name("Demo Supplier").contactPerson("Supplier Rep")
+                .phone("9900112233").email("supplier@demo.com")
+                .materialSupplied("Tiles, Adhesive").active(true).build());
         log.info("✅ Sample vendors seeded for demo tenant");
     }
 
     private InventoryItem item(UUID tenantId, String name, String type, String desc,
-                                String price, int stock, String hsn, String unit) {
+            String price, int stock, String hsn, String unit) {
         return InventoryItem.builder()
-            .tenantId(tenantId).name(name).itemType(com.supererp.erp.enums.ItemType.valueOf(type))
-            .description(desc).currentPrice(new BigDecimal(price))
-            .stockQuantity("PRODUCT".equals(type) ? stock : 0)
-            .hsnSacCode(hsn).unit(unit).active(true).build();
+                .tenantId(tenantId).name(name).itemType(com.supererp.erp.enums.ItemType.valueOf(type))
+                .description(desc).currentPrice(new BigDecimal(price))
+                .stockQuantity("PRODUCT".equals(type) ? stock : 0)
+                .hsnSacCode(hsn).unit(unit).active(true).build();
     }
 }
