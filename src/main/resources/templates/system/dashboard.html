@@ -48,21 +48,39 @@
                             <i class="bi bi-cpu" style="font-size: 1.5rem;"></i>
                         </div>
                         <div class="w-100">
-                            <div class="text-muted small">Server Load</div>
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <div class="text-muted small">Server Load</div>
+                                <span id="live-indicator" class="badge bg-success-subtle text-success border border-success-subtle"
+                                      style="font-size: 0.65rem; animation: pulse-live 2s infinite;">● LIVE</span>
+                            </div>
                             <div class="d-flex justify-content-between align-items-center">
                                 <span class="fw-bold small">CPU:</span>
-                                <span class="fw-bold" th:text="${cpuLoad + '%'}">0%</span>
+                                <span class="fw-bold" id="cpu-text" th:text="${cpuLoad + '%'}">0%</span>
                             </div>
-                            <div class="progress mt-1" style="height: 4px;">
-                                <div class="progress-bar bg-warning" role="progressbar" th:style="'width: ' + ${cpuLoad} + '%'"></div>
+                            <div class="progress mt-1" style="height: 6px; border-radius: 4px;">
+                                <div class="progress-bar bg-warning" id="cpu-bar" role="progressbar"
+                                     th:style="'width: ' + ${cpuLoad} + '%'"
+                                     style="transition: width 0.8s ease-in-out;"></div>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mt-2">
-                                <span class="fw-bold small">RAM:</span>
-                                <span class="fw-bold" th:text="${ramPercent + '%'}">0%</span>
+                                <span class="fw-bold small">VM RAM:</span>
+                                <span class="fw-bold" id="ram-text" th:text="${ramPercent + '%'}">0%</span>
                             </div>
-                            <div class="progress mt-1" style="height: 4px;">
-                                <div class="progress-bar bg-info" role="progressbar" th:style="'width: ' + ${ramPercent} + '%'"></div>
+                            <div class="progress mt-1" style="height: 6px; border-radius: 4px;">
+                                <div class="progress-bar bg-info" id="ram-bar" role="progressbar"
+                                     th:style="'width: ' + ${ramPercent} + '%'"
+                                     style="transition: width 0.8s ease-in-out;"></div>
                             </div>
+                            <div class="d-flex justify-content-between align-items-center mt-2">
+                                <span class="fw-bold small">JVM Heap:</span>
+                                <span class="fw-bold text-purple" id="jvm-text">–</span>
+                            </div>
+                            <div class="progress mt-1" style="height: 6px; border-radius: 4px;">
+                                <div class="progress-bar" id="jvm-bar" role="progressbar"
+                                     style="width: 0%; background: #7c5cfc; transition: width 0.8s ease-in-out;"></div>
+                            </div>
+                            <div class="text-muted mt-2" style="font-size: 0.65rem;" id="ram-detail"
+                                 th:text="${usedRamGb} + ' / ' + ${totalRamGb} + ' GB used'">– GB used</div>
                         </div>
                     </div>
                 </div>
@@ -147,6 +165,46 @@
         </div>
     </div>
 </div>
+
+<style>
+    @keyframes pulse-live {
+        0% { opacity: 1; }
+        50% { opacity: 0.4; }
+        100% { opacity: 1; }
+    }
+    .text-purple { color: #7c5cfc; }
+</style>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const eventSource = new EventSource('/system/api/stats');
+        
+        eventSource.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            
+            // Update CPU
+            document.getElementById('cpu-text').textContent = data.cpuLoad + '%';
+            document.getElementById('cpu-bar').style.width = data.cpuLoad + '%';
+            
+            // Update RAM
+            document.getElementById('ram-text').textContent = data.ramPercent + '%';
+            document.getElementById('ram-bar').style.width = data.ramPercent + '%';
+            
+            // Update JVM
+            document.getElementById('jvm-text').textContent = data.jvmHeapPercent + '%';
+            document.getElementById('jvm-bar').style.width = data.jvmHeapPercent + '%';
+            
+            // Update Details text
+            document.getElementById('ram-detail').textContent = 
+                data.usedRamGb + ' / ' + data.totalRamGb + ' GB VM | JVM: ' + 
+                data.heapUsedMb + ' / ' + data.heapMaxMb + ' MB';
+        };
+
+        eventSource.onerror = function(err) {
+            console.error('SSE Error, connection lost. Browser will attempt to reconnect.', err);
+        };
+    });
+</script>
 
 <div th:replace="~{fragments/layout :: scripts}"></div>
 </body>

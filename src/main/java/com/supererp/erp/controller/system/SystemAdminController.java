@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Controller
@@ -98,6 +99,51 @@ public class SystemAdminController {
         model.addAttribute("dbSizeGb", String.format("%.3f", dbSizeGb));
         model.addAttribute("pageTitle", "System Health Dashboard");
         return "system/dashboard";
+    }
+
+    // ── Live Server Stats API (Server-Sent Events) ───────────────────────
+    @GetMapping(value = "/api/stats", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter liveStatsStream() {
+        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(0L); // No timeout
+        java.util.concurrent.ExecutorService sseMvcExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
+
+        sseMvcExecutor.execute(() -> {
+            try {
+                com.sun.management.OperatingSystemMXBean osBean =
+                    (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
+                java.lang.management.MemoryMXBean memBean = java.lang.management.ManagementFactory.getMemoryMXBean();
+
+                while (true) {
+                    double cpuLoad = osBean.getSystemCpuLoad() * 100.0;
+                    if (cpuLoad < 0) cpuLoad = 0.0;
+
+                    double totalRamGb = osBean.getTotalMemorySize() / (1024.0 * 1024.0 * 1024.0);
+                    double freeRamGb  = osBean.getFreeMemorySize()  / (1024.0 * 1024.0 * 1024.0);
+                    double usedRamGb  = totalRamGb - freeRamGb;
+                    double ramPercent = (usedRamGb / totalRamGb) * 100.0;
+
+                    long heapUsedBytes = memBean.getHeapMemoryUsage().getUsed();
+                    long heapMaxBytes  = memBean.getHeapMemoryUsage().getMax();
+                    double jvmHeapPercent = heapMaxBytes > 0 ? (heapUsedBytes / (double) heapMaxBytes) * 100.0 : 0.0;
+
+                    Map<String, Object> stats = Map.of(
+                        "cpuLoad",       String.format("%.1f", cpuLoad),
+                        "ramPercent",    String.format("%.1f", ramPercent),
+                        "usedRamGb",     String.format("%.1f", usedRamGb),
+                        "totalRamGb",    String.format("%.1f", totalRamGb),
+                        "jvmHeapPercent",String.format("%.1f", jvmHeapPercent),
+                        "heapUsedMb",    String.format("%.0f", heapUsedBytes / (1024.0 * 1024.0)),
+                        "heapMaxMb",     String.format("%.0f", heapMaxBytes  / (1024.0 * 1024.0))
+                    );
+
+                    emitter.send(stats, org.springframework.http.MediaType.APPLICATION_JSON);
+                    Thread.sleep(3000); // Stream every 3 seconds
+                }
+            } catch (Exception ex) {
+                emitter.completeWithError(ex);
+            }
+        });
+        return emitter;
     }
 
     // ── Tenant List ─────────────────────────────────────────────────────────
