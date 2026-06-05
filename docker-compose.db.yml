@@ -12,6 +12,11 @@ services:
       POSTGRES_PASSWORD: -SuperErp@Postgres2026
       # The specific database name for your ERP
       POSTGRES_DB: super_erp
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+    command: postgres -c shared_buffers=64MB -c max_connections=50 -c work_mem=4MB
     volumes:
       # Updated for Postgres 18: Mount to /var/lib/postgresql 
       # to avoid the "pg_ctlcluster" directory error
