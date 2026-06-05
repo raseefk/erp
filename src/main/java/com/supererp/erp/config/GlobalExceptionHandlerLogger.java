@@ -43,6 +43,13 @@ public class GlobalExceptionHandlerLogger {
         }
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public ResponseEntity<Object> handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException ex, WebRequest request) {
+        log.warn("Resource not found: {} - {}", request.getDescription(false), ex.getMessage());
+        return ResponseEntity.status(org.springframework.http.HttpStatus.NOT_FOUND)
+            .body(new com.supererp.erp.dto.ApiResponse<>(false, ex.getMessage(), null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         // Log via SLF4J — output destination is controlled by logging.file.name in application properties.
