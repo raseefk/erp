@@ -28,7 +28,7 @@
                             <div class="input-group">
                                 <input type="text" th:field="${tenant.slug}" class="form-control" required placeholder="levanto"
                                        th:readonly="${!isNew}">
-                                <span class="input-group-text">.erp.com</span>
+                                <span class="input-group-text" th:text="'.' + ${tenantDomain}">.domain.com</span>
                             </div>
                         </div>
                         <div class="col-md-6">

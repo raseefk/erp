@@ -146,11 +146,15 @@ public class SystemAdminController {
         return emitter;
     }
 
+    @org.springframework.beans.factory.annotation.Value("${app.tenant.domain:myerponline.in}")
+    private String tenantDomain;
+
     // ── Tenant List ─────────────────────────────────────────────────────────
     @GetMapping("/tenants")
     public String listTenants(Model model) {
         model.addAttribute("tenants", tenantService.findAll());
         model.addAttribute("pageTitle", "Tenant Management");
+        model.addAttribute("tenantDomain", tenantDomain);
         return "system/tenants";
     }
 
@@ -161,6 +165,7 @@ public class SystemAdminController {
         model.addAttribute("plans", new String[]{"TRIAL", "STANDARD", "ENTERPRISE"});
         model.addAttribute("pageTitle", "Create New Tenant");
         model.addAttribute("isNew", true);
+        model.addAttribute("tenantDomain", tenantDomain);
         return "system/tenant-form";
     }
 
@@ -191,6 +196,7 @@ public class SystemAdminController {
         model.addAttribute("plans", new String[]{"TRIAL", "STANDARD", "ENTERPRISE"});
         model.addAttribute("pageTitle", "Edit Tenant — " + tenant.getName());
         model.addAttribute("isNew", false);
+        model.addAttribute("tenantDomain", tenantDomain);
 
         // Feature & Menu toggling data
         model.addAttribute("allFeatures", featureRepo.findAllWithMenus());
