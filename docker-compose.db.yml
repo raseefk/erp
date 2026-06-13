@@ -3,9 +3,9 @@ services:
     image: postgres:18-alpine
     container_name: erp-db
     restart: unless-stopped
-    ports:
-      # Maps your VM's port 5432 to the container's port 5432
-      - "5432:5432"
+    # ⚠️ Port 5432 intentionally NOT exposed to the host.
+    # The app connects via Docker internal network (erp-db:5432).
+    # Exposing 5432 publicly allows bots to exhaust max_connections.
     environment:
       # The Superuser for manual setup/migrations
       POSTGRES_USER: erp_admin
@@ -15,11 +15,16 @@ services:
     deploy:
       resources:
         limits:
-          memory: 256M
-    command: postgres -c shared_buffers=64MB -c max_connections=50 -c work_mem=4MB
+          memory: 512M
+    command: >-
+      postgres
+      -c shared_buffers=128MB
+      -c max_connections=30
+      -c work_mem=8MB
+      -c authentication_timeout=5s
     volumes:
-      # Updated for Postgres 18: Mount to /var/lib/postgresql 
-      # to avoid the "pg_ctlcluster" directory error
+      # PG 18+ requires mount at /var/lib/postgresql (NOT /data).
+      # The image creates its own subdirectory: /var/lib/postgresql/18/main
       - postgres_data:/var/lib/postgresql
     networks:
       - erp-network
