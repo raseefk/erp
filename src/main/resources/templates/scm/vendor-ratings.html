@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Vendor Ratings')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('vendor-scorecard')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Vendor Ratings')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="@{/admin/scm/vendor-ratings}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Scorecard</a>
+      </div>
+      <div class="row g-3 mb-3">
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(200,151,42,0.1);color:var(--gold)"><i class="bi bi-star-fill"></i></div>
+            <div>
+              <div class="stat-num" th:text="${averageScore + ' / 5'}">0/5</div>
+              <div class="stat-lbl" th:text="${'Avg Score — ' + vendor.name}">Vendor</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:rgba(26,58,92,0.1);color:var(--navy)"><i class="bi bi-clipboard-data"></i></div>
+            <div>
+              <div class="stat-num" th:text="${#lists.size(ratings)}">0</div>
+              <div class="stat-lbl">Total Reviews</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-star-half me-2"></i>All Ratings — <span th:text="${vendor.name}">-</span></div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-levanto mb-0">
+            <thead><tr>
+              <th>Date</th><th class="text-center">Quality</th>
+              <th class="text-center">Delivery</th><th class="text-center">Price</th>
+              <th class="text-center">Service</th><th class="text-center">Overall</th>
+              <th>On Time</th><th>Rated By</th><th>Comments</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="r : ${ratings}">
+                <td th:text="${r.ratingDate}">-</td>
+                <td class="text-center" th:text="${r.qualityScore}">-</td>
+                <td class="text-center" th:text="${r.deliveryScore}">-</td>
+                <td class="text-center" th:text="${r.priceScore}">-</td>
+                <td class="text-center" th:text="${r.serviceScore}">-</td>
+                <td class="text-center fw-bold"
+                    th:classappend="${r.overallScore.doubleValue() >= 4 ? 'text-success' : (r.overallScore.doubleValue() >= 3 ? 'text-warning' : 'text-danger')}"
+                    th:text="${#numbers.formatDecimal(r.overallScore, 1, 2) + ' ★'}">-</td>
+                <td>
+                  <span th:if="${r.onTimeDelivery}" class="badge bg-success"><i class="bi bi-check-lg"></i> Yes</span>
+                  <span th:if="${!r.onTimeDelivery}" class="badge bg-danger"><i class="bi bi-x-lg"></i> <span th:text="${r.daysLate + 'd late'}">-</span></span>
+                </td>
+                <td th:text="${r.ratedBy}">-</td>
+                <td class="small text-muted" th:text="${r.comments ?: '—'}">-</td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(ratings)}">
+                <td colspan="9" class="text-center py-4 text-muted">No ratings for this vendor yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Upload Document')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('dms')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Upload Document')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="mb-3"><a th:href="@{/admin/dms/documents}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-cloud-upload me-2"></i>Upload New Document</div>
+        <div class="card-body">
+          <form th:action="@{/admin/dms/documents/upload}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="linkedEntityType" th:value="${document.linkedEntityType}"/>
+            <input type="hidden" name="linkedEntityId" th:value="${document.linkedEntityId}"/>
+            <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                <label class="form-label fw-bold">Document Title *</label>
+                <input type="text" name="title" class="form-control" th:value="${document.title}" required placeholder="e.g. Vendor Contract 2025 — ABC Supplies"/>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Category *</label>
+                <select name="category" class="form-select" required>
+                  <option th:each="cat : ${categories}" th:value="${cat.name()}" th:text="${cat.name()}" th:selected="${document.category == cat}"></option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Folder</label>
+                <select name="folder.id" class="form-select">
+                  <option value="">-- Root (No Folder) --</option>
+                  <option th:each="f : ${folders}" th:value="${f.id}" th:text="${f.name}" th:selected="${document.folder?.id == f.id}"></option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Expiry Date</label>
+                <input type="date" name="expiryDate" class="form-control" th:value="${document.expiryDate}"/>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Expiry Alert (Days Before)</label>
+                <input type="number" name="expiryAlertDays" class="form-control" th:value="${document.expiryAlertDays ?: 30}" min="1" max="365"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Access Level *</label>
+                <select name="accessLevel" class="form-select" id="accessLevelSel" onchange="toggleAccessFields(this)">
+                  <option th:each="al : ${accessLevels}" th:value="${al.name()}" th:text="${al.name()}" th:selected="${document.accessLevel == al}"></option>
+                </select>
+              </div>
+              <div class="col-md-3" id="deptField" style="display:none;">
+                <label class="form-label fw-bold">Department</label>
+                <input type="text" name="allowedDepartment" class="form-control" th:value="${document.allowedDepartment}" placeholder="e.g. Finance"/>
+              </div>
+              <div class="col-md-3" id="roleField" style="display:none;">
+                <label class="form-label fw-bold">Role</label>
+                <input type="text" name="allowedRole" class="form-control" th:value="${document.allowedRole}" placeholder="e.g. ADMIN"/>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-bold">Tags (comma-separated)</label>
+                <input type="text" name="tags" class="form-control" th:value="${document.tags}" placeholder="e.g. contract, vendor, 2025"/>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Description</label>
+                <textarea name="description" class="form-control" rows="2" th:text="${document.description}" placeholder="What is this document about?"></textarea>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">File * (PDF, JPG, PNG — max 2MB)</label>
+                <input type="file" name="file" class="form-control" required accept="application/pdf,image/jpeg,image/png,image/webp"/>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-gold px-4"><i class="bi bi-cloud-upload me-1"></i>Upload Document</button>
+              <a th:href="@{/admin/dms/documents}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function toggleAccessFields(sel) {
+  document.getElementById('deptField').style.display = sel.value === 'DEPARTMENT' ? 'block' : 'none';
+  document.getElementById('roleField').style.display = sel.value === 'ROLE' ? 'block' : 'none';
+}
+// Init on load
+toggleAccessFields(document.getElementById('accessLevelSel'));
+</script>
+</body>
+</html>

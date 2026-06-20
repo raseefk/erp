@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('RFQ Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-rfq')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('RFQ Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="@{/admin/scm/rfq}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <div class="btn-group">
+          <button th:if="${rfq.status.name() == 'DRAFT'}" class="btn btn-sm btn-info" onclick="setStatus('SENT')"><i class="bi bi-send me-1"></i>Send to Vendors</button>
+          <button th:if="${rfq.status.name() == 'SENT'}" class="btn btn-sm btn-warning" onclick="addResponseModal()"><i class="bi bi-reply me-1"></i>Add Response</button>
+        </div>
+      </div>
+      <!-- RFQ Header -->
+      <div class="card card-levanto mb-3">
+        <div class="card-header d-flex justify-content-between">
+          <span><i class="bi bi-envelope-open-text me-2"></i><span th:text="${rfq.rfqNumber}">-</span> — <span th:text="${rfq.title}">-</span></span>
+          <span class="badge" th:classappend="${rfq.status.name() == 'AWARDED' ? 'bg-success' : (rfq.status.name() == 'SENT' ? 'bg-info text-dark' : 'bg-secondary')}" th:text="${rfq.status}">-</span>
+        </div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-levanto mb-0">
+            <thead><tr><th>Item</th><th>Description</th><th class="text-end">Quantity</th><th>Unit</th></tr></thead>
+            <tbody>
+              <tr th:each="item : ${rfq.items}">
+                <td th:text="${item.inventoryItem?.name ?: 'Custom'}">-</td>
+                <td th:text="${item.description}">-</td>
+                <td class="text-end" th:text="${item.quantity}">0</td>
+                <td th:text="${item.unit}">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <!-- Vendor Comparison Table -->
+      <div class="card card-levanto" th:if="${!#lists.isEmpty(rfq.vendorResponses)}">
+        <div class="card-header"><i class="bi bi-bar-chart me-2"></i>Vendor Quote Comparison</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-sm table-levanto mb-0">
+              <thead><tr>
+                <th>Vendor</th><th class="text-end">Total Quoted</th>
+                <th class="text-center">Delivery Days</th>
+                <th>Payment Terms</th><th>Valid Until</th><th>Status</th><th>Action</th>
+              </tr></thead>
+              <tbody>
+                <tr th:each="resp : ${rfq.vendorResponses}"
+                    th:classappend="${resp.awarded ? 'table-success' : ''}">
+                  <td><strong th:text="${resp.vendor?.name}">-</strong></td>
+                  <td class="text-end fw-bold" th:text="${'₹ ' + #numbers.formatDecimal(resp.totalQuotedAmount, 1, 2)}">0.00</td>
+                  <td class="text-center" th:text="${resp.deliveryDays ?: '-'}">-</td>
+                  <td th:text="${resp.paymentTerms ?: '-'}">-</td>
+                  <td th:text="${resp.validUntil ?: '-'}">-</td>
+                  <td>
+                    <span th:if="${resp.awarded}" class="badge bg-success"><i class="bi bi-trophy me-1"></i>Awarded</span>
+                    <span th:if="${!resp.awarded}" class="badge bg-secondary">Quoted</span>
+                  </td>
+                  <td>
+                    <button th:if="${rfq.status.name() != 'AWARDED' and !resp.awarded}"
+                            class="btn btn-sm btn-gold"
+                            th:onclick="'awardVendor(' + ${resp.id} + ')'">
+                      <i class="bi bi-trophy me-1"></i>Award
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Add Response Modal -->
+<div class="modal fade" id="responseModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header bg-navy text-white">
+        <h5 class="modal-title">Add Vendor Response</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form th:action="@{/admin/scm/rfq/{id}/response(id=${rfq.id})}" method="post" id="responseForm">
+        <div class="modal-body">
+          <div class="row g-3 mb-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Vendor *</label>
+              <select name="vendor.id" class="form-select" required>
+                <option value="">-- Select Vendor --</option>
+                <option th:each="v : ${vendors}" th:value="${v.id}" th:text="${v.name}"></option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Delivery Days</label>
+              <input type="number" name="deliveryDays" class="form-control"/>
+            </div>
+            <div class="col-md-3">
+              <label class="form-label fw-bold">Valid Until</label>
+              <input type="date" name="validUntil" class="form-control"/>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Payment Terms</label>
+            <input type="text" name="paymentTerms" class="form-control" placeholder="e.g. Net 30 days"/>
+          </div>
+          <h6 class="fw-bold">Item-wise Pricing</h6>
+          <table class="table table-sm table-bordered">
+            <thead class="bg-light"><tr><th>Item</th><th>Qty</th><th>Unit Price (₹)</th><th>Total</th></tr></thead>
+            <tbody>
+              <tr th:each="item, stat : ${rfq.items}">
+                <input type="hidden" th:name="'responseItems[' + ${stat.index} + '].rfqItem.id'" th:value="${item.id}"/>
+                <td th:text="${item.description}">-</td>
+                <td th:text="${item.quantity + ' ' + item.unit}">-</td>
+                <td><input type="number" step="0.01" th:name="'responseItems[' + ${stat.index} + '].unitPrice'" class="form-control form-control-sm" required value="0"/></td>
+                <td class="text-muted small">Auto-calculated</td>
+              </tr>
+            </tbody>
+          </table>
+          <textarea name="remarks" class="form-control" rows="2" placeholder="Remarks (optional)"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-gold">Submit Response</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const rfqId = [[${rfq.id}]];
+function setStatus(s) {
+  if (!confirm('Change RFQ status to ' + s + '?')) return;
+  const fd = new FormData(); fd.append('status', s);
+  fetch('/admin/scm/rfq/' + rfqId + '/status', { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.message); });
+}
+function addResponseModal() { new bootstrap.Modal(document.getElementById('responseModal')).show(); }
+function awardVendor(respId) {
+  if (!confirm('Award this RFQ to the selected vendor?')) return;
+  const fd = new FormData(); fd.append('vendorResponseId', respId);
+  fetch('/admin/scm/rfq/' + rfqId + '/award', { method: 'POST', body: fd })
+    .then(r => r.json()).then(d => { if (d.success) location.reload(); else alert(d.message); });
+}
+</script>
+</body>
+</html>

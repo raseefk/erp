@@ -47,6 +47,7 @@
                             <th>Slug / Subdomain</th>
                             <th>Plan</th>
                             <th>Status</th>
+                            <th>Enabled Features</th>
                             <th>Expires</th>
                             <th>Created At</th>
                             <th class="text-end pe-4">Actions</th>
@@ -61,7 +62,7 @@
                                          th:text="${#strings.substring(tenant.name, 0, 1)}">T</div>
                                     <div>
                                         <div class="fw-bold text-dark" th:text="${tenant.name}">Acme Corp</div>
-                                        <div class="text-muted x-small" th:text="${tenant.id}">UUID</div>
+                                        <div class="text-muted x-small" style="font-size:.7rem;" th:text="${tenant.id}">UUID</div>
                                     </div>
                                 </div>
                             </td>
@@ -69,15 +70,27 @@
                                 <code class="bg-light px-2 py-1 rounded" th:text="${tenant.slug + '.' + tenantDomain}">slug.domain.com</code>
                             </td>
                             <td>
-                                <span class="badge" th:classappend="${tenant.plan == 'ENTERPRISE' ? 'bg-warning' : 'bg-info'}" th:text="${tenant.plan}">STANDARD</span>
+                                <span class="badge" th:classappend="${tenant.plan == 'ENTERPRISE' ? 'bg-warning text-dark' : (tenant.plan == 'TRIAL' ? 'bg-secondary' : 'bg-info text-dark')}" th:text="${tenant.plan}">STANDARD</span>
                             </td>
                             <td>
                                 <span th:if="${tenant.active}" class="badge bg-success-subtle text-success border border-success-subtle px-2">ACTIVE</span>
                                 <span th:unless="${tenant.active}" class="badge bg-danger-subtle text-danger border border-danger-subtle px-2">INACTIVE</span>
                             </td>
+                            <!-- ── Enabled Features Column ── -->
+                            <td style="max-width:260px;">
+                                <div class="d-flex flex-wrap gap-1">
+                                    <th:block th:each="feat : ${tenantEnabledFeatures.get(tenant.id)}">
+                                        <span class="badge rounded-pill"
+                                              style="background:rgba(15,35,56,.08);color:#0f2338;font-size:.65rem;font-weight:600;border:1px solid rgba(15,35,56,.12);"
+                                              th:text="${feat}">Feature</span>
+                                    </th:block>
+                                    <span th:if="${#lists.isEmpty(tenantEnabledFeatures.get(tenant.id))}"
+                                          class="text-muted small">None enabled</span>
+                                </div>
+                            </td>
                             <td>
                                 <span th:if="${tenant.expiresAt == null}" class="text-muted small">No Expiry</span>
-                                <span th:if="${tenant.expiresAt != null}" 
+                                <span th:if="${tenant.expiresAt != null}"
                                       th:classappend="${tenant.expiresAt.isBefore(T(java.time.OffsetDateTime).now()) ? 'text-danger fw-bold' : 'text-dark'}"
                                       th:text="${#temporals.format(tenant.expiresAt, 'dd MMM yyyy')}">Date</span>
                             </td>
@@ -85,8 +98,8 @@
                             <td class="text-end pe-4">
                                 <div class="d-flex justify-content-end gap-2">
                                     <a th:href="@{/system/tenants/{id}/edit(id=${tenant.id})}"
-                                       class="btn btn-sm btn-outline-primary" title="Edit Tenant">
-                                        <i class="bi bi-pencil-square"></i>
+                                       class="btn btn-sm btn-outline-primary" title="Edit Tenant &amp; Features">
+                                        <i class="bi bi-pencil-square me-1"></i>Edit
                                     </a>
                                     <form th:if="${tenant.active}" th:action="@{/system/tenants/{id}/deactivate(id=${tenant.id})}" method="POST"
                                           onsubmit="return confirm('Deactivate this tenant? Users will be blocked immediately.')">
@@ -96,6 +109,9 @@
                                     </form>
                                 </div>
                             </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(tenants)}">
+                            <td colspan="8" class="text-center py-5 text-muted">No tenants registered yet.</td>
                         </tr>
                     </tbody>
                 </table>

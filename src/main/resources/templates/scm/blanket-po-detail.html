@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Blanket PO Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-blanket-po')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Rate Contract Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="@{/admin/scm/blanket-po}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <a th:href="@{/admin/scm/blanket-po/{id}/edit(id=${bpo.id})}" class="btn btn-sm btn-navy"><i class="bi bi-pencil me-1"></i>Edit</a>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <div class="card card-levanto mb-3">
+            <div class="card-header d-flex justify-content-between">
+              <span><i class="bi bi-file-earmark-ruled me-2"></i><span th:text="${bpo.bpoNumber}">-</span> — <span th:text="${bpo.title}">-</span></span>
+              <span class="badge" th:classappend="${bpo.status.name() == 'ACTIVE' ? 'bg-success' : 'bg-secondary'}" th:text="${bpo.status}">-</span>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-sm table-levanto mb-0">
+                <thead><tr>
+                  <th>Item</th><th>Description</th><th class="text-end">Agreed Price</th>
+                  <th class="text-end">Max Qty</th><th class="text-end">Released</th><th>Unit</th>
+                </tr></thead>
+                <tbody>
+                  <tr th:each="item : ${bpo.items}">
+                    <td th:text="${item.inventoryItem?.name ?: 'Custom'}">-</td>
+                    <td th:text="${item.description}">-</td>
+                    <td class="text-end" th:text="${'₹ ' + #numbers.formatDecimal(item.agreedUnitPrice, 1, 2)}">0.00</td>
+                    <td class="text-end" th:text="${item.maxQuantity ?: '∞'}">-</td>
+                    <td class="text-end" th:text="${item.releasedQuantity}">0</td>
+                    <td th:text="${item.unit}">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card card-levanto mb-3">
+            <div class="card-header"><i class="bi bi-truck me-2"></i>Vendor</div>
+            <div class="card-body small" th:if="${bpo.vendor != null}">
+              <strong th:text="${bpo.vendor.name}">-</strong><br/>
+              <span th:text="${bpo.vendor.phone}">-</span><br/>
+              <span th:text="${bpo.vendor.email}">-</span>
+            </div>
+          </div>
+          <div class="card card-levanto mb-3">
+            <div class="card-header"><i class="bi bi-calendar me-2"></i>Contract Period</div>
+            <div class="card-body small py-2">
+              <div class="d-flex justify-content-between mb-1"><span>Start:</span><span th:text="${bpo.startDate}">-</span></div>
+              <div class="d-flex justify-content-between mb-1"><span>End:</span><span th:text="${bpo.endDate}">-</span></div>
+              <div class="d-flex justify-content-between"><span>Payment Terms:</span><span th:text="${bpo.paymentTerms ?: '-'}">-</span></div>
+            </div>
+          </div>
+          <div class="card card-levanto">
+            <div class="card-header"><i class="bi bi-cash me-2"></i>Contract Value</div>
+            <div class="card-body small py-2">
+              <div class="d-flex justify-content-between mb-1"><span>Total Value:</span><strong class="text-navy" th:text="${'₹ ' + #numbers.formatDecimal(bpo.totalValue, 1, 2)}">0.00</strong></div>
+              <div class="d-flex justify-content-between mb-1"><span>Consumed:</span><span th:text="${'₹ ' + #numbers.formatDecimal(bpo.consumedValue, 1, 2)}">0.00</span></div>
+              <div th:if="${bpo.totalValue.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                <div class="progress mt-2" style="height:8px;">
+                  <div class="progress-bar" style="background:var(--gold);"
+                       th:style="'width:' + ${bpo.consumedValue.divide(bpo.totalValue, 2, T(java.math.RoundingMode).HALF_UP).multiply(T(java.math.BigDecimal).valueOf(100)).intValue()} + '%'"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

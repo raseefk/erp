@@ -13,8 +13,10 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.time.OffsetDateTime;
+import com.supererp.erp.rbac.entity.Feature;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Controller
@@ -152,7 +154,20 @@ public class SystemAdminController {
     // ── Tenant List ─────────────────────────────────────────────────────────
     @GetMapping("/tenants")
     public String listTenants(Model model) {
-        model.addAttribute("tenants", tenantService.findAll());
+        List<Tenant> tenants = tenantService.findAll();
+        // Build a feature summary map: tenantId → enabled feature display names
+        List<Feature> allFeatures = featureRepo.findAllOrdered();
+        Map<UUID, List<String>> tenantEnabledFeatures = new java.util.LinkedHashMap<>();
+        for (Tenant t : tenants) {
+            Set<String> enabled = rbacService.getEnabledFeatures(t.getId());
+            List<String> names = allFeatures.stream()
+                    .filter(f -> enabled.contains(f.getId()))
+                    .map(Feature::getDisplayName)
+                    .toList();
+            tenantEnabledFeatures.put(t.getId(), names);
+        }
+        model.addAttribute("tenants", tenants);
+        model.addAttribute("tenantEnabledFeatures", tenantEnabledFeatures);
         model.addAttribute("pageTitle", "Tenant Management");
         model.addAttribute("tenantDomain", tenantDomain);
         return "system/tenants";

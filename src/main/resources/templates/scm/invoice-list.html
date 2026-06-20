@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Vendor Invoices')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-invoice')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Vendor Invoices — 3-Way Match')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <form th:action="@{/admin/scm/invoices}" method="get" class="d-flex gap-2">
+          <input type="text" name="q" class="form-control form-control-sm" placeholder="Search invoice, PO, vendor…" th:value="${q}" style="width:260px;"/>
+          <button type="submit" class="btn btn-sm btn-gold">Search</button>
+        </form>
+        <a th:href="@{/admin/scm/invoices/new}" class="btn btn-sm btn-gold"><i class="bi bi-plus-lg me-1"></i>Add Invoice</a>
+      </div>
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-file-earmark-check me-2"></i>Vendor Invoice Register</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-levanto mb-0">
+              <thead><tr>
+                <th>Invoice No</th><th>Vendor</th><th>PO Number</th>
+                <th>Invoice Date</th><th>Amount</th><th>3-Way Match</th><th>Payment</th><th>Actions</th>
+              </tr></thead>
+              <tbody>
+                <tr th:each="inv : ${invoicePage.content}">
+                  <td><strong th:text="${inv.invoiceNumber}">-</strong></td>
+                  <td th:text="${inv.vendor?.name ?: '-'}">-</td>
+                  <td><a th:href="@{/admin/scm/po/{id}(id=${inv.purchaseOrder?.id})}" th:text="${inv.purchaseOrder?.poNumber}">-</a></td>
+                  <td th:text="${inv.invoiceDate}">-</td>
+                  <td th:text="${'₹ ' + #numbers.formatDecimal(inv.totalAmount, 1, 2)}">0.00</td>
+                  <td>
+                    <span class="badge" th:classappend="${
+                      inv.matchStatus == 'FULL_MATCH' ? 'bg-success' :
+                      inv.matchStatus == 'PARTIAL_MATCH' ? 'bg-warning text-dark' :
+                      inv.matchStatus == 'DISCREPANCY' ? 'bg-danger' : 'bg-secondary'
+                    }" th:text="${inv.matchStatus}">-</span>
+                  </td>
+                  <td>
+                    <span class="badge" th:classappend="${inv.paymentStatus == 'PAID' ? 'bg-success' : (inv.paymentStatus == 'PARTIALLY_PAID' ? 'bg-warning text-dark' : 'bg-secondary')}" th:text="${inv.paymentStatus}">-</span>
+                  </td>
+                  <td>
+                    <a th:href="@{/admin/scm/invoices/{id}(id=${inv.id})}" class="btn btn-sm btn-outline-navy" title="View"><i class="bi bi-eye"></i></a>
+                  </td>
+                </tr>
+                <tr th:if="${invoicePage.totalElements == 0}">
+                  <td colspan="8" class="text-center py-4 text-muted">No vendor invoices found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

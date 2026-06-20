@@ -156,7 +156,7 @@
       <span>Supply Chain</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseScm"
-         th:classappend="${#lists.contains({'vendors','scm-po'}, activePage)} ? 'show' : ''">
+         th:classappend="${#lists.contains({'vendors','scm-po','scm-grn','scm-invoice','scm-rfq','scm-blanket-po','scm-approvals','vendor-scorecard'}, activePage)} ? 'show' : ''">
       <li th:if="${@rbacService.isMenuEnabled('MENU_VENDORS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_VENDORS_VIEW')">
         <a href="/admin/vendors" th:classappend="${activePage=='vendors'}?' active':''">
           <i class="bi bi-truck"></i> Vendor Directory
@@ -165,6 +165,58 @@
       <li th:if="${@rbacService.isMenuEnabled('MENU_PURCHASE_ORDERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_PO_VIEW')">
         <a href="/admin/scm/po" th:classappend="${activePage=='scm-po'}?' active':''">
           <i class="bi bi-cart"></i> Purchase Orders
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_GRN_VIEW')">
+        <a href="/admin/scm/grn" th:classappend="${activePage=='scm-grn'}?' active':''">
+          <i class="bi bi-box-seam"></i> Goods Receipt (GRN)
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_INVOICE_VIEW')">
+        <a href="/admin/scm/invoices" th:classappend="${activePage=='scm-invoice'}?' active':''">
+          <i class="bi bi-file-earmark-check"></i> Vendor Invoices
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_RFQ_VIEW')">
+        <a href="/admin/scm/rfq" th:classappend="${activePage=='scm-rfq'}?' active':''">
+          <i class="bi bi-envelope-open-text"></i> RFQ
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_BLANKET_PO_VIEW')">
+        <a href="/admin/scm/blanket-po" th:classappend="${activePage=='scm-blanket-po'}?' active':''">
+          <i class="bi bi-file-earmark-ruled"></i> Blanket POs
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_APPROVAL_VIEW')">
+        <a href="/admin/scm/approvals" th:classappend="${activePage=='scm-approvals'}?' active':''">
+          <i class="bi bi-check2-circle"></i> PO Approvals
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_VENDOR_RATING_VIEW')">
+        <a href="/admin/scm/vendor-ratings" th:classappend="${activePage=='vendor-scorecard'}?' active':''">
+          <i class="bi bi-star-half"></i> Vendor Scorecard
+        </a>
+      </li>
+    </div>
+
+    <!-- ── DOCUMENT MANAGEMENT ────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center"
+        th:if="${@rbacService.isFeatureEnabled('DMS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DOCUMENTS_VIEW')"
+        data-bs-toggle="collapse" data-bs-target="#collapseDms"
+        th:attr="aria-expanded=${#lists.contains({'dms','dms-folders'}, activePage) ? 'true' : 'false'}">
+      <span>Documents</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseDms"
+         th:classappend="${#lists.contains({'dms','dms-folders'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DOCUMENTS_VIEW')">
+        <a href="/admin/dms" th:classappend="${activePage=='dms'}?' active':''">
+          <i class="bi bi-cloud-arrow-up"></i> Document Vault
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_FOLDERS_MANAGE')">
+        <a href="/admin/dms/folders" th:classappend="${activePage=='dms-folders'}?' active':''">
+          <i class="bi bi-folder2-open"></i> Manage Folders
         </a>
       </li>
     </div>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('GRN Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-grn')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Goods Receipt Note Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="@{/admin/scm/grn}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <div class="btn-group" th:if="${grn.status.name() == 'SUBMITTED'}">
+          <button class="btn btn-sm btn-success" onclick="acceptGrn()"><i class="bi bi-check-circle me-1"></i>Accept GRN</button>
+          <button class="btn btn-sm btn-outline-danger" onclick="rejectGrn()"><i class="bi bi-x-circle me-1"></i>Reject GRN</button>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <div class="card card-levanto mb-3">
+            <div class="card-header d-flex justify-content-between">
+              <span><i class="bi bi-box-seam me-2"></i>GRN #<span th:text="${grn.grnNumber}"></span></span>
+              <span class="badge" th:classappend="${grn.status.name() == 'ACCEPTED' ? 'bg-success' : (grn.status.name() == 'SUBMITTED' ? 'bg-info text-dark' : (grn.status.name() == 'REJECTED' ? 'bg-danger' : 'bg-secondary'))}" th:text="${grn.status}">-</span>
+            </div>
+            <div class="card-body p-0">
+              <table class="table table-sm table-levanto mb-0">
+                <thead><tr>
+                  <th>Description</th><th>Unit</th><th class="text-end">Ordered</th>
+                  <th class="text-end">Received</th><th class="text-end">Accepted</th>
+                  <th class="text-end">Rejected</th><th class="text-end">Value</th>
+                </tr></thead>
+                <tbody>
+                  <tr th:each="item : ${grn.items}">
+                    <td th:text="${item.description}">-</td>
+                    <td th:text="${item.unit}">-</td>
+                    <td class="text-end" th:text="${item.orderedQuantity}">0</td>
+                    <td class="text-end" th:text="${item.receivedQuantity}">0</td>
+                    <td class="text-end text-success fw-bold" th:text="${item.acceptedQuantity}">0</td>
+                    <td class="text-end text-danger" th:text="${item.rejectedQuantity}">0</td>
+                    <td class="text-end" th:text="${'₹ ' + #numbers.formatDecimal(item.totalValue, 1, 2)}">0.00</td>
+                  </tr>
+                </tbody>
+                <tfoot>
+                  <tr class="table-light">
+                    <td colspan="6" class="text-end fw-bold">Total Accepted Value</td>
+                    <td class="text-end fw-bold text-navy" th:text="${'₹ ' + #numbers.formatDecimal(grn.totalReceivedValue, 1, 2)}">0.00</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          <div class="card card-levanto" th:if="${!#lists.isEmpty(vendorInvoices)}">
+            <div class="card-header small fw-bold"><i class="bi bi-file-earmark-check me-2"></i>Linked Vendor Invoices</div>
+            <div class="card-body p-0">
+              <table class="table table-sm table-levanto mb-0">
+                <thead><tr><th>Invoice No</th><th>Amount</th><th>Match</th><th>Payment</th></tr></thead>
+                <tbody>
+                  <tr th:each="inv : ${vendorInvoices}">
+                    <td><a th:href="@{/admin/scm/invoices/{id}(id=${inv.id})}" th:text="${inv.invoiceNumber}">-</a></td>
+                    <td th:text="${'₹ ' + #numbers.formatDecimal(inv.totalAmount, 1, 2)}">0.00</td>
+                    <td><span class="badge" th:classappend="${inv.matchStatus == 'FULL_MATCH' ? 'bg-success' : (inv.matchStatus == 'DISCREPANCY' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${inv.matchStatus}">-</span></td>
+                    <td><span class="badge" th:classappend="${inv.paymentStatus == 'PAID' ? 'bg-success' : 'bg-secondary'}" th:text="${inv.paymentStatus}">-</span></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card card-levanto mb-3">
+            <div class="card-header"><i class="bi bi-file-earmark-text me-2"></i>PO Info</div>
+            <div class="card-body small" th:if="${grn.purchaseOrder != null}">
+              <div class="mb-1"><strong>PO Number:</strong> <a th:href="@{/admin/scm/po/{id}(id=${grn.purchaseOrder.id})}" th:text="${grn.purchaseOrder.poNumber}">-</a></div>
+              <div class="mb-1"><strong>Vendor:</strong> <span th:text="${grn.purchaseOrder.vendor?.name}">-</span></div>
+              <div class="mb-1"><strong>PO Total:</strong> ₹<span th:text="${#numbers.formatDecimal(grn.purchaseOrder.totalAmount, 1, 2)}">0.00</span></div>
+            </div>
+          </div>
+          <div class="card card-levanto">
+            <div class="card-header"><i class="bi bi-truck me-2"></i>Receipt Details</div>
+            <div class="card-body small py-2">
+              <div class="d-flex justify-content-between mb-1"><span>Received Date:</span><span th:text="${grn.receivedDate}">-</span></div>
+              <div class="d-flex justify-content-between mb-1"><span>Received By:</span><span th:text="${grn.receivedBy ?: '-'}">-</span></div>
+              <div class="d-flex justify-content-between mb-1"><span>Challan No:</span><span th:text="${grn.deliveryChallanNo ?: '-'}">-</span></div>
+              <div class="d-flex justify-content-between"><span>Vehicle No:</span><span th:text="${grn.vehicleNumber ?: '-'}">-</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const grnId = [[${grn.id}]];
+
+function acceptGrn() {
+  const remarks = prompt('Acceptance remarks (optional):') || '';
+  if (!confirm('Accept this GRN and update inventory stock?')) return;
+  fetch('/admin/scm/grn/' + grnId + '/accept', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'remarks=' + encodeURIComponent(remarks)
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert('Error: ' + d.message);
+  });
+}
+
+function rejectGrn() {
+  const remarks = prompt('Rejection reason (required):');
+  if (!remarks) return;
+  fetch('/admin/scm/grn/' + grnId + '/reject', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'remarks=' + encodeURIComponent(remarks)
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert('Error: ' + d.message);
+  });
+}
+</script>
+</body>
+</html>
