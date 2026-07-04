@@ -137,6 +137,11 @@ public final class Permissions {
     public static final String DMS_DOCUMENTS_DELETE         = "DMS_DOCUMENTS_DELETE";
     public static final String DMS_FOLDERS_MANAGE           = "DMS_FOLDERS_MANAGE";
     public static final String DMS_VERSIONS_VIEW            = "DMS_VERSIONS_VIEW";
+    public static final String DMS_DIGITAL_SIGNATURE_VIEW   = "DMS_DIGITAL_SIGNATURE_VIEW";
+    public static final String DMS_DIGITAL_SIGNATURE_SIGN   = "DMS_DIGITAL_SIGNATURE_SIGN";
+    public static final String DMS_DIGITAL_SIGNATURE_VERIFY = "DMS_DIGITAL_SIGNATURE_VERIFY";
+    public static final String DMS_EXPIRY_ALERTS_VIEW       = "DMS_EXPIRY_ALERTS_VIEW";
+    public static final String DMS_EXPIRY_ALERTS_MANAGE     = "DMS_EXPIRY_ALERTS_MANAGE";
 
     // ── SETTINGS Feature (Admin) ───────────────────────────────────────────────
     public static final String SETTINGS_COMPANY_VIEW        = "SETTINGS_COMPANY_VIEW";

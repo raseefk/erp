@@ -88,6 +88,13 @@ public class DocumentManagementService {
         return documentRepo.findByLinkedEntity(entityType, entityId);
     }
 
+    /** Lightweight list for select/lookup dropdowns */
+    public List<Document> getAllDocumentsForLookup() {
+        return documentRepo.findAll(
+            org.springframework.data.domain.Sort.by("title").ascending())
+            .stream().filter(Document::isActive).toList();
+    }
+
     @Transactional
     @AuditAction(value = "DOCUMENT_UPLOAD", entityType = "Document")
     public Document uploadDocument(Document document, MultipartFile file, String uploadedBy) throws Exception {

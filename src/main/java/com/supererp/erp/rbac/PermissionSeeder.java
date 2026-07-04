@@ -107,8 +107,10 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_PL_REPORT", "FINANCE", "P&L Report", "graph-up-arrow", 3);
 
         // Document Management System
-        upsertMenu("MENU_DMS_VAULT",    "DMS", "Document Vault",    "cloud-arrow-up",   1);
-        upsertMenu("MENU_DMS_FOLDERS",  "DMS", "Manage Folders",    "folder2-open",     2);
+        upsertMenu("MENU_DMS_VAULT",            "DMS", "Document Vault",        "cloud-arrow-up",   1);
+        upsertMenu("MENU_DMS_FOLDERS",          "DMS", "Manage Folders",        "folder2-open",     2);
+        upsertMenu("MENU_DMS_DIGITAL_SIGNATURE","DMS", "Digital Signatures",    "pen",              3);
+        upsertMenu("MENU_DMS_EXPIRY_ALERTS",    "DMS", "Expiry Alerts",         "clock-history",    4);
 
         // Administration
         upsertMenu("MENU_USERS", "ADMIN", "User Management", "shield-lock", 1);
@@ -215,6 +217,8 @@ public class PermissionSeeder implements CommandLineRunner {
         // DMS
         if (id.startsWith("DMS_DOCUMENTS_") || id.startsWith("DMS_VERSIONS_")) return "MENU_DMS_VAULT";
         if (id.startsWith("DMS_FOLDERS_")) return "MENU_DMS_FOLDERS";
+        if (id.startsWith("DMS_DIGITAL_SIGNATURE_")) return "MENU_DMS_DIGITAL_SIGNATURE";
+        if (id.startsWith("DMS_EXPIRY_ALERTS_")) return "MENU_DMS_EXPIRY_ALERTS";
         // Projects
         if (id.startsWith("PROJ_LIST_")) return "MENU_PROJECTS";
         if (id.startsWith("PROJ_DAILYLOG_")) return "MENU_SITELOGS";
@@ -288,6 +292,11 @@ public class PermissionSeeder implements CommandLineRunner {
         names.put("DMS_DOCUMENTS_DELETE",      "Delete Documents");
         names.put("DMS_FOLDERS_MANAGE",        "Manage Folders");
         names.put("DMS_VERSIONS_VIEW",         "View Version History");
+        names.put("DMS_DIGITAL_SIGNATURE_VIEW",   "View Digital Signatures");
+        names.put("DMS_DIGITAL_SIGNATURE_SIGN",   "Sign Documents");
+        names.put("DMS_DIGITAL_SIGNATURE_VERIFY", "Verify Signatures");
+        names.put("DMS_EXPIRY_ALERTS_VIEW",       "View Expiry Alerts");
+        names.put("DMS_EXPIRY_ALERTS_MANAGE",     "Manage Expiry Alerts");
         if (names.containsKey(permId)) return names.get(permId);
         // Generic fallback
         return permId.replace("_", " ").toLowerCase();

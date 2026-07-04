@@ -208,7 +208,7 @@
       <span>Documents</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseDms"
-         th:classappend="${#lists.contains({'dms','dms-folders'}, activePage)} ? 'show' : ''">
+         th:classappend="${#lists.contains({'dms','dms-folders','dms-signatures','dms-expiry-alerts'}, activePage)} ? 'show' : ''">
       <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DOCUMENTS_VIEW')">
         <a href="/admin/dms" th:classappend="${activePage=='dms'}?' active':''">
           <i class="bi bi-cloud-arrow-up"></i> Document Vault
@@ -217,6 +217,16 @@
       <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_FOLDERS_MANAGE')">
         <a href="/admin/dms/folders" th:classappend="${activePage=='dms-folders'}?' active':''">
           <i class="bi bi-folder2-open"></i> Manage Folders
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DIGITAL_SIGNATURE_VIEW')">
+        <a href="/admin/dms/digital-signatures" th:classappend="${activePage=='dms-signatures'}?' active':''">
+          <i class="bi bi-pen"></i> Digital Signatures
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_EXPIRY_ALERTS_VIEW')">
+        <a href="/admin/dms/expiry-alerts" th:classappend="${activePage=='dms-expiry-alerts'}?' active':''">
+          <i class="bi bi-clock-history"></i> Expiry Alerts
         </a>
       </li>
     </div>
