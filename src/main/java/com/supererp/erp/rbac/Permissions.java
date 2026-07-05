@@ -130,6 +130,21 @@ public final class Permissions {
     public static final String SCM_VENDOR_RATING_MANAGE     = "SCM_VENDOR_RATING_MANAGE";
     public static final String SCM_LANDED_COST_MANAGE       = "SCM_LANDED_COST_MANAGE";
 
+    // ── WAREHOUSE MANAGEMENT Feature ─────────────────────────────────────────
+    public static final String WMS_WAREHOUSES_VIEW      = "WMS_WAREHOUSES_VIEW";
+    public static final String WMS_WAREHOUSES_MANAGE    = "WMS_WAREHOUSES_MANAGE";
+    public static final String WMS_LOCATIONS_VIEW       = "WMS_LOCATIONS_VIEW";
+    public static final String WMS_LOCATIONS_MANAGE     = "WMS_LOCATIONS_MANAGE";
+    public static final String WMS_STOCK_VIEW           = "WMS_STOCK_VIEW";
+    public static final String WMS_STOCK_ADJUST         = "WMS_STOCK_ADJUST";
+    public static final String WMS_TRANSFERS_VIEW       = "WMS_TRANSFERS_VIEW";
+    public static final String WMS_TRANSFERS_MANAGE     = "WMS_TRANSFERS_MANAGE";
+    public static final String WMS_BATCHES_VIEW         = "WMS_BATCHES_VIEW";
+    public static final String WMS_BATCHES_MANAGE       = "WMS_BATCHES_MANAGE";
+    public static final String WMS_STOCKCOUNT_VIEW      = "WMS_STOCKCOUNT_VIEW";
+    public static final String WMS_STOCKCOUNT_MANAGE    = "WMS_STOCKCOUNT_MANAGE";
+    public static final String WMS_LEDGER_VIEW          = "WMS_LEDGER_VIEW";
+
     // ── DOCUMENT MANAGEMENT Feature ───────────────────────────────────────────
     public static final String DMS_DOCUMENTS_VIEW           = "DMS_DOCUMENTS_VIEW";
     public static final String DMS_DOCUMENTS_UPLOAD         = "DMS_DOCUMENTS_UPLOAD";

@@ -199,6 +199,58 @@
       </li>
     </div>
 
+    <!-- ── WAREHOUSE MANAGEMENT ─────────────────────────────────────────────── -->
+    <li class="nav-sec d-flex justify-content-between align-items-center"
+        th:if="${@rbacService.isFeatureEnabled('WMS')}"
+        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW', 'PERM_WMS_STOCK_VIEW')"
+        data-bs-toggle="collapse" data-bs-target="#collapseWms"
+        th:attr="aria-expanded=${#lists.contains({'wms','wms-warehouses','wms-stock','wms-transfers','wms-batches','wms-stockcount','wms-ledger','wms-scan'}, activePage) ? 'true' : 'false'}">
+      <span>Warehouse</span> <i class="bi bi-chevron-down collapse-icon"></i>
+    </li>
+    <div class="collapse" id="collapseWms"
+         th:classappend="${#lists.contains({'wms','wms-warehouses','wms-stock','wms-transfers','wms-batches','wms-stockcount','wms-ledger','wms-scan'}, activePage)} ? 'show' : ''">
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW')">
+        <a href="/admin/wms" th:classappend="${activePage == 'wms'} ? 'active'">
+          <i class="bi bi-building"></i> WMS Dashboard
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW')">
+        <a href="/admin/wms/warehouses" th:classappend="${activePage == 'wms-warehouses'} ? 'active'">
+          <i class="bi bi-houses"></i> Warehouses
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCK_VIEW')">
+        <a href="/admin/wms/stock" th:classappend="${activePage == 'wms-stock'} ? 'active'">
+          <i class="bi bi-boxes"></i> Stock Overview
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_TRANSFERS_VIEW')">
+        <a href="/admin/wms/transfers" th:classappend="${activePage == 'wms-transfers'} ? 'active'">
+          <i class="bi bi-arrow-left-right"></i> Stock Transfers
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_BATCHES_VIEW')">
+        <a href="/admin/wms/batches" th:classappend="${activePage == 'wms-batches'} ? 'active'">
+          <i class="bi bi-layers"></i> Batch / Lot Tracking
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCKCOUNT_VIEW')">
+        <a href="/admin/wms/stockcounts" th:classappend="${activePage == 'wms-stockcount'} ? 'active'">
+          <i class="bi bi-clipboard-check"></i> Stock Count
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_LEDGER_VIEW')">
+        <a href="/admin/wms/ledger" th:classappend="${activePage == 'wms-ledger'} ? 'active'">
+          <i class="bi bi-journal-bookmark"></i> Stock Ledger
+        </a>
+      </li>
+      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCK_VIEW')">
+        <a href="/admin/wms/scan" th:classappend="${activePage == 'wms-scan'} ? 'active'">
+          <i class="bi bi-qr-code-scan"></i> Barcode Scan
+        </a>
+      </li>
+    </div>
+
     <!-- ── DOCUMENT MANAGEMENT ────────────────────────────────────────────── -->
     <li class="nav-sec d-flex justify-content-between align-items-center"
         th:if="${@rbacService.isFeatureEnabled('DMS')}"

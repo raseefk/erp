@@ -46,6 +46,7 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertFeature("ADMIN",            "Administration",           "shield-lock",       "Users, roles, permissions management",          9);
         upsertFeature("ADVANCE_PAYMENTS", "Advance Payments",         "cash-coin",         "Customer and vendor advance payment tracking",  10);
         upsertFeature("DMS",              "Document Management",      "cloud-arrow-up",    "Document vault, version control, expiry alerts",11);
+        upsertFeature("WMS",              "Warehouse Management",     "building",          "Multi-warehouse, locations, stock transfers, batch tracking", 13);
         upsertFeature("SYSTEM",           "System",                   "cog",               "Dashboard, company settings, holidays",         12);
     }
 
@@ -120,6 +121,16 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_DASHBOARD", "SYSTEM", "Dashboard", "speedometer2", 0);
         upsertMenu("MENU_SETTINGS", "SYSTEM", "Settings", "gear", 1);
         upsertMenu("MENU_HOLIDAYS", "SYSTEM", "Annual Holidays", "calendar-event", 2);
+
+        // Warehouse Management System
+        upsertMenu("MENU_WMS_DASHBOARD",  "WMS", "WMS Dashboard",      "building",           1);
+        upsertMenu("MENU_WMS_WAREHOUSES", "WMS", "Warehouses",         "houses",             2);
+        upsertMenu("MENU_WMS_STOCK",      "WMS", "Stock Overview",     "boxes-stacked",      3);
+        upsertMenu("MENU_WMS_TRANSFERS",  "WMS", "Stock Transfers",    "arrow-left-right",   4);
+        upsertMenu("MENU_WMS_BATCHES",    "WMS", "Batch / Lot Tracking","layers",            5);
+        upsertMenu("MENU_WMS_STOCKCOUNT", "WMS", "Stock Count",        "clipboard-check",    6);
+        upsertMenu("MENU_WMS_LEDGER",     "WMS", "Stock Ledger",       "journal-bookmark",   7);
+        upsertMenu("MENU_WMS_SCAN",       "WMS", "Barcode Scan",       "qr-code-scan",       8);
     }
 
     private void upsertMenu(String id, String featureId, String name, String icon, int order) {
@@ -219,6 +230,14 @@ public class PermissionSeeder implements CommandLineRunner {
         if (id.startsWith("DMS_FOLDERS_")) return "MENU_DMS_FOLDERS";
         if (id.startsWith("DMS_DIGITAL_SIGNATURE_")) return "MENU_DMS_DIGITAL_SIGNATURE";
         if (id.startsWith("DMS_EXPIRY_ALERTS_")) return "MENU_DMS_EXPIRY_ALERTS";
+        // WMS
+        if (id.startsWith("WMS_WAREHOUSES_")) return "MENU_WMS_WAREHOUSES";
+        if (id.startsWith("WMS_LOCATIONS_")) return "MENU_WMS_WAREHOUSES";
+        if (id.startsWith("WMS_STOCK_")) return "MENU_WMS_STOCK";
+        if (id.startsWith("WMS_TRANSFERS_")) return "MENU_WMS_TRANSFERS";
+        if (id.startsWith("WMS_BATCHES_")) return "MENU_WMS_BATCHES";
+        if (id.startsWith("WMS_STOCKCOUNT_")) return "MENU_WMS_STOCKCOUNT";
+        if (id.startsWith("WMS_LEDGER_")) return "MENU_WMS_LEDGER";
         // Projects
         if (id.startsWith("PROJ_LIST_")) return "MENU_PROJECTS";
         if (id.startsWith("PROJ_DAILYLOG_")) return "MENU_SITELOGS";
@@ -258,6 +277,7 @@ public class PermissionSeeder implements CommandLineRunner {
         if (permId.startsWith("SETTINGS_")) return "ADMIN";
         if (permId.startsWith("SCM_")) return "SCM";
         if (permId.startsWith("DMS_")) return "DMS";
+        if (permId.startsWith("WMS_")) return "WMS";
         return permId.split("_")[0];
     }
 
@@ -297,6 +317,20 @@ public class PermissionSeeder implements CommandLineRunner {
         names.put("DMS_DIGITAL_SIGNATURE_VERIFY", "Verify Signatures");
         names.put("DMS_EXPIRY_ALERTS_VIEW",       "View Expiry Alerts");
         names.put("DMS_EXPIRY_ALERTS_MANAGE",     "Manage Expiry Alerts");
+        // WMS
+        names.put("WMS_WAREHOUSES_VIEW",    "View Warehouses");
+        names.put("WMS_WAREHOUSES_MANAGE",  "Manage Warehouses & Locations");
+        names.put("WMS_LOCATIONS_VIEW",     "View Locations");
+        names.put("WMS_LOCATIONS_MANAGE",   "Manage Locations");
+        names.put("WMS_STOCK_VIEW",         "View Stock Balances");
+        names.put("WMS_STOCK_ADJUST",       "Adjust Stock");
+        names.put("WMS_TRANSFERS_VIEW",     "View Stock Transfers");
+        names.put("WMS_TRANSFERS_MANAGE",   "Manage Stock Transfers");
+        names.put("WMS_BATCHES_VIEW",       "View Batch / Lot Tracking");
+        names.put("WMS_BATCHES_MANAGE",     "Manage Batches & Lots");
+        names.put("WMS_STOCKCOUNT_VIEW",    "View Stock Counts");
+        names.put("WMS_STOCKCOUNT_MANAGE",  "Conduct Stock Counts");
+        names.put("WMS_LEDGER_VIEW",        "View Stock Ledger");
         if (names.containsKey(permId)) return names.get(permId);
         // Generic fallback
         return permId.replace("_", " ").toLowerCase();

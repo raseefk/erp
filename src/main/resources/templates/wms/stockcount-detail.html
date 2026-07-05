@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Stock Count Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-stockcount')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Stock Count')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="/admin/wms/stockcounts" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+      <button th:if="${count.status.name() == 'IN_PROGRESS' or count.status.name() == 'DRAFT'}"
+              class="btn btn-sm btn-gold" onclick="completeCount()"
+              sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_STOCKCOUNT_MANAGE')">
+        <i class="bi bi-check2-all me-1"></i>Complete &amp; Post Adjustments
+      </button>
+    </div>
+
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-info-circle me-2"></i>Count Details</div>
+          <div class="card-body">
+            <dl class="row small mb-0">
+              <dt class="col-5 text-muted">Number</dt>
+              <dd class="col-7 fw-bold" th:text="${count.countNumber}">-</dd>
+              <dt class="col-5 text-muted">Warehouse</dt>
+              <dd class="col-7" th:text="${count.warehouse?.name}">-</dd>
+              <dt class="col-5 text-muted">Location</dt>
+              <dd class="col-7" th:text="${count.location?.fullAddress ?: 'Full Warehouse'}">-</dd>
+              <dt class="col-5 text-muted">Date</dt>
+              <dd class="col-7" th:text="${count.countDate}">-</dd>
+              <dt class="col-5 text-muted">Status</dt>
+              <dd class="col-7">
+                <span class="badge"
+                      th:classappend="${count.status.name() == 'COMPLETED' ? 'bg-success' :
+                                       count.status.name() == 'IN_PROGRESS' ? 'bg-primary' : 'bg-secondary'}"
+                      th:text="${count.status}">-</span>
+              </dd>
+              <dt class="col-5 text-muted">Adj. Posted</dt>
+              <dd class="col-7">
+                <span class="badge" th:classappend="${count.adjustmentPosted ? 'bg-success' : 'bg-secondary'}"
+                      th:text="${count.adjustmentPosted ? 'Yes' : 'No'}">-</span>
+              </dd>
+              <dt class="col-5 text-muted" th:if="${count.conductedBy}">Conducted By</dt>
+              <dd class="col-7" th:if="${count.conductedBy}" th:text="${count.conductedBy}">-</dd>
+              <dt class="col-5 text-muted" th:if="${count.approvedBy}">Approved By</dt>
+              <dd class="col-7" th:if="${count.approvedBy}" th:text="${count.approvedBy}">-</dd>
+            </dl>
+          </div>
+        </div>
+
+        <!-- Barcode scanner input -->
+        <div class="card card-levanto mt-3"
+             th:if="${count.status.name() != 'COMPLETED' and count.status.name() != 'CANCELLED'}"
+             sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_STOCKCOUNT_MANAGE')">
+          <div class="card-header"><i class="bi bi-qr-code-scan me-2"></i>Quick Entry</div>
+          <div class="card-body">
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Item</label>
+              <select id="qeItemId" class="form-select form-select-sm">
+                <option value="">Select item...</option>
+                <option th:each="i : ${count.items}"
+                        th:value="${i.inventoryItem?.id}"
+                        th:attr="data-loc=${i.location?.id}"
+                        th:text="${i.inventoryItem?.name}">-</option>
+              </select>
+            </div>
+            <div class="mb-2">
+              <label class="form-label small fw-bold">Counted Qty</label>
+              <input type="number" id="qeQty" class="form-control form-control-sm" step="0.001" min="0"/>
+            </div>
+            <button class="btn btn-gold btn-sm w-100" onclick="quickEntry()">
+              <i class="bi bi-check2 me-1"></i>Record Count
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <div class="card card-levanto">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-list-check me-2"></i>Count Sheet (<span th:text="${#lists.size(count.items)}">0</span> items)</span>
+            <span class="small text-muted">
+              <span th:text="${count.items.stream().filter(i -> i.countedQty.compareTo(java.math.BigDecimal.ZERO) > 0).count()}">0</span>
+              / <span th:text="${#lists.size(count.items)}">0</span> counted
+            </span>
+          </div>
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-levanto mb-0">
+                <thead><tr>
+                  <th>Item</th><th>Location</th><th>System Qty</th>
+                  <th>Counted Qty</th><th>Variance</th><th>Scanned</th>
+                </tr></thead>
+                <tbody>
+                  <tr th:each="item : ${count.items}"
+                      th:classappend="${item.varianceQty.compareTo(java.math.BigDecimal.ZERO) != 0 and item.countedQty.compareTo(java.math.BigDecimal.ZERO) > 0} ? 'table-warning' : ''">
+                    <td class="fw-bold small" th:text="${item.inventoryItem?.name}">-</td>
+                    <td class="small" th:text="${item.location?.fullAddress}">-</td>
+                    <td th:text="${item.systemQty}">0</td>
+                    <td>
+                      <span th:if="${item.countedQty.compareTo(java.math.BigDecimal.ZERO) > 0}"
+                            class="badge bg-primary" th:text="${item.countedQty}">0</span>
+                      <span th:if="${item.countedQty.compareTo(java.math.BigDecimal.ZERO) == 0}"
+                            class="text-muted small">Not counted</span>
+                    </td>
+                    <td>
+                      <span th:if="${item.countedQty.compareTo(java.math.BigDecimal.ZERO) > 0}"
+                            class="badge"
+                            th:classappend="${item.varianceQty.compareTo(java.math.BigDecimal.ZERO) > 0} ? 'bg-success' : (${item.varianceQty.compareTo(java.math.BigDecimal.ZERO) < 0} ? 'bg-danger' : 'bg-secondary')"
+                            th:text="${item.varianceQty}">0</span>
+                      <span th:if="${item.countedQty.compareTo(java.math.BigDecimal.ZERO) == 0}"
+                            class="text-muted small">—</span>
+                    </td>
+                    <td>
+                      <i th:if="${item.isScanned}" class="bi bi-check-circle text-success"></i>
+                      <i th:if="${!item.isScanned}" class="bi bi-dash text-muted"></i>
+                    </td>
+                  </tr>
+                  <tr th:if="${#lists.isEmpty(count.items)}">
+                    <td colspan="6" class="text-center py-4 text-muted">No items in this count.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const countId = /*[[${count.id}]]*/ 0;
+
+function quickEntry() {
+  const sel = document.getElementById('qeItemId');
+  const itemId = sel.value;
+  const locId = sel.options[sel.selectedIndex]?.getAttribute('data-loc');
+  const qty = document.getElementById('qeQty').value;
+  if (!itemId || !qty) { showToast('Select item and enter quantity.', 'warning'); return; }
+  const params = new URLSearchParams({ itemId, locationId: locId, countedQty: qty, isScanned: false });
+  fetch('/admin/wms/stockcounts/' + countId + '/record', { method: 'POST', body: params })
+    .then(r => r.json()).then(d => {
+      if (d.success) { showToast('Count recorded!', 'success'); setTimeout(() => location.reload(), 700); }
+      else showToast(d.message, 'danger');
+    });
+}
+
+function completeCount() {
+  if (!confirm('Complete this count and post all adjustments? This cannot be undone.')) return;
+  fetch('/admin/wms/stockcounts/' + countId + '/complete', { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.success) { showToast('Count completed!', 'success'); setTimeout(() => location.reload(), 900); }
+      else showToast(d.message, 'danger');
+    });
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
+  t.style.cssText = 'z-index:9999;min-width:260px;'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

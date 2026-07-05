@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Stock Ledger')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-ledger')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Stock Ledger')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <form th:action="@{/admin/wms/ledger}" method="get" class="d-flex gap-2 mb-3 align-items-end flex-wrap">
+      <div>
+        <label class="form-label fw-bold small">Filter by Item</label>
+        <select name="itemId" class="form-select form-select-sm" style="min-width:220px;"
+                onchange="this.form.submit()">
+          <option value="">All Items</option>
+          <option th:each="it : ${items}" th:value="${it.id}" th:text="${it.name}"
+                  th:selected="${selectedItemId == it.id}">-</option>
+        </select>
+      </div>
+      <a href="/admin/wms/ledger" class="btn btn-sm btn-outline-secondary align-self-end">Clear</a>
+    </form>
+
+    <div class="card card-levanto">
+      <div class="card-header">
+        <i class="bi bi-journal-bookmark me-2"></i>Stock Ledger
+        (<span th:text="${ledgerPage.totalElements}">0</span> entries)
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead><tr>
+              <th>Date</th><th>Txn #</th><th>Item</th><th>Location</th>
+              <th>Type</th><th>Qty</th><th>Unit Cost</th><th>Balance</th><th>Reference</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="entry : ${ledgerPage.content}">
+                <td class="small" th:text="${entry.movementDate}">-</td>
+                <td><code class="small" th:text="${entry.transactionNumber}">-</code></td>
+                <td class="fw-bold small" th:text="${entry.inventoryItem?.name}">-</td>
+                <td class="small text-muted" th:text="${entry.location?.warehouse?.name + '/' + entry.location?.fullAddress}">-</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${entry.movementType.name().contains('IN') or entry.movementType.name() == 'RECEIPT' or entry.movementType.name() == 'OPENING'} ? 'bg-success' : 'bg-danger'"
+                        th:text="${entry.movementType}">-</span>
+                </td>
+                <td class="fw-bold"
+                    th:classappend="${entry.quantity.compareTo(java.math.BigDecimal.ZERO) > 0} ? 'text-success' : 'text-danger'"
+                    th:text="${entry.quantity}">0</td>
+                <td class="small" th:text="${entry.unitCost != null ? '₹' + #numbers.formatDecimal(entry.unitCost, 1, 2) : '—'}">-</td>
+                <td class="small fw-bold" th:text="${entry.balanceQty}">0</td>
+                <td class="small text-muted">
+                  <span th:if="${entry.referenceNumber}" th:text="${entry.referenceType + ' / ' + entry.referenceNumber}">-</span>
+                  <span th:if="${entry.remarks}" class="d-block" th:text="${entry.remarks}">-</span>
+                </td>
+              </tr>
+              <tr th:if="${ledgerPage.totalElements == 0}">
+                <td colspan="9" class="text-center py-5 text-muted">No ledger entries found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <nav th:if="${ledgerPage.totalPages > 1}" class="mt-3">
+      <ul class="pagination pagination-sm justify-content-center">
+        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+          <a class="page-link" th:href="@{/admin/wms/ledger(page=${currentPage-1},itemId=${selectedItemId})}">Prev</a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, ledgerPage.totalPages - 1)}"
+            th:classappend="${i == currentPage} ? 'active'">
+          <a class="page-link" th:href="@{/admin/wms/ledger(page=${i},itemId=${selectedItemId})}" th:text="${i+1}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == ledgerPage.totalPages - 1} ? 'disabled'">
+          <a class="page-link" th:href="@{/admin/wms/ledger(page=${currentPage+1},itemId=${selectedItemId})}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

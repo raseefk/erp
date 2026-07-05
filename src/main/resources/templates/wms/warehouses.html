@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Warehouses')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-warehouses')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Warehouses')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-building me-2"></i>All Warehouses</h6>
+      <a href="/admin/wms/warehouses/new" class="btn btn-sm btn-gold"
+         sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_WAREHOUSES_MANAGE')">
+        <i class="bi bi-plus-lg me-1"></i>New Warehouse
+      </a>
+    </div>
+
+    <div class="row g-3">
+      <div th:each="wh : ${warehouses}" class="col-md-6 col-lg-4">
+        <div class="card card-levanto h-100">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-building me-2"></i><span th:text="${wh.name}">-</span></span>
+            <div class="d-flex gap-1 align-items-center">
+              <span th:if="${wh.isDefault}" class="badge bg-success" style="font-size:.65rem;">Default</span>
+              <span class="badge" th:classappend="${wh.active} ? 'bg-success' : 'bg-secondary'"
+                    th:text="${wh.active ? 'Active' : 'Inactive'}">-</span>
+            </div>
+          </div>
+          <div class="card-body">
+            <div class="small text-muted mb-1"><strong>Code:</strong> <span th:text="${wh.code}">-</span></div>
+            <div class="small text-muted mb-1" th:if="${wh.address}"><strong>Address:</strong> <span th:text="${wh.address}">-</span></div>
+            <div class="small text-muted mb-1" th:if="${wh.managerName}"><strong>Manager:</strong> <span th:text="${wh.managerName}">-</span></div>
+            <div class="small text-muted mb-1"><strong>Costing:</strong> <span class="badge bg-secondary" th:text="${wh.costingMethod}">-</span></div>
+          </div>
+          <div class="card-footer bg-transparent border-top d-flex gap-2 flex-wrap">
+            <a th:href="@{/admin/wms/warehouses/{id}/locations(id=${wh.id})}" class="btn btn-sm btn-navy">
+              <i class="bi bi-geo-alt me-1"></i>Locations
+            </a>
+            <a th:href="@{/admin/wms/stock(warehouseId=${wh.id})}" class="btn btn-sm btn-outline-navy">
+              <i class="bi bi-boxes me-1"></i>Stock
+            </a>
+            <a th:href="@{/admin/wms/warehouses/{id}/edit(id=${wh.id})}" class="btn btn-sm btn-outline-secondary"
+               sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_WAREHOUSES_MANAGE')">
+              <i class="bi bi-pencil"></i>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div th:if="${#lists.isEmpty(warehouses)}" class="col-12">
+        <div class="card card-levanto">
+          <div class="card-body text-center py-5 text-muted">
+            <i class="bi bi-building d-block mb-2" style="font-size:2.5rem;opacity:.25;"></i>
+            No warehouses yet.
+            <a href="/admin/wms/warehouses/new" class="d-block mt-2 btn btn-gold btn-sm"
+               sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_WAREHOUSES_MANAGE')">
+              Create First Warehouse
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
