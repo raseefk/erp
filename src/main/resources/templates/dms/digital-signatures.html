@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:insert="~{fragments/layout :: head('Digital Signatures')}"></head>
 <body>
-<th:block th:insert="~{fragments/layout :: sidebar('dms')}"></th:block>
+<th:block th:insert="~{fragments/layout :: sidebar('dms-signatures')}"></th:block>
 <div id="main">
   <th:block th:insert="~{fragments/layout :: topbar('Digital Signatures')}"></th:block>
   <div class="pb">
@@ -50,21 +50,21 @@
 
     <!-- Toolbar -->
     <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
-      <!-- Status filter tabs -->
       <div class="btn-group" role="group">
         <a th:href="@{/admin/dms/digital-signatures}" class="btn btn-sm"
-           th:classappend="${selectedStatus == null ? 'btn-navy' : 'btn-outline-navy'}">All</a>
+           th:classappend="${selectedStatus == null} ? 'btn-navy' : 'btn-outline-navy'">All</a>
         <a th:href="@{/admin/dms/digital-signatures(status='PENDING')}" class="btn btn-sm"
-           th:classappend="${selectedStatus == 'PENDING' ? 'btn-navy' : 'btn-outline-navy'}">Pending</a>
+           th:classappend="${selectedStatus == 'PENDING'} ? 'btn-navy' : 'btn-outline-navy'">Pending</a>
         <a th:href="@{/admin/dms/digital-signatures(status='SIGNED')}" class="btn btn-sm"
-           th:classappend="${selectedStatus == 'SIGNED' ? 'btn-navy' : 'btn-outline-navy'}">Signed</a>
+           th:classappend="${selectedStatus == 'SIGNED'} ? 'btn-navy' : 'btn-outline-navy'">Signed</a>
         <a th:href="@{/admin/dms/digital-signatures(status='VERIFIED')}" class="btn btn-sm"
-           th:classappend="${selectedStatus == 'VERIFIED' ? 'btn-navy' : 'btn-outline-navy'}">Verified</a>
+           th:classappend="${selectedStatus == 'VERIFIED'} ? 'btn-navy' : 'btn-outline-navy'">Verified</a>
         <a th:href="@{/admin/dms/digital-signatures(status='REJECTED')}" class="btn btn-sm"
-           th:classappend="${selectedStatus == 'REJECTED' ? 'btn-navy' : 'btn-outline-navy'}">Rejected</a>
+           th:classappend="${selectedStatus == 'REJECTED'} ? 'btn-navy' : 'btn-outline-navy'">Rejected</a>
       </div>
-      <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#requestSignatureModal"
-              sec:authorize="hasAuthority('DMS_DIGITAL_SIGNATURE_SIGN')">
+      <button class="btn btn-sm btn-gold"
+              data-bs-toggle="modal" data-bs-target="#requestSignatureModal"
+              sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_DIGITAL_SIGNATURE_SIGN')">
         <i class="bi bi-pen me-1"></i>Request Signature
       </button>
     </div>
@@ -72,8 +72,7 @@
     <!-- Signatures Table -->
     <div class="card card-levanto">
       <div class="card-header d-flex justify-content-between align-items-center">
-        <span><i class="bi bi-pen me-2"></i>Digital Signatures
-          (<span th:text="${signaturePage.totalElements}">0</span>)</span>
+        <span><i class="bi bi-pen me-2"></i>Digital Signatures (<span th:text="${signaturePage.totalElements}">0</span>)</span>
       </div>
       <div class="card-body p-0">
         <div class="table-responsive">
@@ -96,50 +95,53 @@
                 <td>
                   <a th:href="@{/admin/dms/documents/{id}(id=${sig.document.id})}"
                      th:text="${sig.document.title}" class="fw-bold">-</a>
-                  <div class="small text-muted" th:text="'v' + ${sig.document.currentVersion}">-</div>
+                  <div class="small text-muted" th:text="${'v' + sig.document.currentVersion}">-</div>
                 </td>
                 <td>
                   <div class="fw-bold" th:text="${sig.signerName}">-</div>
                   <div class="small text-muted" th:text="${sig.signerEmail}">-</div>
-                  <div class="small text-muted" th:if="${sig.signerDesignation}" th:text="${sig.signerDesignation}">-</div>
+                  <div class="small text-muted" th:if="${sig.signerDesignation != null}" th:text="${sig.signerDesignation}">-</div>
                 </td>
                 <td>
                   <span class="badge bg-secondary" th:text="${sig.signatureType}">-</span>
                 </td>
                 <td>
-                  <span class="badge"
-                        th:classappend="${sig.signatureStatus == 'VERIFIED' ? 'bg-success' :
-                                         (sig.signatureStatus == 'SIGNED'   ? 'bg-primary' :
-                                         (sig.signatureStatus == 'PENDING'  ? 'bg-warning text-dark' : 'bg-danger'))}"
-                        th:text="${sig.signatureStatus}">-</span>
+                  <th:block th:with="st=${sig.signatureStatus}">
+                    <span class="badge"
+                          th:classappend="${st == 'VERIFIED'} ? 'bg-success' : (${st == 'SIGNED'} ? 'bg-primary' : (${st == 'PENDING'} ? 'bg-warning text-dark' : 'bg-danger'))"
+                          th:text="${st}">-</span>
+                  </th:block>
                 </td>
-                <td class="small" th:text="${sig.signedAt != null ? #temporals.format(sig.signedAt,'dd/MM/yy HH:mm') : '—'}">-</td>
-                <td class="small" th:text="${sig.verifiedAt != null ? #temporals.format(sig.verifiedAt,'dd/MM/yy HH:mm') : '—'}">-</td>
+                <td class="small">
+                  <span th:if="${sig.signedAt != null}" th:text="${#temporals.format(sig.signedAt,'dd/MM/yy HH:mm')}">-</span>
+                  <span th:if="${sig.signedAt == null}" class="text-muted">—</span>
+                </td>
+                <td class="small">
+                  <span th:if="${sig.verifiedAt != null}" th:text="${#temporals.format(sig.verifiedAt,'dd/MM/yy HH:mm')}">-</span>
+                  <span th:if="${sig.verifiedAt == null}" class="text-muted">—</span>
+                </td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a th:href="@{/admin/dms/digital-signatures/{id}(id=${sig.id})}"
-                       class="btn btn-outline-navy" title="View Detail">
+                       class="btn btn-outline-navy" title="View">
                       <i class="bi bi-eye"></i>
                     </a>
-                    <!-- Sign button: only for PENDING signatures -->
                     <button th:if="${sig.signatureStatus == 'PENDING'}"
                             class="btn btn-outline-primary" title="Sign"
-                            th:attr="onclick='openSignModal(' + ${sig.id} + ')'"
-                            sec:authorize="hasAuthority('DMS_DIGITAL_SIGNATURE_SIGN')">
+                            th:onclick="|openSignModal(${sig.id})|"
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_DIGITAL_SIGNATURE_SIGN')">
                       <i class="bi bi-pen"></i>
                     </button>
-                    <!-- Verify button: only for SIGNED signatures -->
                     <button th:if="${sig.signatureStatus == 'SIGNED'}"
                             class="btn btn-outline-success" title="Verify"
-                            th:attr="onclick='verifySignature(' + ${sig.id} + ')'"
-                            sec:authorize="hasAuthority('DMS_DIGITAL_SIGNATURE_VERIFY')">
+                            th:onclick="|verifySignature(${sig.id})|"
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_DIGITAL_SIGNATURE_VERIFY')">
                       <i class="bi bi-shield-check"></i>
                     </button>
-                    <!-- Reject button -->
                     <button th:if="${sig.signatureStatus == 'SIGNED' or sig.signatureStatus == 'PENDING'}"
                             class="btn btn-outline-danger" title="Reject"
-                            th:attr="onclick='rejectSignature(' + ${sig.id} + ')'"
-                            sec:authorize="hasAuthority('DMS_DIGITAL_SIGNATURE_VERIFY')">
+                            th:onclick="|rejectSignature(${sig.id})|"
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_DIGITAL_SIGNATURE_VERIFY')">
                       <i class="bi bi-x-circle"></i>
                     </button>
                   </div>
@@ -147,7 +149,7 @@
               </tr>
               <tr th:if="${signaturePage.totalElements == 0}">
                 <td colspan="8" class="text-center py-5 text-muted">
-                  <i class="bi bi-pen display-6 d-block mb-2 opacity-25"></i>
+                  <i class="bi bi-pen d-block mb-2" style="font-size:2rem;opacity:.25;"></i>
                   No signatures found.
                 </td>
               </tr>
@@ -160,22 +162,26 @@
     <!-- Pagination -->
     <nav th:if="${signaturePage.totalPages > 1}" class="mt-3">
       <ul class="pagination pagination-sm justify-content-center">
-        <li class="page-item" th:classappend="${currentPage == 0 ? 'disabled' : ''}">
+        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
           <a class="page-link" th:href="@{/admin/dms/digital-signatures(page=${currentPage - 1},status=${selectedStatus})}">Prev</a>
         </li>
-        <li class="page-item" th:each="i : ${#numbers.sequence(0, signaturePage.totalPages - 1)}"
-            th:classappend="${i == currentPage ? 'active' : ''}">
-          <a class="page-link" th:href="@{/admin/dms/digital-signatures(page=${i},status=${selectedStatus})}" th:text="${i + 1}">1</a>
+        <li class="page-item"
+            th:each="i : ${#numbers.sequence(0, signaturePage.totalPages - 1)}"
+            th:classappend="${i == currentPage} ? 'active'">
+          <a class="page-link"
+             th:href="@{/admin/dms/digital-signatures(page=${i},status=${selectedStatus})}"
+             th:text="${i + 1}">1</a>
         </li>
-        <li class="page-item" th:classappend="${currentPage == signaturePage.totalPages - 1 ? 'disabled' : ''}">
+        <li class="page-item" th:classappend="${currentPage == signaturePage.totalPages - 1} ? 'disabled'">
           <a class="page-link" th:href="@{/admin/dms/digital-signatures(page=${currentPage + 1},status=${selectedStatus})}">Next</a>
         </li>
       </ul>
     </nav>
+
   </div>
 </div>
 
-<!-- ── Request Signature Modal ───────────────────────────────────────────── -->
+<!-- Request Signature Modal -->
 <div class="modal fade" id="requestSignatureModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -185,10 +191,10 @@
       </div>
       <div class="modal-body">
         <div class="row g-3">
-          <div class="col-md-12">
+          <div class="col-12">
             <label class="form-label fw-bold">Document *</label>
             <select id="reqDocumentId" class="form-select">
-              <option value="">Select a document…</option>
+              <option value="">Select a document...</option>
               <option th:each="doc : ${documents}"
                       th:value="${doc.id}"
                       th:text="${doc.title + ' (v' + doc.currentVersion + ')'}">-</option>
@@ -214,9 +220,9 @@
               <option value="BIOMETRIC">Biometric</option>
             </select>
           </div>
-          <div class="col-md-12">
+          <div class="col-12">
             <label class="form-label fw-bold">Purpose / Instructions</label>
-            <textarea id="reqPurpose" class="form-control" rows="2" placeholder="Why this document needs to be signed…"></textarea>
+            <textarea id="reqPurpose" class="form-control" rows="2" placeholder="Why this document needs to be signed..."></textarea>
           </div>
         </div>
       </div>
@@ -230,7 +236,7 @@
   </div>
 </div>
 
-<!-- ── Sign Modal (draws/captures signature) ─────────────────────────────── -->
+<!-- Sign Modal -->
 <div class="modal fade" id="signModal" tabindex="-1">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
@@ -242,20 +248,20 @@
         <div class="mb-3">
           <label class="form-label fw-bold">Draw Your Signature</label>
           <div class="border rounded" style="background:#f8fafc;">
-            <canvas id="signaturePad" width="700" height="180" style="width:100%;touch-action:none;cursor:crosshair;"></canvas>
+            <canvas id="signaturePad" width="700" height="180"
+                    style="width:100%;touch-action:none;cursor:crosshair;display:block;"></canvas>
           </div>
-          <div class="d-flex gap-2 mt-2">
+          <div class="mt-2">
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearSignaturePad()">
               <i class="bi bi-eraser me-1"></i>Clear
             </button>
           </div>
         </div>
-        <div class="mb-0">
-          <label class="form-label fw-bold small">I confirm that I am signing this document voluntarily and this represents my digital signature.</label>
-          <div class="form-check">
-            <input type="checkbox" class="form-check-input" id="signConfirm"/>
-            <label class="form-check-label small" for="signConfirm">I agree to sign this document electronically.</label>
-          </div>
+        <div class="form-check">
+          <input type="checkbox" class="form-check-input" id="signConfirm"/>
+          <label class="form-check-label small" for="signConfirm">
+            I agree to sign this document electronically. This represents my digital signature.
+          </label>
         </div>
       </div>
       <div class="modal-footer">
@@ -268,17 +274,18 @@
   </div>
 </div>
 
-<!-- ── Reject Modal ──────────────────────────────────────────────────────── -->
+<!-- Reject Modal -->
 <div class="modal fade" id="rejectModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title"><i class="bi bi-x-circle me-2 text-danger"></i>Reject Signature</h5>
+        <h5 class="modal-title text-danger"><i class="bi bi-x-circle me-2"></i>Reject Signature</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
       </div>
       <div class="modal-body">
         <label class="form-label fw-bold">Reason for Rejection *</label>
-        <textarea id="rejectReason" class="form-control" rows="3" placeholder="Explain why this signature is being rejected…"></textarea>
+        <textarea id="rejectReason" class="form-control" rows="3"
+                  placeholder="Explain why this signature is being rejected..."></textarea>
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -295,90 +302,86 @@
 let currentSignatureId = null;
 let isDrawing = false;
 let lastX = 0, lastY = 0;
+let canvas, ctx;
 
-// ── Signature pad setup ─────────────────────────────────────────────────────
-const canvas = document.getElementById('signaturePad');
-const ctx = canvas.getContext('2d');
-ctx.strokeStyle = '#1a3a5c';
-ctx.lineWidth = 2;
-ctx.lineCap = 'round';
-ctx.lineJoin = 'round';
+// Init canvas when Sign modal opens
+document.getElementById('signModal').addEventListener('shown.bs.modal', function () {
+  canvas = document.getElementById('signaturePad');
+  ctx = canvas.getContext('2d');
+  ctx.strokeStyle = '#1a3a5c';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+  bindCanvasEvents();
+});
+
+function bindCanvasEvents() {
+  canvas.onmousedown  = e => { isDrawing = true;  const p = getPos(e); lastX = p.x; lastY = p.y; };
+  canvas.onmousemove  = e => { if (!isDrawing) return; draw(getPos(e)); };
+  canvas.onmouseup    = () => isDrawing = false;
+  canvas.onmouseleave = () => isDrawing = false;
+  canvas.ontouchstart = e => { e.preventDefault(); isDrawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; };
+  canvas.ontouchmove  = e => { e.preventDefault(); if (!isDrawing) return; draw(getPos(e)); };
+  canvas.ontouchend   = () => isDrawing = false;
+}
 
 function getPos(e) {
   const rect = canvas.getBoundingClientRect();
-  const scaleX = canvas.width / rect.width;
-  const scaleY = canvas.height / rect.height;
-  if (e.touches) {
-    return { x: (e.touches[0].clientX - rect.left) * scaleX, y: (e.touches[0].clientY - rect.top) * scaleY };
-  }
-  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+  const sx = canvas.width / rect.width;
+  const sy = canvas.height / rect.height;
+  const src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - rect.left) * sx, y: (src.clientY - rect.top) * sy };
 }
 
-canvas.addEventListener('mousedown', e => { isDrawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; });
-canvas.addEventListener('mousemove', e => {
-  if (!isDrawing) return;
-  const p = getPos(e);
-  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
+function draw(p) {
+  ctx.beginPath();
+  ctx.moveTo(lastX, lastY);
+  ctx.lineTo(p.x, p.y);
+  ctx.stroke();
   lastX = p.x; lastY = p.y;
-});
-canvas.addEventListener('mouseup', () => isDrawing = false);
-canvas.addEventListener('mouseleave', () => isDrawing = false);
-canvas.addEventListener('touchstart', e => { e.preventDefault(); isDrawing = true; const p = getPos(e); lastX = p.x; lastY = p.y; });
-canvas.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (!isDrawing) return;
-  const p = getPos(e);
-  ctx.beginPath(); ctx.moveTo(lastX, lastY); ctx.lineTo(p.x, p.y); ctx.stroke();
-  lastX = p.x; lastY = p.y;
-});
-canvas.addEventListener('touchend', () => isDrawing = false);
+}
 
 function clearSignaturePad() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
 }
 
 function isCanvasBlank() {
+  if (!ctx) return true;
   const data = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-  for (let i = 0; i < data.length; i += 4) { if (data[i + 3] !== 0) return false; }
+  for (let i = 3; i < data.length; i += 4) { if (data[i] !== 0) return false; }
   return true;
 }
 
-// ── Open sign modal ─────────────────────────────────────────────────────────
 function openSignModal(sigId) {
   currentSignatureId = sigId;
-  clearSignaturePad();
-  document.getElementById('signConfirm').checked = false;
-  const modal = new bootstrap.Modal(document.getElementById('signModal'));
-  modal.show();
+  const el = document.getElementById('signConfirm');
+  if (el) el.checked = false;
+  new bootstrap.Modal(document.getElementById('signModal')).show();
 }
 
-// ── Submit signature ────────────────────────────────────────────────────────
 function submitSign() {
   if (isCanvasBlank()) { showToast('Please draw your signature first.', 'warning'); return; }
   if (!document.getElementById('signConfirm').checked) { showToast('Please confirm your agreement.', 'warning'); return; }
-  const signatureData = canvas.toDataURL('image/png');
   fetch('/admin/dms/digital-signatures/' + currentSignatureId + '/sign', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ signatureData: signatureData, geoLocation: '' })
+    body: JSON.stringify({ signatureData: canvas.toDataURL('image/png'), geoLocation: '' })
   }).then(r => r.json()).then(d => {
     bootstrap.Modal.getInstance(document.getElementById('signModal')).hide();
     if (d.success) { showToast('Document signed successfully!', 'success'); setTimeout(() => location.reload(), 1000); }
-    else showToast(d.message, 'danger');
-  });
+    else showToast(d.message || 'Error signing document.', 'danger');
+  }).catch(() => showToast('Network error.', 'danger'));
 }
 
-// ── Verify signature ────────────────────────────────────────────────────────
 function verifySignature(sigId) {
-  if (!confirm('Verify this signature? This will check document integrity.')) return;
+  if (!confirm('Verify this signature? This checks document integrity.')) return;
   fetch('/admin/dms/digital-signatures/' + sigId + '/verify', { method: 'POST' })
     .then(r => r.json()).then(d => {
       if (d.success) { showToast('Signature verified!', 'success'); setTimeout(() => location.reload(), 1000); }
-      else showToast(d.message, 'danger');
-    });
+      else showToast(d.message || 'Verification failed.', 'danger');
+    }).catch(() => showToast('Network error.', 'danger'));
 }
 
-// ── Reject signature ─────────────────────────────────────────────────────────
 function rejectSignature(sigId) {
   currentSignatureId = sigId;
   document.getElementById('rejectReason').value = '';
@@ -392,16 +395,15 @@ function submitReject() {
     .then(r => r.json()).then(d => {
       bootstrap.Modal.getInstance(document.getElementById('rejectModal')).hide();
       if (d.success) { showToast('Signature rejected.', 'success'); setTimeout(() => location.reload(), 1000); }
-      else showToast(d.message, 'danger');
-    });
+      else showToast(d.message || 'Error.', 'danger');
+    }).catch(() => showToast('Network error.', 'danger'));
 }
 
-// ── Request new signature ────────────────────────────────────────────────────
 function submitSignatureRequest() {
-  const docId = document.getElementById('reqDocumentId').value;
-  const name = document.getElementById('reqSignerName').value.trim();
-  const email = document.getElementById('reqSignerEmail').value.trim();
-  if (!docId || !name || !email) { showToast('Document, signer name and email are required.', 'warning'); return; }
+  const docId   = document.getElementById('reqDocumentId').value;
+  const name    = document.getElementById('reqSignerName').value.trim();
+  const email   = document.getElementById('reqSignerEmail').value.trim();
+  if (!docId || !name || !email) { showToast('Document, name and email are required.', 'warning'); return; }
   const payload = {
     document: { id: parseInt(docId) },
     signerName: name,
@@ -417,14 +419,13 @@ function submitSignatureRequest() {
   }).then(r => r.json()).then(d => {
     bootstrap.Modal.getInstance(document.getElementById('requestSignatureModal')).hide();
     if (d.success) { showToast('Signature request created!', 'success'); setTimeout(() => location.reload(), 1000); }
-    else showToast(d.message, 'danger');
-  });
+    else showToast(d.message || 'Error.', 'danger');
+  }).catch(() => showToast('Network error.', 'danger'));
 }
 
-// ── Toast utility ────────────────────────────────────────────────────────────
-function showToast(msg, type = 'success') {
+function showToast(msg, type) {
   const t = document.createElement('div');
-  t.className = `alert alert-${type} position-fixed top-0 end-0 m-3 shadow`;
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
   t.style.cssText = 'z-index:9999;min-width:260px;';
   t.textContent = msg;
   document.body.appendChild(t);

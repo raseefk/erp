@@ -248,6 +248,7 @@ public class DocumentManagementController {
 
     @GetMapping("/digital-signatures")
     @RequiresPermission(Permissions.DMS_DIGITAL_SIGNATURE_VIEW)
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public String digitalSignatures(@RequestParam(defaultValue = "0") int page,
                                     @RequestParam(defaultValue = "20") int size,
                                     @RequestParam(required = false) String status,
@@ -267,6 +268,7 @@ public class DocumentManagementController {
 
     @GetMapping("/digital-signatures/{id}")
     @RequiresPermission(Permissions.DMS_DIGITAL_SIGNATURE_VIEW)
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public String viewSignature(@PathVariable Long id, Model model) {
         var signature = signatureService.getSignatureById(id)
             .orElseThrow(() -> new IllegalArgumentException("Signature not found: " + id));
@@ -346,13 +348,13 @@ public class DocumentManagementController {
 
     @GetMapping("/expiry-alerts")
     @RequiresPermission(Permissions.DMS_EXPIRY_ALERTS_VIEW)
+    @org.springframework.transaction.annotation.Transactional(readOnly = true)
     public String expiryAlerts(@RequestParam(defaultValue = "0") int page,
                                @RequestParam(defaultValue = "20") int size,
                                @RequestParam(required = false) String status,
                                Model model) {
         var pageable = PageRequest.of(page, size);
-        model.addAttribute("alertPage",
-            alertService.getAllAlerts(pageable));
+        model.addAttribute("alertPage", alertService.getAllAlerts(pageable));
         model.addAttribute("stats", alertService.getAlertStatistics());
         model.addAttribute("upcoming30", alertService.getUpcomingExpiries(30));
         model.addAttribute("upcoming7", alertService.getUpcomingExpiries(7));

@@ -187,7 +187,6 @@ public class DigitalSignatureService {
     public List<DigitalSignature> getSignaturesForUser(String email) {
         return signatureRepo.findActiveSignaturesByEmail(email);
     }
-
     /**
      * Check if document has at least requiredSignatures signed signatures
      */

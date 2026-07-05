@@ -2,7 +2,7 @@
 <html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:insert="~{fragments/layout :: head('Expiry Alerts')}"></head>
 <body>
-<th:block th:insert="~{fragments/layout :: sidebar('dms')}"></th:block>
+<th:block th:insert="~{fragments/layout :: sidebar('dms-expiry-alerts')}"></th:block>
 <div id="main">
   <th:block th:insert="~{fragments/layout :: topbar('Document Expiry Alerts')}"></th:block>
   <div class="pb">
@@ -97,7 +97,7 @@
     <div class="d-flex justify-content-between align-items-center mb-3 gap-2 flex-wrap">
       <h6 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>All Expiry Alerts</h6>
       <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#createAlertModal"
-              sec:authorize="hasAuthority('DMS_EXPIRY_ALERTS_MANAGE')">
+              sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_EXPIRY_ALERTS_MANAGE')">
         <i class="bi bi-plus-circle me-1"></i>New Alert
       </button>
     </div>
@@ -150,18 +150,18 @@
                     <button th:if="${alert.alertStatus == 'PENDING' or alert.alertStatus == 'SENT'}"
                             class="btn btn-outline-primary" title="Acknowledge"
                             th:attr="onclick='acknowledgeAlert(' + ${alert.id} + ')'"
-                            sec:authorize="hasAuthority('DMS_EXPIRY_ALERTS_MANAGE')">
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_EXPIRY_ALERTS_MANAGE')">
                       <i class="bi bi-check2"></i>
                     </button>
                     <button th:if="${alert.alertStatus != 'RESOLVED'}"
                             class="btn btn-outline-success" title="Resolve"
                             th:attr="onclick='openResolveModal(' + ${alert.id} + ')'"
-                            sec:authorize="hasAuthority('DMS_EXPIRY_ALERTS_MANAGE')">
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_EXPIRY_ALERTS_MANAGE')">
                       <i class="bi bi-shield-check"></i>
                     </button>
                     <button class="btn btn-outline-danger" title="Delete"
                             th:attr="onclick='deleteAlert(' + ${alert.id} + ')'"
-                            sec:authorize="hasAuthority('DMS_EXPIRY_ALERTS_MANAGE')">
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_DMS_EXPIRY_ALERTS_MANAGE')">
                       <i class="bi bi-trash"></i>
                     </button>
                   </div>
