@@ -41,6 +41,42 @@ CREATE TABLE IF NOT EXISTS warehouse_locations (
     CONSTRAINT uk_location_barcode UNIQUE(tenant_id, warehouse_id, barcode)
 );
 
+-- ── GOODS RECEIPT NOTES ───────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS goods_receipt_notes (
+    id                   BIGSERIAL PRIMARY KEY,
+    tenant_id            UUID NOT NULL REFERENCES tenants(id),
+    grn_number           VARCHAR(50) NOT NULL,
+    purchase_order_id    BIGINT NOT NULL REFERENCES purchase_orders(id),
+    status               VARCHAR(30) NOT NULL DEFAULT 'DRAFT',
+    received_date        DATE,
+    received_by          VARCHAR(200),
+    delivery_challan_no  VARCHAR(100),
+    vehicle_number       VARCHAR(50),
+    remarks              TEXT,
+    total_received_value NUMERIC(14,2) NOT NULL DEFAULT 0,
+    created_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at           TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uk_grn_number UNIQUE(tenant_id, grn_number)
+);
+
+-- ── GRN ITEMS ─────────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS grn_items (
+    id                   BIGSERIAL PRIMARY KEY,
+    tenant_id            UUID NOT NULL REFERENCES tenants(id),
+    grn_id               BIGINT NOT NULL REFERENCES goods_receipt_notes(id) ON DELETE CASCADE,
+    po_item_id           BIGINT REFERENCES purchase_order_items(id),
+    inventory_item_id    BIGINT REFERENCES inventory_items(id),
+    description          VARCHAR(300) NOT NULL,
+    ordered_quantity     NUMERIC(12,3) NOT NULL DEFAULT 0,
+    received_quantity    NUMERIC(12,3) NOT NULL DEFAULT 0,
+    accepted_quantity    NUMERIC(12,3) NOT NULL DEFAULT 0,
+    rejected_quantity    NUMERIC(12,3) NOT NULL DEFAULT 0,
+    unit                 VARCHAR(20),
+    unit_price           NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total_value          NUMERIC(14,2) NOT NULL DEFAULT 0,
+    rejection_reason     TEXT
+);
+
 -- ── BATCH LOTS ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS batch_lots (
     id                   BIGSERIAL PRIMARY KEY,
@@ -187,3 +223,5 @@ CREATE INDEX IF NOT EXISTS idx_stock_transfers_tenant  ON stock_transfers(tenant
 CREATE INDEX IF NOT EXISTS idx_stock_trf_items_tenant  ON stock_transfer_items(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_stock_counts_tenant     ON stock_counts(tenant_id);
 CREATE INDEX IF NOT EXISTS idx_stock_count_items_tenant ON stock_count_items(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_grn_tenant              ON goods_receipt_notes(tenant_id);
+CREATE INDEX IF NOT EXISTS idx_grn_items_tenant        ON grn_items(tenant_id);
