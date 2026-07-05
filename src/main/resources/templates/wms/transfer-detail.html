@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Transfer Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-transfers')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Transfer Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <a href="/admin/wms/transfers" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+      <div class="btn-group btn-group-sm"
+           sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_TRANSFERS_MANAGE')">
+        <button th:if="${transfer.status.name() == 'DRAFT'}"
+                class="btn btn-primary" th:onclick="|doAction('submit')|">
+          <i class="bi bi-send me-1"></i>Submit
+        </button>
+        <button th:if="${transfer.status.name() == 'SUBMITTED'}"
+                class="btn btn-warning text-dark" th:onclick="|doAction('dispatch')|">
+          <i class="bi bi-truck me-1"></i>Dispatch
+        </button>
+        <button th:if="${transfer.status.name() == 'IN_TRANSIT'}"
+                class="btn btn-success" th:onclick="|doAction('receive')|">
+          <i class="bi bi-box-seam me-1"></i>Receive
+        </button>
+        <button th:if="${transfer.status.name() != 'RECEIVED' and transfer.status.name() != 'CANCELLED'}"
+                class="btn btn-outline-danger" th:onclick="|doAction('cancel')|">
+          <i class="bi bi-x-circle me-1"></i>Cancel
+        </button>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <div class="col-md-4">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-info-circle me-2"></i>Transfer Info</div>
+          <div class="card-body">
+            <dl class="row small mb-0">
+              <dt class="col-5 text-muted">Number</dt>
+              <dd class="col-7 fw-bold" th:text="${transfer.transferNumber}">-</dd>
+              <dt class="col-5 text-muted">Status</dt>
+              <dd class="col-7">
+                <span class="badge"
+                      th:classappend="${transfer.status.name() == 'RECEIVED' ? 'bg-success' :
+                                       transfer.status.name() == 'IN_TRANSIT' ? 'bg-primary' :
+                                       transfer.status.name() == 'SUBMITTED' ? 'bg-info text-dark' :
+                                       transfer.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"
+                      th:text="${transfer.status}">-</span>
+              </dd>
+              <dt class="col-5 text-muted">From</dt>
+              <dd class="col-7" th:text="${transfer.fromLocation?.warehouse?.name + ' / ' + transfer.fromLocation?.fullAddress}">-</dd>
+              <dt class="col-5 text-muted">To</dt>
+              <dd class="col-7" th:text="${transfer.toLocation?.warehouse?.name + ' / ' + transfer.toLocation?.fullAddress}">-</dd>
+              <dt class="col-5 text-muted">Transfer Date</dt>
+              <dd class="col-7" th:text="${transfer.transferDate ?: '—'}">-</dd>
+              <dt class="col-5 text-muted">Expected</dt>
+              <dd class="col-7" th:text="${transfer.expectedArrivalDate ?: '—'}">-</dd>
+              <dt class="col-5 text-muted">Received Date</dt>
+              <dd class="col-7" th:text="${transfer.receivedDate ?: '—'}">-</dd>
+              <dt class="col-5 text-muted">Created By</dt>
+              <dd class="col-7" th:text="${transfer.createdBy ?: '—'}">-</dd>
+              <dt class="col-5 text-muted">Received By</dt>
+              <dd class="col-7" th:text="${transfer.receivedBy ?: '—'}">-</dd>
+              <dt class="col-5 text-muted" th:if="${transfer.remarks}">Remarks</dt>
+              <dd class="col-7" th:if="${transfer.remarks}" th:text="${transfer.remarks}">-</dd>
+            </dl>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-8">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-list-check me-2"></i>Items</div>
+          <div class="card-body p-0">
+            <table class="table table-levanto mb-0">
+              <thead><tr>
+                <th>Item</th><th>Requested</th><th>Transferred</th><th>Received</th><th>Unit</th>
+              </tr></thead>
+              <tbody>
+                <tr th:each="item : ${transfer.items}">
+                  <td class="fw-bold small" th:text="${item.inventoryItem?.name}">-</td>
+                  <td th:text="${item.requestedQty}">0</td>
+                  <td th:text="${item.transferredQty}">0</td>
+                  <td th:text="${item.receivedQty}">0</td>
+                  <td class="small text-muted" th:text="${item.unit ?: '-'}">-</td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(transfer.items)}">
+                  <td colspan="5" class="text-muted text-center py-3">No items.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const transferId = /*[[${transfer.id}]]*/ 0;
+
+function doAction(action) {
+  const labels = { submit: 'Submit this transfer?', dispatch: 'Dispatch? This will deduct stock from source.',
+                   receive: 'Mark as received? This will add stock at destination.',
+                   cancel: 'Cancel this transfer?' };
+  if (!confirm(labels[action] || 'Continue?')) return;
+  fetch('/admin/wms/transfers/' + transferId + '/' + action, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.success) { showToast(d.message, 'success'); setTimeout(() => location.reload(), 900); }
+      else showToast(d.message, 'danger');
+    });
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
+  t.style.cssText = 'z-index:9999;min-width:260px;'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Batch / Lot Tracking')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-batches')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Batch / Lot Tracking')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <!-- Expiring soon alert -->
+    <div th:if="${not #lists.isEmpty(expiringBatches)}" class="alert alert-levanto mb-3">
+      <i class="bi bi-clock-history me-2" style="color:#d97706;"></i>
+      <strong>Expiring within 30 days:</strong>
+      <span th:each="bl, idx : ${expiringBatches}">
+        <strong th:text="${bl.batchNumber}">-</strong> (<span th:text="${bl.inventoryItem?.name}">-</span>
+        — <span th:text="${bl.expiryDate}">-</span>)<span th:if="${!idx.last}">, </span>
+      </span>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <!-- Filter by item -->
+      <form th:action="@{/admin/wms/batches}" method="get" class="d-flex gap-2 align-items-end">
+        <div>
+          <label class="form-label fw-bold small mb-1">Filter by Item</label>
+          <select name="itemId" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:200px;">
+            <option value="">All Items</option>
+            <option th:each="it : ${items}" th:value="${it.id}" th:text="${it.name}"
+                    th:selected="${selectedItemId == it.id}">-</option>
+          </select>
+        </div>
+      </form>
+      <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#addBatchModal"
+              sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_BATCHES_MANAGE')">
+        <i class="bi bi-plus-lg me-1"></i>New Batch/Lot
+      </button>
+    </div>
+
+    <div class="card card-levanto">
+      <div class="card-header"><i class="bi bi-layers me-2"></i>Batch / Lot Records</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead><tr>
+              <th>Batch #</th><th>Item</th><th>Lot #</th>
+              <th>Qty Received</th><th>Qty Available</th>
+              <th>Manufacture</th><th>Expiry</th><th>Unit Cost</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="bl : ${batchList != null ? batchList : (batchPage != null ? batchPage.content : #lists.emptyList())}">
+                <td class="fw-bold small" th:text="${bl.batchNumber}">-</td>
+                <td class="small" th:text="${bl.inventoryItem?.name}">-</td>
+                <td class="small text-muted" th:text="${bl.lotNumber ?: '—'}">-</td>
+                <td th:text="${bl.quantityReceived}">0</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${bl.quantityAvailable.compareTo(java.math.BigDecimal.ZERO) == 0} ? 'bg-secondary' : 'bg-success'"
+                        th:text="${bl.quantityAvailable}">0</span>
+                </td>
+                <td class="small" th:text="${bl.manufactureDate ?: '—'}">-</td>
+                <td>
+                  <span th:if="${bl.expiryDate == null}" class="text-muted small">—</span>
+                  <span th:if="${bl.expiryDate != null}" class="badge"
+                        th:with="dl=${#temporals.daysBetween(#temporals.createToday(), bl.expiryDate)}"
+                        th:classappend="${dl <= 0} ? 'bg-danger' : (${dl <= 30} ? 'bg-warning text-dark' : 'bg-success')"
+                        th:text="${bl.expiryDate}">-</span>
+                </td>
+                <td class="small" th:text="${'₹' + #numbers.formatDecimal(bl.unitCost, 1, 2)}">0</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-navy" title="Show QR"
+                          th:onclick="|showBatchQr(${bl.id})|">
+                    <i class="bi bi-qr-code"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr th:if="${(batchList == null or #lists.isEmpty(batchList)) and (batchPage == null or batchPage.totalElements == 0)}">
+                <td colspan="9" class="text-center py-5 text-muted">No batch/lot records found.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination (when showing all) -->
+    <nav th:if="${batchPage != null and batchPage.totalPages > 1}" class="mt-3">
+      <ul class="pagination pagination-sm justify-content-center">
+        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+          <a class="page-link" th:href="@{/admin/wms/batches(page=${currentPage-1})}">Prev</a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, batchPage.totalPages - 1)}"
+            th:classappend="${i == currentPage} ? 'active'">
+          <a class="page-link" th:href="@{/admin/wms/batches(page=${i})}" th:text="${i+1}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == batchPage.totalPages - 1} ? 'disabled'">
+          <a class="page-link" th:href="@{/admin/wms/batches(page=${currentPage+1})}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<!-- Add Batch Modal -->
+<div class="modal fade" id="addBatchModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-layers me-2"></i>New Batch / Lot</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Item *</label>
+            <select id="blItemId" class="form-select">
+              <option value="">Select item...</option>
+              <option th:each="it : ${items}" th:value="${it.id}" th:text="${it.name}">-</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Batch Number *</label>
+            <input type="text" id="blBatchNo" class="form-control" placeholder="e.g. BATCH-2024-001"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Lot Number</label>
+            <input type="text" id="blLotNo" class="form-control" placeholder="Optional"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Serial Number</label>
+            <input type="text" id="blSerialNo" class="form-control" placeholder="For serialised items"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Manufacture Date</label>
+            <input type="date" id="blMfgDate" class="form-control"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Expiry Date</label>
+            <input type="date" id="blExpDate" class="form-control"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Received Date</label>
+            <input type="date" id="blRcvDate" class="form-control"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Qty Received *</label>
+            <input type="number" id="blQtyReceived" class="form-control" step="0.001" min="0.001" placeholder="0"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Unit Cost (₹)</label>
+            <input type="number" id="blUnitCost" class="form-control" step="0.0001" min="0" placeholder="0.00"/>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Supplier Batch Ref</label>
+            <input type="text" id="blSupplierRef" class="form-control" placeholder="Vendor's batch code"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="saveBatch()">
+          <i class="bi bi-save me-1"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+  <div class="modal-dialog modal-sm text-center">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Batch QR Code</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><img id="qrImg" src="" class="img-fluid" alt="QR"/></div>
+      <div class="modal-footer justify-content-center">
+        <a id="qrDl" download="batch-qr.png" class="btn btn-gold btn-sm"><i class="bi bi-download me-1"></i>Download</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function saveBatch() {
+  const itemId = document.getElementById('blItemId').value;
+  const batchNo = document.getElementById('blBatchNo').value.trim();
+  const qtyReceived = document.getElementById('blQtyReceived').value;
+  if (!itemId || !batchNo || !qtyReceived) { showToast('Item, Batch # and Qty are required.', 'warning'); return; }
+  const payload = {
+    inventoryItem: { id: parseInt(itemId) },
+    batchNumber: batchNo,
+    lotNumber: document.getElementById('blLotNo').value.trim() || null,
+    serialNumber: document.getElementById('blSerialNo').value.trim() || null,
+    manufactureDate: document.getElementById('blMfgDate').value || null,
+    expiryDate: document.getElementById('blExpDate').value || null,
+    receivedDate: document.getElementById('blRcvDate').value || null,
+    quantityReceived: parseFloat(qtyReceived),
+    quantityAvailable: parseFloat(qtyReceived),
+    unitCost: parseFloat(document.getElementById('blUnitCost').value || '0'),
+    supplierBatchRef: document.getElementById('blSupplierRef').value.trim() || null
+  };
+  fetch('/admin/wms/batches/save', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(r => r.json()).then(d => {
+    bootstrap.Modal.getInstance(document.getElementById('addBatchModal')).hide();
+    if (d.success) { showToast('Batch saved!', 'success'); setTimeout(() => location.reload(), 800); }
+    else showToast(d.message, 'danger');
+  });
+}
+
+function showBatchQr(id) {
+  fetch('/admin/wms/batches/' + id + '/qr').then(r => r.json()).then(d => {
+    if (d.success) {
+      document.getElementById('qrImg').src = d.data;
+      document.getElementById('qrDl').href = d.data;
+      new bootstrap.Modal(document.getElementById('qrModal')).show();
+    } else showToast(d.message, 'danger');
+  });
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
+  t.style.cssText = 'z-index:9999;min-width:260px;'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

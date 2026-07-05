@@ -102,4 +102,10 @@ public class ScmService {
     public PurchaseOrderItem getLatestPrice(Long itemId) {
         return poiRepo.findLatestReceivedPrice(itemId).orElse(null);
     }
+
+    /** Returns all POs in ORDERED or RECEIVED status for GRN/Invoice linkage */
+    public java.util.List<PurchaseOrder> getAllOrderedPos() {
+        return poRepo.findByStatusInOrderByOrderDateDesc(
+                java.util.List.of(PurchaseOrderStatus.ORDERED, PurchaseOrderStatus.RECEIVED));
+    }
 }

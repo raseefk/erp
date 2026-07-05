@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Vendor Scorecard')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('vendor-scorecard')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Vendor Scorecard')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <!-- Add Rating Button -->
+      <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#rateVendorModal">
+          <i class="bi bi-star-half me-1"></i>Add Rating
+        </button>
+      </div>
+      <!-- Scorecard Summary -->
+      <div class="card card-levanto mb-3">
+        <div class="card-header"><i class="bi bi-bar-chart me-2"></i>Vendor Performance Summary</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-levanto mb-0">
+              <thead><tr>
+                <th>Vendor</th><th class="text-center">Avg Score</th>
+                <th class="text-center">Ratings</th><th>Performance</th>
+              </tr></thead>
+              <tbody>
+                <tr th:each="row : ${scorecardSummary}">
+                  <td><strong th:text="${row[1]}">-</strong></td>
+                  <td class="text-center">
+                    <span class="fw-bold" th:classappend="${row[2] != null and row[2].doubleValue() >= 4 ? 'text-success' : (row[2] != null and row[2].doubleValue() >= 3 ? 'text-warning' : 'text-danger')}" th:text="${row[2] != null ? #numbers.formatDecimal(row[2], 1, 1) + '/5' : 'N/A'}">-</span>
+                  </td>
+                  <td class="text-center" th:text="${row[3]}">0</td>
+                  <td>
+                    <div class="progress" style="height:8px;">
+                      <div class="progress-bar"
+                           th:style="'width:' + (${row[2] != null ? row[2].doubleValue() / 5 * 100 : 0}) + '%;background:' + (${row[2] != null and row[2].doubleValue() >= 4 ? '#16a34a' : (row[2] != null and row[2].doubleValue() >= 3 ? '#d97706' : '#dc2626')})"></div>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(scorecardSummary)}">
+                  <td colspan="4" class="text-center py-4 text-muted">No vendor ratings yet.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <!-- Recent Ratings -->
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-clock-history me-2"></i>Recent Ratings</div>
+        <div class="card-body p-0">
+          <table class="table table-sm table-levanto mb-0">
+            <thead><tr><th>Vendor</th><th>Date</th><th class="text-center">Quality</th><th class="text-center">Delivery</th><th class="text-center">Price</th><th class="text-center">Service</th><th class="text-center">Overall</th><th>Rated By</th></tr></thead>
+            <tbody>
+              <tr th:each="r : ${ratings.content}">
+                <td th:text="${r.vendor?.name}">-</td>
+                <td th:text="${r.ratingDate}">-</td>
+                <td class="text-center" th:text="${r.qualityScore}">-</td>
+                <td class="text-center" th:text="${r.deliveryScore}">-</td>
+                <td class="text-center" th:text="${r.priceScore}">-</td>
+                <td class="text-center" th:text="${r.serviceScore}">-</td>
+                <td class="text-center"><strong th:classappend="${r.overallScore.doubleValue() >= 4 ? 'text-success' : (r.overallScore.doubleValue() >= 3 ? 'text-warning' : 'text-danger')}" th:text="${#numbers.formatDecimal(r.overallScore, 1, 1) + ' ★'}">-</strong></td>
+                <td th:text="${r.ratedBy}">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Add Rating Modal -->
+<div class="modal fade" id="rateVendorModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:var(--navy-deep);color:#fff;">
+        <h5 class="modal-title">Rate Vendor</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <form th:action="@{/admin/scm/vendor-ratings/save}" method="post">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Vendor *</label>
+            <select name="vendor.id" class="form-select" required>
+              <option value="">-- Select --</option>
+              <option th:each="row : ${scorecardSummary}" th:value="${row[0]}" th:text="${row[1]}"></option>
+            </select>
+          </div>
+          <div class="mb-2">
+            <label class="form-label fw-bold">Rating Date</label>
+            <input type="date" name="ratingDate" class="form-control" th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"/>
+          </div>
+          <div class="row g-2 mb-2">
+            <div class="col-6"><label class="form-label small">Quality (1-5)</label><input type="number" min="1" max="5" step="0.1" name="qualityScore" class="form-control" value="3" required/></div>
+            <div class="col-6"><label class="form-label small">Delivery (1-5)</label><input type="number" min="1" max="5" step="0.1" name="deliveryScore" class="form-control" value="3" required/></div>
+            <div class="col-6"><label class="form-label small">Price (1-5)</label><input type="number" min="1" max="5" step="0.1" name="priceScore" class="form-control" value="3" required/></div>
+            <div class="col-6"><label class="form-label small">Service (1-5)</label><input type="number" min="1" max="5" step="0.1" name="serviceScore" class="form-control" value="3" required/></div>
+          </div>
+          <textarea name="comments" class="form-control" rows="2" placeholder="Observations (optional)"></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-gold">Save Rating</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

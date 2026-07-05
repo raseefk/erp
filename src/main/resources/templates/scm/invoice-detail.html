@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Invoice Detail')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-invoice')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Vendor Invoice Detail')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <a th:href="@{/admin/scm/invoices}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <div th:if="${invoice.paymentStatus != 'PAID'}">
+          <button class="btn btn-sm btn-gold" onclick="recordPayment()"><i class="bi bi-cash-coin me-1"></i>Record Payment</button>
+        </div>
+      </div>
+      <div class="row g-3">
+        <div class="col-md-8">
+          <div class="card card-levanto mb-3">
+            <div class="card-header d-flex justify-content-between">
+              <span><i class="bi bi-file-earmark-check me-2"></i>Invoice: <strong th:text="${invoice.invoiceNumber}">-</strong></span>
+              <div class="d-flex gap-2">
+                <span class="badge" th:classappend="${invoice.matchStatus == 'FULL_MATCH' ? 'bg-success' : (invoice.matchStatus == 'DISCREPANCY' ? 'bg-danger' : 'bg-warning text-dark')}" th:text="${invoice.matchStatus}">-</span>
+                <span class="badge" th:classappend="${invoice.paymentStatus == 'PAID' ? 'bg-success' : 'bg-secondary'}" th:text="${invoice.paymentStatus}">-</span>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row g-3">
+                <div class="col-6"><strong>Vendor:</strong> <span th:text="${invoice.vendor?.name}">-</span></div>
+                <div class="col-6"><strong>PO Number:</strong> <a th:href="@{/admin/scm/po/{id}(id=${invoice.purchaseOrder?.id})}" th:text="${invoice.purchaseOrder?.poNumber}">-</a></div>
+                <div class="col-4"><strong>Invoice Date:</strong> <span th:text="${invoice.invoiceDate}">-</span></div>
+                <div class="col-4"><strong>Due Date:</strong> <span th:text="${invoice.dueDate ?: '-'}">-</span></div>
+                <div class="col-4"><strong>Base Amount:</strong> ₹<span th:text="${#numbers.formatDecimal(invoice.invoiceAmount, 1, 2)}">0.00</span></div>
+                <div class="col-4"><strong>Tax:</strong> ₹<span th:text="${#numbers.formatDecimal(invoice.taxAmount, 1, 2)}">0.00</span></div>
+                <div class="col-4"><strong class="text-navy">Total:</strong> <strong class="text-navy">₹<span th:text="${#numbers.formatDecimal(invoice.totalAmount, 1, 2)}">0.00</span></strong></div>
+                <div class="col-4"><strong>Paid:</strong> ₹<span th:text="${#numbers.formatDecimal(invoice.paidAmount, 1, 2)}">0.00</span></div>
+              </div>
+            </div>
+          </div>
+          <!-- 3-Way Match Panel -->
+          <div class="card card-levanto">
+            <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>3-Way Match Result</div>
+            <div class="card-body">
+              <div class="row g-3 text-center">
+                <div class="col-4">
+                  <div class="p-3 rounded border" th:classappend="${invoice.poAmountMatch ? 'border-success bg-success bg-opacity-10' : 'border-danger bg-danger bg-opacity-10'}">
+                    <i class="bi fs-3" th:classappend="${invoice.poAmountMatch ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'}"></i>
+                    <div class="small fw-bold mt-1">PO Match</div>
+                    <div class="small text-muted">PO: ₹<span th:text="${#numbers.formatDecimal(invoice.purchaseOrder?.totalAmount ?: 0, 1, 2)}">0</span></div>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 rounded border" th:classappend="${invoice.grnAmountMatch == null ? 'border-secondary' : (invoice.grnAmountMatch ? 'border-success bg-success bg-opacity-10' : 'border-danger bg-danger bg-opacity-10')}">
+                    <i class="bi fs-3" th:classappend="${invoice.grnAmountMatch == null ? 'bi-dash-circle text-secondary' : (invoice.grnAmountMatch ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger')}"></i>
+                    <div class="small fw-bold mt-1">GRN Match</div>
+                    <div class="small text-muted" th:if="${invoice.grn != null}">GRN: ₹<span th:text="${#numbers.formatDecimal(invoice.grn.totalReceivedValue, 1, 2)}">0</span></div>
+                    <div class="small text-muted" th:if="${invoice.grn == null}">No GRN linked</div>
+                  </div>
+                </div>
+                <div class="col-4">
+                  <div class="p-3 rounded border" th:classappend="${invoice.matchStatus == 'FULL_MATCH' ? 'border-success bg-success bg-opacity-10' : 'border-warning bg-warning bg-opacity-10'}">
+                    <i class="bi bi-receipt fs-3" th:classappend="${invoice.matchStatus == 'FULL_MATCH' ? 'text-success' : 'text-warning'}"></i>
+                    <div class="small fw-bold mt-1">Invoice</div>
+                    <div class="small text-muted">₹<span th:text="${#numbers.formatDecimal(invoice.totalAmount, 1, 2)}">0</span></div>
+                  </div>
+                </div>
+              </div>
+              <p class="small mt-3 mb-0 p-2 rounded" th:classappend="${invoice.matchStatus == 'FULL_MATCH' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'}" th:text="${invoice.matchNotes}"></p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="card card-levanto" th:if="${invoice.grn != null}">
+            <div class="card-header"><i class="bi bi-box-seam me-2"></i>Linked GRN</div>
+            <div class="card-body small">
+              <a th:href="@{/admin/scm/grn/{id}(id=${invoice.grn.id})}" th:text="${invoice.grn.grnNumber}">-</a>
+              <div class="mt-1">Received: <span th:text="${invoice.grn.receivedDate}">-</span></div>
+              <div>Value: ₹<span th:text="${#numbers.formatDecimal(invoice.grn.totalReceivedValue, 1, 2)}">0.00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const invoiceId = [[${invoice.id}]];
+const outstanding = [[${invoice.totalAmount - invoice.paidAmount}]];
+
+function recordPayment() {
+  const amt = prompt('Enter payment amount (₹):');
+  if (!amt || isNaN(amt)) return;
+  fetch('/admin/scm/invoices/' + invoiceId + '/mark-paid', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'amount=' + amt
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert('Error: ' + d.message);
+  });
+}
+</script>
+</body>
+</html>

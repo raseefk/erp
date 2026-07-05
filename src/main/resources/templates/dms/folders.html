@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Manage Folders')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('dms-folders')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Manage Folders')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-end mb-3">
+        <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#createFolderModal"><i class="bi bi-folder-plus me-1"></i>New Folder</button>
+      </div>
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-folder2-open me-2"></i>Folder Hierarchy</div>
+        <div class="card-body">
+          <div th:each="folder : ${rootFolders}" class="mb-3">
+            <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background:rgba(26,58,92,0.05);">
+              <div class="d-flex align-items-center gap-2">
+                <i class="bi fs-5 text-navy" th:classappend="${folder.iconClass ?: 'bi-folder'}"></i>
+                <strong th:text="${folder.name}">-</strong>
+                <span class="text-muted small" th:if="${folder.description}" th:text="${' — ' + folder.description}">-</span>
+              </div>
+              <div class="btn-group btn-group-sm">
+                <a th:href="@{/admin/dms/documents(folderId=${folder.id})}" class="btn btn-outline-navy" title="Browse"><i class="bi bi-folder-symlink"></i></a>
+                <button class="btn btn-outline-danger" th:onclick="'deleteFolder(' + ${folder.id} + ')'" title="Delete"><i class="bi bi-trash"></i></button>
+              </div>
+            </div>
+            <!-- Sub-folders -->
+            <div class="ms-4 mt-1" th:each="sub : ${folder.subFolders}" th:if="${sub.active}">
+              <div class="d-flex align-items-center justify-content-between p-2 rounded" style="background:rgba(26,58,92,0.03);">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="bi bi-folder2 text-muted"></i>
+                  <span th:text="${sub.name}">-</span>
+                </div>
+                <div class="btn-group btn-group-sm">
+                  <a th:href="@{/admin/dms/documents(folderId=${sub.id})}" class="btn btn-outline-navy" title="Browse"><i class="bi bi-folder-symlink"></i></a>
+                  <button class="btn btn-outline-danger" th:onclick="'deleteFolder(' + ${sub.id} + ')'" title="Delete"><i class="bi bi-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p th:if="${#lists.isEmpty(rootFolders)}" class="text-center text-muted py-4">No folders created yet.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Create Folder Modal -->
+<div class="modal fade" id="createFolderModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background:var(--navy-deep);color:#fff;">
+        <h5 class="modal-title"><i class="bi bi-folder-plus me-2"></i>Create Folder</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label fw-bold">Folder Name *</label>
+          <input type="text" id="folderName" class="form-control" placeholder="e.g. Vendor Contracts" required/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Description</label>
+          <input type="text" id="folderDesc" class="form-control" placeholder="Optional description"/>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Parent Folder (optional)</label>
+          <select id="parentFolderId" class="form-select">
+            <option value="">-- Root Level --</option>
+            <option th:each="f : ${allFolders}" th:value="${f.id}" th:text="${f.name}"></option>
+          </select>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Icon</label>
+          <select id="iconClass" class="form-select">
+            <option value="bi-folder">📁 Default Folder</option>
+            <option value="bi-file-earmark-text">📄 Documents</option>
+            <option value="bi-cash-coin">💰 Finance</option>
+            <option value="bi-people">👥 HR</option>
+            <option value="bi-truck">🚚 Vendor</option>
+            <option value="bi-gear">⚙️ Operations</option>
+            <option value="bi-shield-check">🔒 Compliance</option>
+            <option value="bi-briefcase">💼 Projects</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-gold" onclick="createFolder()">Create</button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function createFolder() {
+  const name = document.getElementById('folderName').value.trim();
+  if (!name) { alert('Folder name is required.'); return; }
+  const parentId = document.getElementById('parentFolderId').value;
+  const payload = {
+    name: name,
+    description: document.getElementById('folderDesc').value,
+    iconClass: document.getElementById('iconClass').value,
+    parentFolder: parentId ? { id: parseInt(parentId) } : null,
+    active: true
+  };
+  fetch('/admin/dms/folders/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  }).then(r => r.json()).then(d => {
+    if (d.success) location.reload();
+    else alert('Error: ' + d.message);
+  });
+}
+
+function deleteFolder(id) {
+  if (!confirm('Delete this folder? Documents inside will be moved to root.')) return;
+  fetch('/admin/dms/folders/' + id + '/delete', { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.success) location.reload();
+      else alert(d.message);
+    });
+}
+</script>
+</body>
+</html>

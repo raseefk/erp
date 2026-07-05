@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Stock Count')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-stockcount')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Stock Count')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2"></i>Stock Count Sessions</h6>
+      <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#newCountModal"
+              sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_STOCKCOUNT_MANAGE')">
+        <i class="bi bi-plus-lg me-1"></i>New Count
+      </button>
+    </div>
+
+    <div class="card card-levanto">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead><tr>
+              <th>Count #</th><th>Warehouse</th><th>Location</th>
+              <th>Date</th><th>Status</th><th>Conducted By</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="sc : ${countPage.content}">
+                <td class="fw-bold">
+                  <a th:href="@{/admin/wms/stockcounts/{id}(id=${sc.id})}"
+                     th:text="${sc.countNumber}">-</a>
+                </td>
+                <td class="small" th:text="${sc.warehouse?.name}">-</td>
+                <td class="small" th:text="${sc.location?.fullAddress ?: 'Full Warehouse'}">-</td>
+                <td class="small" th:text="${sc.countDate}">-</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${sc.status.name() == 'COMPLETED' ? 'bg-success' :
+                                         sc.status.name() == 'IN_PROGRESS' ? 'bg-primary' :
+                                         sc.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"
+                        th:text="${sc.status}">-</span>
+                  <span th:if="${sc.adjustmentPosted}" class="badge bg-info text-dark ms-1">Adj. Posted</span>
+                </td>
+                <td class="small" th:text="${sc.conductedBy ?: '—'}">-</td>
+                <td>
+                  <a th:href="@{/admin/wms/stockcounts/{id}(id=${sc.id})}"
+                     class="btn btn-sm btn-outline-navy"><i class="bi bi-eye"></i></a>
+                </td>
+              </tr>
+              <tr th:if="${countPage.totalElements == 0}">
+                <td colspan="7" class="text-center py-5 text-muted">No stock counts yet.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <nav th:if="${countPage.totalPages > 1}" class="mt-3">
+      <ul class="pagination pagination-sm justify-content-center">
+        <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
+          <a class="page-link" th:href="@{/admin/wms/stockcounts(page=${currentPage-1})}">Prev</a>
+        </li>
+        <li class="page-item" th:each="i : ${#numbers.sequence(0, countPage.totalPages - 1)}"
+            th:classappend="${i == currentPage} ? 'active'">
+          <a class="page-link" th:href="@{/admin/wms/stockcounts(page=${i})}" th:text="${i+1}">1</a>
+        </li>
+        <li class="page-item" th:classappend="${currentPage == countPage.totalPages - 1} ? 'disabled'">
+          <a class="page-link" th:href="@{/admin/wms/stockcounts(page=${currentPage+1})}">Next</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</div>
+
+<!-- New Count Modal -->
+<div class="modal fade" id="newCountModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-clipboard-check me-2"></i>Start New Stock Count</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <form th:action="@{/admin/wms/stockcounts/create}" method="post">
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-12">
+              <label class="form-label fw-bold">Warehouse *</label>
+              <select name="warehouseId" id="newCountWarehouse" class="form-select" required
+                      onchange="loadLocationsForCount(this.value)">
+                <option value="">Select warehouse...</option>
+                <option th:each="wh : ${warehouses}" th:value="${wh.id}" th:text="${wh.name}">-</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Location (leave blank for full warehouse count)</label>
+              <select name="locationId" id="newCountLocation" class="form-select">
+                <option value="">Full Warehouse Count</option>
+              </select>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Count Date *</label>
+              <input type="date" name="countDate" class="form-control" required
+                     th:value="${#temporals.format(#temporals.createToday(), 'yyyy-MM-dd')}"/>
+            </div>
+          </div>
+          <div class="alert alert-info mt-3 small mb-0">
+            <i class="bi bi-info-circle me-1"></i>
+            System will auto-populate items from current stock balances for the selected scope.
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-gold"><i class="bi bi-play me-1"></i>Start Count</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script th:inline="javascript">
+const warehouseLocationsMap = {};
+/*[(${warehouses})]*/ // preload via fetch
+function loadLocationsForCount(whId) {
+  if (!whId) return;
+  fetch('/admin/wms/warehouses/' + whId + '/locations/save', { method: 'GET' }) // just use the API for locations
+    .catch(() => {});
+}
+</script>
+</body>
+</html>

@@ -35,24 +35,31 @@ public class PermissionSeeder implements CommandLineRunner {
     }
 
     private void seedFeatures() {
-        upsertFeature("SALES",      "Sales",               "receipt",     1);
-        upsertFeature("OPERATIONS", "Operations",          "boxes",       2);
-        upsertFeature("SCM",        "Supply Chain",        "truck",       3);
-        upsertFeature("PROJECTS",   "Projects",            "folder-open", 4);
-        upsertFeature("ASSETS",     "Asset Management",    "tools",       5);
-        upsertFeature("CONSTRUCTION", "Construction",       "building",    6);
-        upsertFeature("HR",         "HR",                  "id-card",     7);
-        upsertFeature("FINANCE",    "Finance",             "coins",       8);
-        upsertFeature("ADMIN",      "Administration",      "shield-lock", 9);
-        upsertFeature("ADVANCE_PAYMENTS", "Advance Payments", "cash-coin", 10);
-        upsertFeature("SYSTEM",     "System",              "cog",         11);
+        upsertFeature("SALES",            "Sales",                    "receipt",           "Enquiries, billing, quotations, customers",     1);
+        upsertFeature("OPERATIONS",       "Operations",               "boxes",             "Inventory, stock management",                   2);
+        upsertFeature("SCM",              "Supply Chain",             "truck",             "Vendors, POs, GRN, RFQ, rate contracts, approvals", 3);
+        upsertFeature("PROJECTS",         "Projects",                 "folder-open",       "Project tracking, site logs, approvals",        4);
+        upsertFeature("ASSETS",           "Asset Management",         "tools",             "Asset register, maintenance, depreciation",     5);
+        upsertFeature("CONSTRUCTION",     "Construction",             "building",          "BOQ, subcontractor bills, milestones, materials",6);
+        upsertFeature("HR",               "Human Resources",          "id-card",           "Employees, attendance, leaves, salaries",       7);
+        upsertFeature("FINANCE",          "Finance",                  "coins",             "Expenses, payments, P&L reporting",             8);
+        upsertFeature("ADMIN",            "Administration",           "shield-lock",       "Users, roles, permissions management",          9);
+        upsertFeature("ADVANCE_PAYMENTS", "Advance Payments",         "cash-coin",         "Customer and vendor advance payment tracking",  10);
+        upsertFeature("DMS",              "Document Management",      "cloud-arrow-up",    "Document vault, version control, expiry alerts",11);
+        upsertFeature("WMS",              "Warehouse Management",     "building",          "Multi-warehouse, locations, stock transfers, batch tracking", 13);
+        upsertFeature("SYSTEM",           "System",                   "cog",               "Dashboard, company settings, holidays",         12);
     }
 
-    private void upsertFeature(String id, String name, String icon, int order) {
-        if (!featureRepo.existsById(id)) {
-            featureRepo.save(Feature.builder()
-                .id(id).displayName(name).icon(icon).sortOrder(order).build());
-        }
+    private void upsertFeature(String id, String name, String icon, String description, int order) {
+        featureRepo.findById(id).ifPresentOrElse(f -> {
+            boolean changed = false;
+            if (!name.equals(f.getDisplayName()))        { f.setDisplayName(name); changed = true; }
+            if (!icon.equals(f.getIcon()))               { f.setIcon(icon);        changed = true; }
+            if (f.getDescription() == null || f.getDescription().isBlank()) { f.setDescription(description); changed = true; }
+            if (changed) featureRepo.save(f);
+        }, () -> featureRepo.save(Feature.builder()
+                .id(id).displayName(name).icon(icon)
+                .description(description).sortOrder(order).build()));
     }
 
     private void seedMenus() {
@@ -68,9 +75,16 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_ASSET_MAINTENANCE", "ASSETS", "Maintenance", "calendar-check", 2);
         upsertMenu("MENU_ASSET_ANALYTICS", "ASSETS", "Asset Analytics", "bar-chart-line", 3);
 
-        // Supply Chain
-        upsertMenu("MENU_VENDORS", "SCM", "Vendor Directory", "truck", 1);
-        upsertMenu("MENU_PURCHASE_ORDERS", "SCM", "Purchase Orders", "cart", 2);
+        // Supply Chain — existing
+        upsertMenu("MENU_VENDORS",          "SCM", "Vendor Directory",       "truck",                  1);
+        upsertMenu("MENU_PURCHASE_ORDERS",  "SCM", "Purchase Orders",        "cart",                   2);
+        // Supply Chain — new SCM menus
+        upsertMenu("MENU_GRN",              "SCM", "Goods Receipt (GRN)",    "box-seam",               3);
+        upsertMenu("MENU_VENDOR_INVOICES",  "SCM", "Vendor Invoices",        "file-earmark-check",     4);
+        upsertMenu("MENU_RFQ",              "SCM", "Request for Quotation",  "envelope-open-text",     5);
+        upsertMenu("MENU_BLANKET_PO",       "SCM", "Blanket POs",            "file-earmark-ruled",     6);
+        upsertMenu("MENU_PROCUREMENT_APPROVALS", "SCM", "PO Approvals",      "check2-circle",          7);
+        upsertMenu("MENU_VENDOR_SCORECARD", "SCM", "Vendor Scorecard",       "star-half",              8);
 
         // Projects
         upsertMenu("MENU_PROJECTS", "PROJECTS", "Projects", "kanban", 1);
@@ -93,6 +107,12 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_PAYMENTS", "FINANCE", "Payments", "cash-coin", 2);
         upsertMenu("MENU_PL_REPORT", "FINANCE", "P&L Report", "graph-up-arrow", 3);
 
+        // Document Management System
+        upsertMenu("MENU_DMS_VAULT",            "DMS", "Document Vault",        "cloud-arrow-up",   1);
+        upsertMenu("MENU_DMS_FOLDERS",          "DMS", "Manage Folders",        "folder2-open",     2);
+        upsertMenu("MENU_DMS_DIGITAL_SIGNATURE","DMS", "Digital Signatures",    "pen",              3);
+        upsertMenu("MENU_DMS_EXPIRY_ALERTS",    "DMS", "Expiry Alerts",         "clock-history",    4);
+
         // Administration
         upsertMenu("MENU_USERS", "ADMIN", "User Management", "shield-lock", 1);
         upsertMenu("MENU_ROLES", "ADMIN", "Roles & Permissions", "shield-check", 2);
@@ -101,6 +121,16 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_DASHBOARD", "SYSTEM", "Dashboard", "speedometer2", 0);
         upsertMenu("MENU_SETTINGS", "SYSTEM", "Settings", "gear", 1);
         upsertMenu("MENU_HOLIDAYS", "SYSTEM", "Annual Holidays", "calendar-event", 2);
+
+        // Warehouse Management System
+        upsertMenu("MENU_WMS_DASHBOARD",  "WMS", "WMS Dashboard",      "building",           1);
+        upsertMenu("MENU_WMS_WAREHOUSES", "WMS", "Warehouses",         "houses",             2);
+        upsertMenu("MENU_WMS_STOCK",      "WMS", "Stock Overview",     "boxes-stacked",      3);
+        upsertMenu("MENU_WMS_TRANSFERS",  "WMS", "Stock Transfers",    "arrow-left-right",   4);
+        upsertMenu("MENU_WMS_BATCHES",    "WMS", "Batch / Lot Tracking","layers",            5);
+        upsertMenu("MENU_WMS_STOCKCOUNT", "WMS", "Stock Count",        "clipboard-check",    6);
+        upsertMenu("MENU_WMS_LEDGER",     "WMS", "Stock Ledger",       "journal-bookmark",   7);
+        upsertMenu("MENU_WMS_SCAN",       "WMS", "Barcode Scan",       "qr-code-scan",       8);
     }
 
     private void upsertMenu(String id, String featureId, String name, String icon, int order) {
@@ -184,8 +214,31 @@ public class PermissionSeeder implements CommandLineRunner {
         if (id.equals("ASSETS_VIEW") || id.equals("ASSETS_MANAGE") || id.equals("ASSETS_ASSIGN") || id.equals("ASSETS_DEPRECIATION")) return "MENU_ASSETS";
         if (id.equals("ASSETS_MAINTENANCE")) return "MENU_ASSET_MAINTENANCE";
         if (id.equals("ASSETS_ANALYTICS")) return "MENU_ASSET_ANALYTICS";
+        // SCM — existing
         if (id.startsWith("SCM_PO_")) return "MENU_PURCHASE_ORDERS";
         if (id.startsWith("SCM_VENDORS_")) return "MENU_VENDORS";
+        // SCM — new
+        if (id.startsWith("SCM_GRN_")) return "MENU_GRN";
+        if (id.startsWith("SCM_INVOICE_")) return "MENU_VENDOR_INVOICES";
+        if (id.startsWith("SCM_RFQ_")) return "MENU_RFQ";
+        if (id.startsWith("SCM_BLANKET_PO_")) return "MENU_BLANKET_PO";
+        if (id.startsWith("SCM_APPROVAL_")) return "MENU_PROCUREMENT_APPROVALS";
+        if (id.startsWith("SCM_VENDOR_RATING_")) return "MENU_VENDOR_SCORECARD";
+        if (id.startsWith("SCM_LANDED_COST_")) return "MENU_PURCHASE_ORDERS";
+        // DMS
+        if (id.startsWith("DMS_DOCUMENTS_") || id.startsWith("DMS_VERSIONS_")) return "MENU_DMS_VAULT";
+        if (id.startsWith("DMS_FOLDERS_")) return "MENU_DMS_FOLDERS";
+        if (id.startsWith("DMS_DIGITAL_SIGNATURE_")) return "MENU_DMS_DIGITAL_SIGNATURE";
+        if (id.startsWith("DMS_EXPIRY_ALERTS_")) return "MENU_DMS_EXPIRY_ALERTS";
+        // WMS
+        if (id.startsWith("WMS_WAREHOUSES_")) return "MENU_WMS_WAREHOUSES";
+        if (id.startsWith("WMS_LOCATIONS_")) return "MENU_WMS_WAREHOUSES";
+        if (id.startsWith("WMS_STOCK_")) return "MENU_WMS_STOCK";
+        if (id.startsWith("WMS_TRANSFERS_")) return "MENU_WMS_TRANSFERS";
+        if (id.startsWith("WMS_BATCHES_")) return "MENU_WMS_BATCHES";
+        if (id.startsWith("WMS_STOCKCOUNT_")) return "MENU_WMS_STOCKCOUNT";
+        if (id.startsWith("WMS_LEDGER_")) return "MENU_WMS_LEDGER";
+        // Projects
         if (id.startsWith("PROJ_LIST_")) return "MENU_PROJECTS";
         if (id.startsWith("PROJ_DAILYLOG_")) return "MENU_SITELOGS";
         if (id.startsWith("PROJ_EXPENSES_") || id.startsWith("PROJ_JOBCARD_")) return "MENU_APPROVALS";
@@ -194,10 +247,10 @@ public class PermissionSeeder implements CommandLineRunner {
         if (id.startsWith("CONSTRUCTION_SUBCONTRACTOR_BILL_")) return "MENU_SUBCONTRACTOR_BILLS";
         if (id.startsWith("CONSTRUCTION_MILESTONE_")) return "MENU_MILESTONES";
         if (id.startsWith("HR_EMPLOYEES_")) return "MENU_EMPLOYEES";
+        if (id.startsWith("HR_ATTENDANCE_REPORT_")) return "MENU_ATTENDANCE_REPORT";
         if (id.startsWith("HR_ATTENDANCE_")) return "MENU_ATTENDANCE";
         if (id.startsWith("HR_LEAVES_")) return "MENU_LEAVES";
         if (id.startsWith("HR_SALARY_")) return "MENU_SALARIES";
-        if (id.startsWith("HR_ATTENDANCE_REPORT_")) return "MENU_ATTENDANCE_REPORT";
         if (id.startsWith("HR_HOLIDAYS_")) return "MENU_HOLIDAYS";
         if (id.startsWith("FIN_EXPENSES_")) return "MENU_EXPENSES";
         if (id.startsWith("FIN_PAYMENTS_")) return "MENU_PAYMENTS";
@@ -223,6 +276,8 @@ public class PermissionSeeder implements CommandLineRunner {
         if (permId.startsWith("SETTINGS_COMPANY_") || permId.startsWith("SETTINGS_FEATURES_")) return "SYSTEM";
         if (permId.startsWith("SETTINGS_")) return "ADMIN";
         if (permId.startsWith("SCM_")) return "SCM";
+        if (permId.startsWith("DMS_")) return "DMS";
+        if (permId.startsWith("WMS_")) return "WMS";
         return permId.split("_")[0];
     }
 
@@ -233,6 +288,51 @@ public class PermissionSeeder implements CommandLineRunner {
     }
 
     private String toDisplayName(String permId) {
+        // Proper human-readable names
+        Map<String, String> names = new LinkedHashMap<>();
+        // SCM — new
+        names.put("SCM_GRN_VIEW",              "View GRN");
+        names.put("SCM_GRN_CREATE",            "Create GRN");
+        names.put("SCM_GRN_ACCEPT",            "Accept / Reject GRN");
+        names.put("SCM_INVOICE_VIEW",          "View Vendor Invoices");
+        names.put("SCM_INVOICE_CREATE",        "Submit Vendor Invoice");
+        names.put("SCM_RFQ_VIEW",              "View RFQs");
+        names.put("SCM_RFQ_MANAGE",            "Manage RFQs");
+        names.put("SCM_BLANKET_PO_VIEW",       "View Blanket POs");
+        names.put("SCM_BLANKET_PO_MANAGE",     "Manage Blanket POs");
+        names.put("SCM_APPROVAL_VIEW",         "View PO Approvals");
+        names.put("SCM_APPROVAL_MANAGE",       "Approve / Reject POs");
+        names.put("SCM_VENDOR_RATING_VIEW",    "View Vendor Scorecard");
+        names.put("SCM_VENDOR_RATING_MANAGE",  "Rate Vendors");
+        names.put("SCM_LANDED_COST_MANAGE",    "Manage Landed Costs");
+        // DMS
+        names.put("DMS_DOCUMENTS_VIEW",        "View Documents");
+        names.put("DMS_DOCUMENTS_UPLOAD",      "Upload Documents");
+        names.put("DMS_DOCUMENTS_EDIT",        "Edit Documents");
+        names.put("DMS_DOCUMENTS_DELETE",      "Delete Documents");
+        names.put("DMS_FOLDERS_MANAGE",        "Manage Folders");
+        names.put("DMS_VERSIONS_VIEW",         "View Version History");
+        names.put("DMS_DIGITAL_SIGNATURE_VIEW",   "View Digital Signatures");
+        names.put("DMS_DIGITAL_SIGNATURE_SIGN",   "Sign Documents");
+        names.put("DMS_DIGITAL_SIGNATURE_VERIFY", "Verify Signatures");
+        names.put("DMS_EXPIRY_ALERTS_VIEW",       "View Expiry Alerts");
+        names.put("DMS_EXPIRY_ALERTS_MANAGE",     "Manage Expiry Alerts");
+        // WMS
+        names.put("WMS_WAREHOUSES_VIEW",    "View Warehouses");
+        names.put("WMS_WAREHOUSES_MANAGE",  "Manage Warehouses & Locations");
+        names.put("WMS_LOCATIONS_VIEW",     "View Locations");
+        names.put("WMS_LOCATIONS_MANAGE",   "Manage Locations");
+        names.put("WMS_STOCK_VIEW",         "View Stock Balances");
+        names.put("WMS_STOCK_ADJUST",       "Adjust Stock");
+        names.put("WMS_TRANSFERS_VIEW",     "View Stock Transfers");
+        names.put("WMS_TRANSFERS_MANAGE",   "Manage Stock Transfers");
+        names.put("WMS_BATCHES_VIEW",       "View Batch / Lot Tracking");
+        names.put("WMS_BATCHES_MANAGE",     "Manage Batches & Lots");
+        names.put("WMS_STOCKCOUNT_VIEW",    "View Stock Counts");
+        names.put("WMS_STOCKCOUNT_MANAGE",  "Conduct Stock Counts");
+        names.put("WMS_LEDGER_VIEW",        "View Stock Ledger");
+        if (names.containsKey(permId)) return names.get(permId);
+        // Generic fallback
         return permId.replace("_", " ").toLowerCase();
     }
 }

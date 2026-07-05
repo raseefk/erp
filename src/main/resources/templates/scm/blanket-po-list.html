@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Blanket POs')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('scm-blanket-po')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Blanket Purchase Orders / Rate Contracts')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <form th:action="@{/admin/scm/blanket-po}" method="get" class="d-flex gap-2">
+          <input type="text" name="q" class="form-control form-control-sm" placeholder="Search BPO, vendor…" th:value="${q}" style="width:250px;"/>
+          <button type="submit" class="btn btn-sm btn-gold">Search</button>
+        </form>
+        <a th:href="@{/admin/scm/blanket-po/new}" class="btn btn-sm btn-gold"><i class="bi bi-plus-lg me-1"></i>New Rate Contract</a>
+      </div>
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-file-earmark-ruled me-2"></i>Blanket PO / Rate Contracts</div>
+        <div class="card-body p-0">
+          <div class="table-responsive">
+            <table class="table table-levanto mb-0">
+              <thead><tr>
+                <th>BPO Number</th><th>Title</th><th>Vendor</th>
+                <th>Period</th><th>Total Value</th><th>Consumed</th><th>Status</th><th>Actions</th>
+              </tr></thead>
+              <tbody>
+                <tr th:each="b : ${bpoPage.content}">
+                  <td><strong th:text="${b.bpoNumber}">-</strong></td>
+                  <td th:text="${b.title}">-</td>
+                  <td th:text="${b.vendor?.name}">-</td>
+                  <td><span th:text="${b.startDate}">-</span> — <span th:text="${b.endDate}">-</span></td>
+                  <td th:text="${'₹ ' + #numbers.formatDecimal(b.totalValue, 1, 2)}">0.00</td>
+                  <td>
+                    <div class="progress" style="height:6px;min-width:80px;" th:if="${b.totalValue.compareTo(T(java.math.BigDecimal).ZERO) > 0}">
+                      <div class="progress-bar bg-gold"
+                           th:style="'width:' + ${b.consumedValue.divide(b.totalValue, 2, T(java.math.RoundingMode).HALF_UP).multiply(T(java.math.BigDecimal).valueOf(100)).intValue()} + '%'"></div>
+                    </div>
+                    <small th:text="${'₹ ' + #numbers.formatDecimal(b.consumedValue, 1, 2)}">0.00</small>
+                  </td>
+                  <td>
+                    <span class="badge" th:classappend="${b.status.name() == 'ACTIVE' ? 'bg-success' : (b.status.name() == 'EXPIRED' ? 'bg-secondary' : 'bg-danger')}" th:text="${b.status}">-</span>
+                  </td>
+                  <td>
+                    <div class="btn-group btn-group-sm">
+                      <a th:href="@{/admin/scm/blanket-po/{id}(id=${b.id})}" class="btn btn-outline-navy" title="View"><i class="bi bi-eye"></i></a>
+                      <a th:href="@{/admin/scm/blanket-po/{id}/edit(id=${b.id})}" class="btn btn-navy" title="Edit"><i class="bi bi-pencil"></i></a>
+                    </div>
+                  </td>
+                </tr>
+                <tr th:if="${bpoPage.totalElements == 0}">
+                  <td colspan="8" class="text-center py-4 text-muted">No Blanket POs found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

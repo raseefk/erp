@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Document Vault')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('dms')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Document Management')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <!-- Stat Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(26,58,92,0.1);color:var(--navy)"><i class="bi bi-cloud-arrow-up"></i></div>
+          <div>
+            <div class="stat-num" th:text="${metrics.totalDocuments ?: 0}">0</div>
+            <div class="stat-lbl">Total Documents</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#d97706;">
+          <div class="stat-icon" style="background:rgba(217,119,6,0.1);color:#d97706;"><i class="bi bi-clock-history"></i></div>
+          <div>
+            <div class="stat-num" th:text="${metrics.expiringIn30Days ?: 0}">0</div>
+            <div class="stat-lbl">Expiring in 30 Days</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card">
+          <div class="stat-icon" style="background:rgba(200,151,42,0.1);color:var(--gold)"><i class="bi bi-folder2-open"></i></div>
+          <div>
+            <div class="stat-num" th:text="${metrics.totalFolders ?: 0}">0</div>
+            <div class="stat-lbl">Folders</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="stat-card" style="border-left-color:#16a34a;">
+          <div class="stat-icon" style="background:rgba(22,163,74,0.1);color:#16a34a;"><i class="bi bi-shield-check"></i></div>
+          <div>
+            <div class="stat-num">Secure</div>
+            <div class="stat-lbl">Encrypted Vault</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-3">
+      <!-- Quick Actions -->
+      <div class="col-md-4">
+        <div class="card card-levanto mb-3">
+          <div class="card-header"><i class="bi bi-lightning me-2"></i>Quick Actions</div>
+          <div class="card-body d-grid gap-2">
+            <a th:href="@{/admin/dms/documents/upload}" class="btn btn-gold"><i class="bi bi-cloud-upload me-2"></i>Upload Document</a>
+            <a th:href="@{/admin/dms/documents}" class="btn btn-navy"><i class="bi bi-search me-2"></i>Browse All Documents</a>
+            <a th:href="@{/admin/dms/folders}" class="btn btn-outline-navy"><i class="bi bi-folder-plus me-2"></i>Manage Folders</a>
+          </div>
+        </div>
+        <!-- Folders Tree -->
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-diagram-3 me-2"></i>Folders</div>
+          <div class="card-body py-2">
+            <div th:each="folder : ${rootFolders}" class="mb-1">
+              <a th:href="@{/admin/dms/documents(folderId=${folder.id})}" class="text-decoration-none d-flex align-items-center gap-2 py-1 px-2 rounded" style="color:var(--navy-deep);">
+                <i class="bi" th:classappend="${folder.iconClass ?: 'bi-folder'}"></i>
+                <span th:text="${folder.name}">-</span>
+              </a>
+              <div class="ms-4" th:each="sub : ${folder.subFolders}" th:if="${sub.active}">
+                <a th:href="@{/admin/dms/documents(folderId=${sub.id})}" class="text-decoration-none d-flex align-items-center gap-2 py-1 px-2 rounded" style="color:#4a6080;font-size:.85rem;">
+                  <i class="bi bi-folder2"></i>
+                  <span th:text="${sub.name}">-</span>
+                </a>
+              </div>
+            </div>
+            <p th:if="${#lists.isEmpty(rootFolders)}" class="text-muted small mb-0">No folders yet. <a th:href="@{/admin/dms/folders}">Create one.</a></p>
+          </div>
+        </div>
+      </div>
+      <!-- Expiring Documents -->
+      <div class="col-md-8">
+        <div class="card card-levanto">
+          <div class="card-header d-flex justify-content-between align-items-center">
+            <span><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Documents Expiring Soon</span>
+            <a th:href="@{/admin/dms/documents}" class="btn btn-sm btn-outline-navy">View All</a>
+          </div>
+          <div class="card-body p-0">
+            <table class="table table-sm table-levanto mb-0">
+              <thead><tr><th>Document</th><th>Category</th><th>Expiry Date</th><th>Days Left</th><th>Action</th></tr></thead>
+              <tbody>
+                <tr th:each="doc : ${metrics.expiringDocuments}">
+                  <td><a th:href="@{/admin/dms/documents/{id}(id=${doc.id})}" th:text="${doc.title}">-</a></td>
+                  <td><span class="badge badge-navy" th:text="${doc.category}">-</span></td>
+                  <td th:text="${doc.expiryDate}">-</td>
+                  <td>
+                    <span class="badge" th:with="daysLeft=${#temporals.daysBetween(#temporals.createToday(), doc.expiryDate)}"
+                          th:classappend="${daysLeft <= 7 ? 'bg-danger' : (daysLeft <= 14 ? 'bg-warning text-dark' : 'bg-secondary')}"
+                          th:text="${daysLeft + ' days'}">-</span>
+                  </td>
+                  <td><a th:href="@{/admin/dms/documents/{id}(id=${doc.id})}" class="btn btn-sm btn-outline-navy"><i class="bi bi-eye"></i></a></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(metrics.expiringDocuments)}">
+                  <td colspan="5" class="text-center py-4 text-muted"><i class="bi bi-check-circle me-2 text-success"></i>No documents expiring in the next 30 days.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

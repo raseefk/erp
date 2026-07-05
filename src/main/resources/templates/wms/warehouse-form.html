@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Warehouse Form')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-warehouses')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Warehouse')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="mb-3"><a href="/admin/wms/warehouses" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+
+    <div class="card card-levanto" style="max-width:700px;">
+      <div class="card-header">
+        <i class="bi bi-building me-2"></i>
+        <span th:text="${warehouse.id != null ? 'Edit Warehouse' : 'New Warehouse'}">Warehouse</span>
+      </div>
+      <div class="card-body">
+        <form th:action="@{/admin/wms/warehouses/save}" method="post">
+          <input type="hidden" name="id" th:value="${warehouse.id}"/>
+          <div class="row g-3">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Code *</label>
+              <input type="text" name="code" class="form-control" required
+                     th:value="${warehouse.code}" placeholder="WH-001"/>
+            </div>
+            <div class="col-md-8">
+              <label class="form-label fw-bold">Name *</label>
+              <input type="text" name="name" class="form-control" required
+                     th:value="${warehouse.name}" placeholder="Main Warehouse"/>
+            </div>
+            <div class="col-12">
+              <label class="form-label fw-bold">Address</label>
+              <textarea name="address" class="form-control" rows="2"
+                        th:text="${warehouse.address}" placeholder="Warehouse address"></textarea>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Manager Name</label>
+              <input type="text" name="managerName" class="form-control"
+                     th:value="${warehouse.managerName}"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Manager Phone</label>
+              <input type="text" name="managerPhone" class="form-control"
+                     th:value="${warehouse.managerPhone}"/>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">Manager Email</label>
+              <input type="email" name="managerEmail" class="form-control"
+                     th:value="${warehouse.managerEmail}"/>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Costing Method</label>
+              <select name="costingMethod" class="form-select">
+                <option value="WEIGHTED_AVERAGE" th:selected="${warehouse.costingMethod?.name() == 'WEIGHTED_AVERAGE'}">Weighted Average</option>
+                <option value="FIFO"             th:selected="${warehouse.costingMethod?.name() == 'FIFO'}">FIFO</option>
+                <option value="LIFO"             th:selected="${warehouse.costingMethod?.name() == 'LIFO'}">LIFO</option>
+              </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+              <div class="form-check">
+                <input type="checkbox" name="isDefault" value="true" class="form-check-input"
+                       th:checked="${warehouse.isDefault}"/>
+                <label class="form-check-label fw-bold">Default</label>
+              </div>
+            </div>
+          </div>
+          <div class="mt-4 d-flex gap-2">
+            <button type="submit" class="btn btn-gold px-4"><i class="bi bi-save me-1"></i>Save</button>
+            <a href="/admin/wms/warehouses" class="btn btn-outline-secondary">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

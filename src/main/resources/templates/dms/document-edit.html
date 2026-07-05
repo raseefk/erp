@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Edit Document')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('dms')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Edit Document')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+    <div class="mt-1">
+      <div class="mb-3"><a th:href="@{/admin/dms/documents/{id}(id=${document.id})}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+      <div class="card card-levanto">
+        <div class="card-header"><i class="bi bi-pencil me-2"></i>Edit Document Metadata</div>
+        <div class="card-body">
+          <form th:action="@{/admin/dms/documents/{id}/edit(id=${document.id})}" method="post">
+            <div class="row g-3 mb-3">
+              <div class="col-md-8">
+                <label class="form-label fw-bold">Title *</label>
+                <input type="text" name="title" class="form-control" th:value="${document.title}" required/>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Category</label>
+                <select name="category" class="form-select">
+                  <option th:each="cat : ${categories}" th:value="${cat.name()}" th:text="${cat.name()}" th:selected="${document.category == cat}"></option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Folder</label>
+                <select name="folder.id" class="form-select">
+                  <option value="">-- Root --</option>
+                  <option th:each="f : ${folders}" th:value="${f.id}" th:text="${f.name}" th:selected="${document.folder?.id == f.id}"></option>
+                </select>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Expiry Date</label>
+                <input type="date" name="expiryDate" class="form-control" th:value="${document.expiryDate}"/>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Alert Days</label>
+                <input type="number" name="expiryAlertDays" class="form-control" th:value="${document.expiryAlertDays ?: 30}"/>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-bold">Access Level</label>
+                <select name="accessLevel" class="form-select" id="accessLevelSel" onchange="toggleAccessFields(this)">
+                  <option th:each="al : ${accessLevels}" th:value="${al.name()}" th:text="${al.name()}" th:selected="${document.accessLevel == al}"></option>
+                </select>
+              </div>
+              <div class="col-md-4" id="deptField">
+                <label class="form-label fw-bold">Department</label>
+                <input type="text" name="allowedDepartment" class="form-control" th:value="${document.allowedDepartment}"/>
+              </div>
+              <div class="col-md-4" id="roleField">
+                <label class="form-label fw-bold">Role</label>
+                <input type="text" name="allowedRole" class="form-control" th:value="${document.allowedRole}"/>
+              </div>
+              <div class="col-md-8">
+                <label class="form-label fw-bold">Tags</label>
+                <input type="text" name="tags" class="form-control" th:value="${document.tags}"/>
+              </div>
+              <div class="col-12">
+                <label class="form-label fw-bold">Description</label>
+                <textarea name="description" class="form-control" rows="2" th:text="${document.description}"></textarea>
+              </div>
+            </div>
+            <div class="d-flex gap-2">
+              <button type="submit" class="btn btn-gold px-4">Save Changes</button>
+              <a th:href="@{/admin/dms/documents/{id}(id=${document.id})}" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function toggleAccessFields(sel) {
+  document.getElementById('deptField').style.display = sel.value === 'DEPARTMENT' ? 'block' : 'none';
+  document.getElementById('roleField').style.display = sel.value === 'ROLE' ? 'block' : 'none';
+}
+toggleAccessFields(document.getElementById('accessLevelSel'));
+</script>
+</body>
+</html>

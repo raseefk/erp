@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Barcode Scan')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-scan')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Barcode / QR Scan')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="row g-3 justify-content-center">
+      <div class="col-md-6">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-qr-code-scan me-2"></i>Scan Barcode / QR Code</div>
+          <div class="card-body">
+            <div class="mb-4">
+              <label class="form-label fw-bold">Scan or Type Barcode</label>
+              <div class="input-group">
+                <input type="text" id="barcodeInput" class="form-control"
+                       placeholder="Scan barcode or type here..."
+                       autofocus autocomplete="off"
+                       onkeydown="if(event.key==='Enter') lookup()"/>
+                <button class="btn btn-gold" onclick="lookup()">
+                  <i class="bi bi-search me-1"></i>Lookup
+                </button>
+              </div>
+              <div class="form-text">Works with hardware barcode scanners (auto-sends Enter key).</div>
+            </div>
+
+            <!-- Result card -->
+            <div id="resultCard" class="d-none">
+              <div class="card border rounded">
+                <div class="card-body">
+                  <div class="d-flex align-items-start gap-3">
+                    <div id="resultIcon" class="rounded-3 d-flex align-items-center justify-content-center"
+                         style="width:48px;height:48px;background:rgba(26,58,92,.08);font-size:1.5rem;flex-shrink:0;">
+                      <i class="bi bi-geo-alt text-navy"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                      <div class="fw-bold" id="resultTitle">-</div>
+                      <div class="small text-muted" id="resultSubtitle">-</div>
+                      <div class="mt-2" id="resultActions"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div id="notFoundMsg" class="d-none alert alert-danger">
+              <i class="bi bi-x-circle me-2"></i>Barcode not found. Check the code and try again.
+            </div>
+
+            <!-- Scan history -->
+            <div id="historySection" class="mt-4 d-none">
+              <h6 class="fw-bold small text-muted text-uppercase">Recent Scans</h6>
+              <ul id="scanHistory" class="list-group list-group-flush small"></ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="card card-levanto">
+          <div class="card-header"><i class="bi bi-camera me-2"></i>Camera Scan</div>
+          <div class="card-body text-center">
+            <div id="cameraArea">
+              <video id="cameraVideo" class="w-100 rounded mb-2" style="max-height:250px;background:#000;display:none;"></video>
+              <canvas id="cameraCanvas" class="d-none"></canvas>
+              <button class="btn btn-navy btn-sm" onclick="startCamera()" id="startCamBtn">
+                <i class="bi bi-camera-video me-1"></i>Start Camera
+              </button>
+              <button class="btn btn-outline-secondary btn-sm d-none" onclick="stopCamera()" id="stopCamBtn">
+                <i class="bi bi-stop-circle me-1"></i>Stop
+              </button>
+            </div>
+            <div class="text-muted small mt-2">Use device camera to scan QR codes.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+const history = [];
+let cameraStream = null;
+let scanInterval = null;
+
+function lookup() {
+  const val = document.getElementById('barcodeInput').value.trim();
+  if (!val) return;
+  document.getElementById('resultCard').classList.add('d-none');
+  document.getElementById('notFoundMsg').classList.add('d-none');
+
+  fetch('/admin/wms/scan/lookup?barcode=' + encodeURIComponent(val))
+    .then(r => r.json()).then(d => {
+      if (d.success && d.data) {
+        showResult(d.data, val);
+        addHistory(val, d.data);
+      } else {
+        document.getElementById('notFoundMsg').classList.remove('d-none');
+        addHistory(val, null);
+      }
+      document.getElementById('barcodeInput').value = '';
+      document.getElementById('barcodeInput').focus();
+    });
+}
+
+function showResult(data, barcode) {
+  document.getElementById('resultCard').classList.remove('d-none');
+  document.getElementById('resultTitle').textContent = data.fullAddress || data.name || barcode;
+  document.getElementById('resultSubtitle').textContent = data.warehouse || data.type || '';
+  const actions = document.getElementById('resultActions');
+  if (data.type === 'LOCATION') {
+    actions.innerHTML = `<a href="/admin/wms/stock?warehouseId=" class="btn btn-sm btn-navy me-1">
+      <i class="bi bi-boxes me-1"></i>View Stock</a>`;
+  }
+}
+
+function addHistory(barcode, result) {
+  history.unshift({ barcode, result, time: new Date().toLocaleTimeString() });
+  if (history.length > 10) history.pop();
+  const hist = document.getElementById('scanHistory');
+  hist.innerHTML = history.map(h =>
+    `<li class="list-group-item d-flex justify-content-between align-items-center px-0">
+      <span><i class="bi ${h.result ? 'bi-check-circle text-success' : 'bi-x-circle text-danger'} me-2"></i>
+        <code>${h.barcode}</code>
+        ${h.result ? '<span class="text-muted small ms-1">' + (h.result.fullAddress || '') + '</span>' : ''}
+      </span>
+      <small class="text-muted">${h.time}</small>
+    </li>`).join('');
+  document.getElementById('historySection').classList.remove('d-none');
+}
+
+// Camera scan using browser API
+async function startCamera() {
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    const video = document.getElementById('cameraVideo');
+    video.srcObject = cameraStream;
+    video.play();
+    video.style.display = '';
+    document.getElementById('startCamBtn').classList.add('d-none');
+    document.getElementById('stopCamBtn').classList.remove('d-none');
+    // Note: real QR decode requires a library like jsQR — this polls for user to type
+  } catch (e) {
+    showToast('Camera access denied or not supported.', 'warning');
+  }
+}
+
+function stopCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  const video = document.getElementById('cameraVideo');
+  video.style.display = 'none';
+  document.getElementById('startCamBtn').classList.remove('d-none');
+  document.getElementById('stopCamBtn').classList.add('d-none');
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
+  t.style.cssText = 'z-index:9999;min-width:260px;'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

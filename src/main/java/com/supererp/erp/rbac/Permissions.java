@@ -114,6 +114,50 @@ public final class Permissions {
     public static final String FIN_LEDGER_VIEW              = "FIN_LEDGER_VIEW";
     public static final String FIN_REPORTS_VIEW             = "FIN_REPORTS_VIEW";
 
+    // ── PROCUREMENT Feature (extended SCM) ───────────────────────────────────
+    public static final String SCM_GRN_VIEW                 = "SCM_GRN_VIEW";
+    public static final String SCM_GRN_CREATE               = "SCM_GRN_CREATE";
+    public static final String SCM_GRN_ACCEPT               = "SCM_GRN_ACCEPT";
+    public static final String SCM_INVOICE_VIEW             = "SCM_INVOICE_VIEW";
+    public static final String SCM_INVOICE_CREATE           = "SCM_INVOICE_CREATE";
+    public static final String SCM_RFQ_VIEW                 = "SCM_RFQ_VIEW";
+    public static final String SCM_RFQ_MANAGE               = "SCM_RFQ_MANAGE";
+    public static final String SCM_BLANKET_PO_VIEW          = "SCM_BLANKET_PO_VIEW";
+    public static final String SCM_BLANKET_PO_MANAGE        = "SCM_BLANKET_PO_MANAGE";
+    public static final String SCM_APPROVAL_VIEW            = "SCM_APPROVAL_VIEW";
+    public static final String SCM_APPROVAL_MANAGE          = "SCM_APPROVAL_MANAGE";
+    public static final String SCM_VENDOR_RATING_VIEW       = "SCM_VENDOR_RATING_VIEW";
+    public static final String SCM_VENDOR_RATING_MANAGE     = "SCM_VENDOR_RATING_MANAGE";
+    public static final String SCM_LANDED_COST_MANAGE       = "SCM_LANDED_COST_MANAGE";
+
+    // ── WAREHOUSE MANAGEMENT Feature ─────────────────────────────────────────
+    public static final String WMS_WAREHOUSES_VIEW      = "WMS_WAREHOUSES_VIEW";
+    public static final String WMS_WAREHOUSES_MANAGE    = "WMS_WAREHOUSES_MANAGE";
+    public static final String WMS_LOCATIONS_VIEW       = "WMS_LOCATIONS_VIEW";
+    public static final String WMS_LOCATIONS_MANAGE     = "WMS_LOCATIONS_MANAGE";
+    public static final String WMS_STOCK_VIEW           = "WMS_STOCK_VIEW";
+    public static final String WMS_STOCK_ADJUST         = "WMS_STOCK_ADJUST";
+    public static final String WMS_TRANSFERS_VIEW       = "WMS_TRANSFERS_VIEW";
+    public static final String WMS_TRANSFERS_MANAGE     = "WMS_TRANSFERS_MANAGE";
+    public static final String WMS_BATCHES_VIEW         = "WMS_BATCHES_VIEW";
+    public static final String WMS_BATCHES_MANAGE       = "WMS_BATCHES_MANAGE";
+    public static final String WMS_STOCKCOUNT_VIEW      = "WMS_STOCKCOUNT_VIEW";
+    public static final String WMS_STOCKCOUNT_MANAGE    = "WMS_STOCKCOUNT_MANAGE";
+    public static final String WMS_LEDGER_VIEW          = "WMS_LEDGER_VIEW";
+
+    // ── DOCUMENT MANAGEMENT Feature ───────────────────────────────────────────
+    public static final String DMS_DOCUMENTS_VIEW           = "DMS_DOCUMENTS_VIEW";
+    public static final String DMS_DOCUMENTS_UPLOAD         = "DMS_DOCUMENTS_UPLOAD";
+    public static final String DMS_DOCUMENTS_EDIT           = "DMS_DOCUMENTS_EDIT";
+    public static final String DMS_DOCUMENTS_DELETE         = "DMS_DOCUMENTS_DELETE";
+    public static final String DMS_FOLDERS_MANAGE           = "DMS_FOLDERS_MANAGE";
+    public static final String DMS_VERSIONS_VIEW            = "DMS_VERSIONS_VIEW";
+    public static final String DMS_DIGITAL_SIGNATURE_VIEW   = "DMS_DIGITAL_SIGNATURE_VIEW";
+    public static final String DMS_DIGITAL_SIGNATURE_SIGN   = "DMS_DIGITAL_SIGNATURE_SIGN";
+    public static final String DMS_DIGITAL_SIGNATURE_VERIFY = "DMS_DIGITAL_SIGNATURE_VERIFY";
+    public static final String DMS_EXPIRY_ALERTS_VIEW       = "DMS_EXPIRY_ALERTS_VIEW";
+    public static final String DMS_EXPIRY_ALERTS_MANAGE     = "DMS_EXPIRY_ALERTS_MANAGE";
+
     // ── SETTINGS Feature (Admin) ───────────────────────────────────────────────
     public static final String SETTINGS_COMPANY_VIEW        = "SETTINGS_COMPANY_VIEW";
     public static final String SETTINGS_COMPANY_EDIT        = "SETTINGS_COMPANY_EDIT";

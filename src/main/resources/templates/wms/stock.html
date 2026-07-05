@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Stock Overview')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('wms-stock')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Stock Overview')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <!-- Warehouse selector -->
+    <form th:action="@{/admin/wms/stock}" method="get" class="d-flex gap-2 mb-3 align-items-end flex-wrap">
+      <div>
+        <label class="form-label fw-bold small">Warehouse</label>
+        <select name="warehouseId" class="form-select form-select-sm" style="min-width:220px;"
+                onchange="this.form.submit()">
+          <option value="">-- Select Warehouse --</option>
+          <option th:each="wh : ${warehouses}" th:value="${wh.id}" th:text="${wh.name}"
+                  th:selected="${selectedWarehouseId == wh.id}"></option>
+        </select>
+      </div>
+    </form>
+
+    <!-- Low stock alert strip -->
+    <div th:if="${not #lists.isEmpty(lowStockItems)}" class="alert alert-levanto mb-3">
+      <i class="bi bi-exclamation-triangle me-2" style="color:#dc2626;"></i>
+      <strong>Low Stock:</strong>
+      <span th:each="sb, idx : ${lowStockItems}">
+        <strong th:text="${sb.inventoryItem?.name}">-</strong>
+        (<span th:text="${sb.quantityAvailable}">0</span>
+        <span th:text="${sb.inventoryItem?.unit ?: ''}">-</span>)<span th:if="${!idx.last}">, </span>
+      </span>
+    </div>
+
+    <!-- Stock table -->
+    <div class="card card-levanto" th:if="${stockBalances != null}">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-boxes me-2"></i>
+          Stock at <span th:text="${warehouse?.name}">-</span>
+          (<span th:text="${#lists.size(stockBalances)}">0</span> items)
+        </span>
+        <button class="btn btn-sm btn-outline-navy" data-bs-toggle="modal"
+                data-bs-target="#adjustModal"
+                sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_STOCK_ADJUST')">
+          <i class="bi bi-sliders me-1"></i>Adjust Stock
+        </button>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead><tr>
+              <th>Item</th><th>Location</th><th>On Hand</th>
+              <th>Reserved</th><th>Available</th><th>Avg Cost</th>
+              <th>Reorder Pt.</th><th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="sb : ${stockBalances}">
+                <td>
+                  <div class="fw-bold small" th:text="${sb.inventoryItem?.name}">-</div>
+                  <div class="small text-muted" th:text="${sb.inventoryItem?.hsnSacCode}">-</div>
+                </td>
+                <td class="small" th:text="${sb.location?.fullAddress}">-</td>
+                <td>
+                  <span class="badge bg-secondary"
+                        th:text="${sb.quantityOnHand + ' ' + (sb.inventoryItem?.unit ?: '')}">0</span>
+                </td>
+                <td class="small text-muted" th:text="${sb.quantityReserved ?: 0}">0</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${sb.quantityAvailable.compareTo(sb.reorderPoint) <= 0 and sb.reorderPoint.compareTo(java.math.BigDecimal.ZERO) > 0} ? 'bg-danger' : 'bg-success'"
+                        th:text="${sb.quantityAvailable + ' ' + (sb.inventoryItem?.unit ?: '')}">0</span>
+                </td>
+                <td class="small" th:text="${'₹' + #numbers.formatDecimal(sb.avgCost, 1, 2)}">0</td>
+                <td class="small">
+                  <span th:if="${sb.reorderPoint.compareTo(java.math.BigDecimal.ZERO) > 0}"
+                        th:text="${sb.reorderPoint}">0</span>
+                  <span th:if="${sb.reorderPoint.compareTo(java.math.BigDecimal.ZERO) == 0}"
+                        class="text-muted">—</span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <a th:href="@{/admin/wms/ledger(itemId=${sb.inventoryItem?.id})}"
+                       class="btn btn-outline-navy" title="Ledger">
+                      <i class="bi bi-journal"></i>
+                    </a>
+                    <button class="btn btn-outline-secondary" title="Set Reorder Point"
+                            th:onclick="|openReorderModal(${sb.inventoryItem?.id}, ${sb.location?.id}, ${sb.reorderPoint}, ${sb.reorderQty})|"
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_WMS_STOCK_ADJUST')">
+                      <i class="bi bi-bell"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(stockBalances)}">
+                <td colspan="8" class="text-center py-5 text-muted">
+                  No stock records for this warehouse.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div th:if="${stockBalances == null}" class="card card-levanto">
+      <div class="card-body text-center py-5 text-muted">
+        <i class="bi bi-building d-block mb-2" style="font-size:2rem;opacity:.25;"></i>
+        Select a warehouse above to view stock levels.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Adjust Stock Modal -->
+<div class="modal fade" id="adjustModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-sliders me-2"></i>Manual Stock Adjustment</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-bold">Item *</label>
+            <select id="adjItemId" class="form-select">
+              <option value="">Select item...</option>
+              <option th:each="sb : ${stockBalances}"
+                      th:value="${sb.inventoryItem?.id}"
+                      th:text="${sb.inventoryItem?.name}"
+                      th:attr="data-loc=${sb.location?.id}">-</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Adjustment Type *</label>
+            <select id="adjType" class="form-select">
+              <option value="IN">Add Stock (IN)</option>
+              <option value="OUT">Remove Stock (OUT)</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Quantity *</label>
+            <input type="number" id="adjQty" class="form-control" step="0.001" min="0.001" placeholder="0"/>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">Remarks</label>
+            <input type="text" id="adjRemarks" class="form-control" placeholder="Reason for adjustment"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="submitAdjustment()">
+          <i class="bi bi-check2 me-1"></i>Apply
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reorder Point Modal -->
+<div class="modal fade" id="reorderModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-bell me-2"></i>Set Reorder Point</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="ropItemId"/>
+        <input type="hidden" id="ropLocId"/>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Reorder Point</label>
+            <input type="number" id="ropPoint" class="form-control" step="0.001" min="0" placeholder="Trigger alert below this"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Reorder Qty</label>
+            <input type="number" id="ropQty" class="form-control" step="0.001" min="0" placeholder="Suggested PO qty"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="saveReorderPoint()">
+          <i class="bi bi-save me-1"></i>Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function submitAdjustment() {
+  const itemId = document.getElementById('adjItemId').value;
+  const sel = document.getElementById('adjItemId');
+  const locId = sel.options[sel.selectedIndex]?.getAttribute('data-loc');
+  const type = document.getElementById('adjType').value;
+  const qty = document.getElementById('adjQty').value;
+  const remarks = document.getElementById('adjRemarks').value;
+  if (!itemId || !qty) { showToast('Item and quantity required.', 'warning'); return; }
+  const params = new URLSearchParams({ itemId, locationId: locId, adjustmentType: type, qty, remarks });
+  fetch('/admin/wms/stock/adjust', { method: 'POST', body: params })
+    .then(r => r.json()).then(d => {
+      bootstrap.Modal.getInstance(document.getElementById('adjustModal')).hide();
+      if (d.success) { showToast('Stock adjusted!', 'success'); setTimeout(() => location.reload(), 800); }
+      else showToast(d.message, 'danger');
+    });
+}
+
+function openReorderModal(itemId, locId, point, qty) {
+  document.getElementById('ropItemId').value = itemId;
+  document.getElementById('ropLocId').value = locId;
+  document.getElementById('ropPoint').value = point;
+  document.getElementById('ropQty').value = qty;
+  new bootstrap.Modal(document.getElementById('reorderModal')).show();
+}
+
+function saveReorderPoint() {
+  const params = new URLSearchParams({
+    itemId: document.getElementById('ropItemId').value,
+    locationId: document.getElementById('ropLocId').value,
+    reorderPoint: document.getElementById('ropPoint').value,
+    reorderQty: document.getElementById('ropQty').value
+  });
+  fetch('/admin/wms/stock/reorder', { method: 'POST', body: params })
+    .then(r => r.json()).then(d => {
+      bootstrap.Modal.getInstance(document.getElementById('reorderModal')).hide();
+      if (d.success) { showToast('Reorder point saved!', 'success'); setTimeout(() => location.reload(), 800); }
+      else showToast(d.message, 'danger');
+    });
+}
+
+function showToast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
+  t.style.cssText = 'z-index:9999;min-width:260px;'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>
