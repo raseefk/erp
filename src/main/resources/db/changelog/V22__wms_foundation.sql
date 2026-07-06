@@ -3,7 +3,7 @@
 --  V22: Warehouse Management System (WMS) Foundation
 -- ============================================================
 
--- changeset system:V22-001 runOnChange:false
+-- changeset system:V22-001-wms runOnChange:false
 
 -- ── WAREHOUSES ────────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS warehouses (

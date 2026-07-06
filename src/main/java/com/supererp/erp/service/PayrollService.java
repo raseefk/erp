@@ -364,11 +364,11 @@ public class PayrollService {
 
     /** Mark arrears as paid after they've been included in a run entry */
     @Transactional
-    public void markArrearsAsPaid(Long employeeId, PayrollEntry entry) {
+    public void markArrearsAsPaid(Long employeeId, PayrollEntry payrollEntry) {
         List<PayrollArrear> unpaid = arrearRepo.findUnpaidByEmployee(employeeId);
         unpaid.forEach(a -> {
             a.setPaid(true);
-            a.setPayrollEntry(entry);
+            a.setPayrollEntry(payrollEntry);
         });
         arrearRepo.saveAll(unpaid);
     }
@@ -426,11 +426,11 @@ public class PayrollService {
         StringBuilder sb = new StringBuilder();
         sb.append("Seq,Beneficiary Name,Account Number,IFSC Code,Amount,Remarks\n");
 
-        int seq = 1;
+        final int[] seqArr = {1}; // Use array to make it mutable and effectively final
         for (PayrollEntry e : entries) {
             if (e.getNetSalary().compareTo(BigDecimal.ZERO) <= 0) continue;
             if (e.getAccountNumber() == null || e.getAccountNumber().isBlank()) continue;
-            sb.append(seq++).append(",")
+            sb.append(seqArr[0]++).append(",")
               .append(csvEscape(e.getEmployee().getName())).append(",")
               .append(csvEscape(e.getAccountNumber())).append(",")
               .append(csvEscape(e.getIfscCode() != null ? e.getIfscCode() : "")).append(",")
@@ -457,11 +457,14 @@ public class PayrollService {
     private int countWorkingDays(LocalDate start, LocalDate end,
                                   List<java.time.DayOfWeek> weekends, List<Holiday> holidays) {
         int count = 0;
-        for (LocalDate d = start; !d.isAfter(end); d = d.plusDays(1)) {
+        LocalDate current = start;
+        while (!current.isAfter(end)) {
+            final LocalDate d = current; // Make it final for lambda
             if (!weekends.contains(d.getDayOfWeek())
                     && holidays.stream().noneMatch(h -> h.getDate().equals(d))) {
                 count++;
             }
+            current = current.plusDays(1);
         }
         return count;
     }

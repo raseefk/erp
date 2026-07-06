@@ -2,7 +2,9 @@ package com.supererp.erp.service;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
-import com.supererp.erp.entity.*;
+import com.supererp.erp.entity.CompanySettings;
+import com.supererp.erp.entity.Employee;
+import com.supererp.erp.entity.PayrollEntry;
 import com.supererp.erp.repository.PayrollEntryRepository;
 import com.supererp.erp.repository.EmployeeRepository;
 import lombok.RequiredArgsConstructor;
@@ -72,7 +74,7 @@ public class Form16PdfService {
 
         try {
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Document doc = new Document(PageSize.A4, 40, 40, 40, 60);
+            com.itextpdf.text.Document doc = new com.itextpdf.text.Document(PageSize.A4, 40, 40, 40, 60);
             PdfWriter writer = PdfWriter.getInstance(doc, out);
             writer.setPageEvent(new FooterEvent(cs, financialYear));
             doc.open();
@@ -104,7 +106,7 @@ public class Form16PdfService {
             .reduce(BigDecimal.ZERO, BigDecimal::add);
     }
 
-    private void addForm16Header(Document doc, Employee emp, CompanySettings cs, int fy)
+    private void addForm16Header(com.itextpdf.text.Document doc, Employee emp, CompanySettings cs, int fy)
             throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100); t.setWidths(new float[]{3f, 1.8f}); t.setSpacingAfter(16);
@@ -143,7 +145,7 @@ public class Form16PdfService {
         doc.add(emp2);
     }
 
-    private void addPartB(Document doc,
+    private void addPartB(com.itextpdf.text.Document doc,
                            BigDecimal basic, BigDecimal hra, BigDecimal da, BigDecimal spl,
                            BigDecimal gross, BigDecimal pf, BigDecimal esi, BigDecimal pt,
                            BigDecimal tds, BigDecimal net) throws DocumentException {
@@ -206,7 +208,7 @@ public class Form16PdfService {
         t.addCell(c1); t.addCell(c2);
     }
 
-    private void addDeclaration(Document doc, CompanySettings cs) throws DocumentException {
+    private void addDeclaration(com.itextpdf.text.Document doc, CompanySettings cs) throws DocumentException {
         Paragraph p = new Paragraph(
             "DECLARATION: I " + (cs.getCompanyName() != null ? cs.getCompanyName() : "the Employer") +
             " hereby certify that a sum of tax as mentioned above has been deducted from the salary of the " +

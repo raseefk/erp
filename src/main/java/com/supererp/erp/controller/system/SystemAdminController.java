@@ -298,4 +298,42 @@ public class SystemAdminController {
         ra.addFlashAttribute("success", "Tenant deactivated.");
         return "redirect:/system/tenants";
     }
+
+    // ── Manual Tenant Expiry Check (Trigger manually & get status) ───────────
+    @PostMapping("/tenants/expire/check-now")
+    @AuditAction(value = "TENANT_EXPIRY_CHECK_MANUAL", entityType = "Tenant")
+    public String runTenantExpiryCheckNow(RedirectAttributes ra) {
+        try {
+            // Mark job as running
+            lastJobStatus = new ExpiryJobStatus();
+            lastJobStatus.setStatus("RUNNING");
+            lastJobStatus.setStartedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            lastJobStatus.setFinishedAt(null);
+            lastJobStatus.setDeactivatedCount(0);
+            lastJobStatus.setMessage("Checking expired tenants...");
+
+            // Run the check
+            com.supererp.erp.tenant.TenantExpiryScheduler.ExpiryCheckResult result = tenantExpiryScheduler.runExpiryCheck();
+
+            // Mark job as completed
+            lastJobStatus.setStatus("COMPLETED");
+            lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            lastJobStatus.setDeactivatedCount(result.getDeactivatedCount());
+            lastJobStatus.setMessage(result.getMessage());
+
+            ra.addFlashAttribute("success", "Tenant expiry check completed. Deactivated: " + result.getDeactivatedCount());
+        } catch (Exception e) {
+            lastJobStatus.setStatus("FAILED");
+            lastJobStatus.setMessage(e.getMessage());
+            ra.addFlashAttribute("error", "Tenant expiry check failed: " + e.getMessage());
+        }
+        return "redirect:/system/tenants";
+    }
+
+    // ── Get last job status (AJAX endpoint) ────────────────────────────────────
+    @GetMapping("/api/tenants/expiry-job-status")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public ExpiryJobStatus getTenantExpiryJobStatus() {
+        return lastJobStatus != null ? lastJobStatus : new ExpiryJobStatus("IDLE", null, null, 0, "No job run yet");
+    }
 }

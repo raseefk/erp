@@ -2,7 +2,9 @@ package com.supererp.erp.service;
 
 import com.itextpdf.text.*;
 import com.itextpdf.text.pdf.*;
-import com.supererp.erp.entity.*;
+import com.supererp.erp.entity.CompanySettings;
+import com.supererp.erp.entity.Employee;
+import com.supererp.erp.entity.PayrollEntry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,7 +49,7 @@ public class PayslipPdfService {
         try {
             CompanySettings cs = settingsService.getSettings();
             ByteArrayOutputStream out = new ByteArrayOutputStream();
-            Document doc = new Document(PageSize.A4, 36, 36, 36, 54);
+            com.itextpdf.text.Document doc = new com.itextpdf.text.Document(PageSize.A4, 36, 36, 36, 54);
             PdfWriter writer = PdfWriter.getInstance(doc, out);
             writer.setPageEvent(new FooterEvent(cs));
             doc.open();
@@ -67,7 +69,7 @@ public class PayslipPdfService {
     }
 
     // ── Header ────────────────────────────────────────────────────────────────
-    private void addHeader(Document doc, PayrollEntry entry, CompanySettings cs) throws DocumentException {
+    private void addHeader(com.itextpdf.text.Document doc, PayrollEntry entry, CompanySettings cs) throws DocumentException {
         PdfPTable t = new PdfPTable(2);
         t.setWidthPercentage(100);
         t.setWidths(new float[]{3f, 1.8f});
@@ -107,7 +109,7 @@ public class PayslipPdfService {
     }
 
     // ── Employee info row ─────────────────────────────────────────────────────
-    private void addEmployeeInfo(Document doc, PayrollEntry entry) throws DocumentException {
+    private void addEmployeeInfo(com.itextpdf.text.Document doc, PayrollEntry entry) throws DocumentException {
         Employee emp = entry.getEmployee();
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
@@ -141,7 +143,7 @@ public class PayslipPdfService {
     }
 
     // ── Earnings / Deductions table ───────────────────────────────────────────
-    private void addEarningsDeductions(Document doc, PayrollEntry entry) throws DocumentException {
+    private void addEarningsDeductions(com.itextpdf.text.Document doc, PayrollEntry entry) throws DocumentException {
         PdfPTable t = new PdfPTable(4);
         t.setWidthPercentage(100);
         t.setWidths(new float[]{2.5f, 1.5f, 2.5f, 1.5f});
@@ -215,7 +217,7 @@ public class PayslipPdfService {
     }
 
     // ── Net Salary box ────────────────────────────────────────────────────────
-    private void addNetSalaryBox(Document doc, PayrollEntry entry) throws DocumentException {
+    private void addNetSalaryBox(com.itextpdf.text.Document doc, PayrollEntry entry) throws DocumentException {
         PdfPTable t = new PdfPTable(1);
         t.setWidthPercentage(100);
         t.setSpacingAfter(10);
@@ -239,7 +241,7 @@ public class PayslipPdfService {
     }
 
     // ── Bank info ─────────────────────────────────────────────────────────────
-    private void addBankInfo(Document doc, PayrollEntry entry) throws DocumentException {
+    private void addBankInfo(com.itextpdf.text.Document doc, PayrollEntry entry) throws DocumentException {
         if (entry.getAccountNumber() == null || entry.getAccountNumber().isBlank()) return;
         PdfPTable t = new PdfPTable(3);
         t.setWidthPercentage(70);
