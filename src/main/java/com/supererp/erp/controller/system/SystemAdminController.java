@@ -31,6 +31,24 @@ public class SystemAdminController {
     private final com.supererp.erp.rbac.repository.MenuRepository menuRepo;
     private final jakarta.persistence.EntityManager entityManager;
     private final com.supererp.erp.repository.AppUserRepository appUserRepository;
+    private final com.supererp.erp.tenant.TenantExpiryScheduler tenantExpiryScheduler;
+
+    /**
+     * In-memory job state for the manual expiry check trigger.
+     * Replaced on each run — only one run tracked at a time (single-node).
+     */
+    private static volatile com.supererp.erp.controller.system.SystemAdminController.ExpiryJobStatus lastJobStatus = null;
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class ExpiryJobStatus {
+        private String status;       // RUNNING | COMPLETED | FAILED
+        private String startedAt;
+        private String finishedAt;
+        private int deactivatedCount;
+        private String message;
+    }
     
     @InitBinder
     public void initBinder(org.springframework.web.bind.WebDataBinder binder) {

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Arrears')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('payroll-arrears')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Salary Arrears')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div class="d-flex gap-2">
+        <a href="/admin/payroll" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <h6 class="mb-0 fw-bold align-self-center"><i class="bi bi-clock-history me-2"></i>Pending Arrears</h6>
+      </div>
+      <div class="d-flex gap-2">
+        <!-- Leave Encashment -->
+        <button class="btn btn-sm btn-outline-navy" onclick="processEncashment()"
+                sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_RUN')">
+          <i class="bi bi-calendar-check me-1"></i>Process Leave Encashment
+        </button>
+        <button class="btn btn-sm btn-gold" data-bs-toggle="modal" data-bs-target="#addArrearModal"
+                sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_RUN')">
+          <i class="bi bi-plus-lg me-1"></i>Add Arrear
+        </button>
+      </div>
+    </div>
+
+    <div class="alert alert-info small mb-3">
+      <i class="bi bi-info-circle me-2"></i>
+      Pending arrears are automatically included in the <strong>next payroll run</strong> for the respective employee.
+    </div>
+
+    <div class="card card-levanto">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead><tr>
+              <th>Employee</th><th>Period</th><th>Old Salary</th>
+              <th>New Salary</th><th>Arrear Amount</th><th>Reason</th><th>Created</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="a : ${arrears}">
+                <td>
+                  <div class="fw-bold small" th:text="${a.employee?.name}">-</div>
+                  <div class="small text-muted" th:text="${a.employee?.designation ?: ''}">-</div>
+                </td>
+                <td class="small" th:text="${a.arrearPeriod}">-</td>
+                <td class="small" th:text="${a.oldSalary != null ? '₹' + #numbers.formatDecimal(a.oldSalary, 1, 2) : '—'}">-</td>
+                <td class="small" th:text="${a.newSalary != null ? '₹' + #numbers.formatDecimal(a.newSalary, 1, 2) : '—'}">-</td>
+                <td class="fw-bold text-warning"
+                    th:text="${'₹' + #numbers.formatDecimal(a.arrearAmount, 1, 2)}">0</td>
+                <td class="small text-muted" th:text="${a.reason ?: '—'}">-</td>
+                <td class="small text-muted" th:text="${a.createdAt != null ? #temporals.format(a.createdAt, 'dd/MM/yy') : '—'}">-</td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(arrears)}">
+                <td colspan="7" class="text-center py-5 text-muted">
+                  <i class="bi bi-check-circle me-2 text-success"></i>No pending arrears.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add Arrear Modal -->
+<div class="modal fade" id="addArrearModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Add Salary Arrear</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label fw-bold">Employee *</label>
+            <select id="arrEmpId" class="form-select">
+              <option value="">Select employee...</option>
+              <option th:each="e : ${employees}" th:value="${e.id}"
+                      th:text="${e.name + ' — ' + (e.designation ?: '')}"
+                      th:attr="data-sal=${e.monthlySalary}">-</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Period *</label>
+            <input type="text" id="arrPeriod" class="form-control" placeholder="e.g. January 2026"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Arrear Amount (₹) *</label>
+            <input type="number" id="arrAmount" class="form-control" step="0.01" min="0.01"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Old Salary (₹)</label>
+            <input type="number" id="arrOldSal" class="form-control" step="0.01" min="0"/>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">New Salary (₹)</label>
+            <input type="number" id="arrNewSal" class="form-control" step="0.01" min="0"/>
+          </div>
+          <div class="col-12">
+            <label class="form-label fw-bold">Reason</label>
+            <input type="text" id="arrReason" class="form-control"
+                   placeholder="e.g. Salary revision effective Jan 2026"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="btn btn-gold" onclick="saveArrear()">
+          <i class="bi bi-save me-1"></i>Save Arrear
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function saveArrear() {
+  const empId = document.getElementById('arrEmpId').value;
+  const period = document.getElementById('arrPeriod').value.trim();
+  const amount = document.getElementById('arrAmount').value;
+  if (!empId || !period || !amount) { toast('Employee, period and amount are required.', 'warning'); return; }
+  const params = new URLSearchParams({
+    employeeId: empId, period,
+    oldSalary: document.getElementById('arrOldSal').value || '',
+    newSalary: document.getElementById('arrNewSal').value || '',
+    amount,
+    reason: document.getElementById('arrReason').value.trim()
+  });
+  fetch('/admin/payroll/arrears/save', { method: 'POST', body: params })
+    .then(r => r.json()).then(d => {
+      bootstrap.Modal.getInstance(document.getElementById('addArrearModal')).hide();
+      if (d.success) { toast('Arrear saved!', 'success'); setTimeout(() => location.reload(), 800); }
+      else toast(d.message, 'danger');
+    });
+}
+
+function processEncashment() {
+  const year = new Date().getFullYear();
+  if (!confirm('Process leave encashment for all employees for year ' + year + '? This queues arrears for the next payroll run.')) return;
+  fetch('/admin/payroll/leave-encashment/' + year, { method: 'POST' })
+    .then(r => r.json()).then(d => {
+      if (d.success) { toast(d.message, 'success'); setTimeout(() => location.reload(), 900); }
+      else toast(d.message, 'danger');
+    });
+}
+
+function toast(msg, type) {
+  const t = document.createElement('div');
+  t.className = 'alert alert-' + (type || 'success') + ' position-fixed top-0 end-0 m-3 shadow';
+  t.style.cssText = 'z-index:9999;min-width:260px;'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+</script>
+</body>
+</html>

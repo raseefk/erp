@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Payroll History')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('payroll-runs')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Employee Payroll History')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div class="d-flex align-items-center gap-3">
+        <a href="/admin/payroll" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
+        <div>
+          <div class="fw-bold" th:text="${employee.name}">-</div>
+          <div class="small text-muted" th:text="${employee.designation ?: ''}">-</div>
+        </div>
+      </div>
+      <div class="d-flex gap-2">
+        <a th:href="@{/admin/payroll/config/{id}(id=${employee.id})}" class="btn btn-sm btn-outline-navy"
+           sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_RUN')">
+          <i class="bi bi-gear me-1"></i>Payroll Config
+        </a>
+        <!-- Form 16 download -->
+        <a th:href="@{/admin/payroll/form16/{id}/{fy}(id=${employee.id}, fy=${currentYear - 1})}"
+           class="btn btn-sm btn-gold"
+           sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_FORM16')">
+          <i class="bi bi-file-earmark-pdf me-1"></i>Form 16 (FY <span th:text="${currentYear - 1}">-</span>)
+        </a>
+      </div>
+    </div>
+
+    <!-- Employee info card -->
+    <div class="card card-levanto mb-3">
+      <div class="card-body py-2">
+        <div class="row g-2 small">
+          <div class="col-md-3"><strong>Code:</strong> <span th:text="${employee.employeeCode ?: '—'}">-</span></div>
+          <div class="col-md-3"><strong>Department:</strong> <span th:text="${employee.department ?: '—'}">-</span></div>
+          <div class="col-md-3"><strong>PAN:</strong> <span th:text="${employee.panNumber ?: '—'}">-</span></div>
+          <div class="col-md-3"><strong>CTC/Month:</strong>
+            <span class="fw-bold"
+                  th:text="${'₹' + #numbers.formatDecimal(employee.monthlySalary, 1, 'COMMA', 2, 'POINT')}">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payslip history -->
+    <div class="card card-levanto mb-3">
+      <div class="card-header"><i class="bi bi-clock-history me-2"></i>Payslip History</div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead><tr>
+              <th>Period</th><th>Working Days</th><th>Gross</th>
+              <th>Deductions</th><th class="text-success">Net Pay</th><th>Status</th><th>Payslip</th>
+            </tr></thead>
+            <tbody>
+              <tr th:each="e : ${entries}">
+                <td class="fw-bold small" th:text="${e.payrollRun?.payPeriodLabel}">-</td>
+                <td class="small">
+                  <span th:text="${(e.daysPresent ?: 0) + ' / ' + (e.totalWorkingDays ?: 0)}">-</span>
+                  <span th:if="${e.daysLop > 0}" class="badge bg-danger ms-1"
+                        th:text="${'LOP: ' + e.daysLop}">-</span>
+                </td>
+                <td th:text="${'₹' + #numbers.formatDecimal(e.grossSalary, 1, 2)}">0</td>
+                <td class="text-danger" th:text="${'₹' + #numbers.formatDecimal(e.totalDeductions, 1, 2)}">0</td>
+                <td class="fw-bold text-success" th:text="${'₹' + #numbers.formatDecimal(e.netSalary, 1, 2)}">0</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${e.payrollRun?.status?.name() == 'DISBURSED' ? 'bg-success' :
+                                         e.payrollRun?.status?.name() == 'APPROVED' ? 'bg-primary' : 'bg-secondary'}"
+                        th:text="${e.payrollRun?.status}">-</span>
+                </td>
+                <td>
+                  <a th:href="@{/admin/payroll/entries/{id}/payslip(id=${e.id})}"
+                     class="btn btn-sm btn-outline-navy" target="_blank" title="Download Payslip">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                  </a>
+                </td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(entries)}">
+                <td colspan="7" class="text-center py-4 text-muted">No payroll history for this employee.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pending arrears -->
+    <div class="card card-levanto" th:if="${not #lists.isEmpty(arrears)}">
+      <div class="card-header">
+        <i class="bi bi-clock-history text-warning me-2"></i>Pending Arrears
+      </div>
+      <div class="card-body p-0">
+        <table class="table table-levanto mb-0">
+          <thead><tr><th>Period</th><th>Old Salary</th><th>New Salary</th><th>Amount</th><th>Reason</th></tr></thead>
+          <tbody>
+            <tr th:each="a : ${arrears}">
+              <td class="small" th:text="${a.arrearPeriod}">-</td>
+              <td class="small" th:text="${a.oldSalary != null ? '₹' + #numbers.formatDecimal(a.oldSalary, 1, 2) : '—'}">-</td>
+              <td class="small" th:text="${a.newSalary != null ? '₹' + #numbers.formatDecimal(a.newSalary, 1, 2) : '—'}">-</td>
+              <td class="fw-bold text-warning" th:text="${'₹' + #numbers.formatDecimal(a.arrearAmount, 1, 2)}">0</td>
+              <td class="small text-muted" th:text="${a.reason ?: '—'}">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head th:insert="~{fragments/layout :: head('Payroll Config')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('payroll-runs')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Payroll Configuration')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="mb-3"><a href="/admin/payroll" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a></div>
+
+    <div class="card card-levanto" style="max-width:740px;">
+      <div class="card-header">
+        <i class="bi bi-gear me-2"></i>
+        Payroll Config — <span th:text="${employee.name}">Employee</span>
+        <span class="small text-muted ms-2" th:text="${employee.designation ?: ''}">-</span>
+      </div>
+      <div class="card-body">
+        <div class="alert alert-info small mb-4">
+          <i class="bi bi-info-circle me-2"></i>
+          Monthly CTC: <strong th:text="${'₹' + #numbers.formatDecimal(employee.monthlySalary, 1, 'COMMA', 2, 'POINT')}">0</strong>.
+          All statutory deductions are <strong>optional</strong> — enable only what applies to this employee.
+        </div>
+
+        <form th:action="@{/admin/payroll/config/{id}/save(id=${employee.id})}" method="post">
+          <h6 class="fw-bold mb-3 border-bottom pb-2">CTC Breakup (%)</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Basic % <small class="text-muted">(of gross)</small></label>
+              <div class="input-group">
+                <input type="number" name="basicPct" class="form-control" step="0.01" min="0" max="100"
+                       th:value="${config.basicPct}"/>
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">HRA %</label>
+              <div class="input-group">
+                <input type="number" name="hraPct" class="form-control" step="0.01" min="0" max="100"
+                       th:value="${config.hraPct}"/>
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <div class="col-md-4">
+              <label class="form-label fw-bold">DA %</label>
+              <div class="input-group">
+                <input type="number" name="daPct" class="form-control" step="0.01" min="0" max="100"
+                       th:value="${config.daPct}"/>
+                <span class="input-group-text">%</span>
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="small text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Special Allowance = Gross − Basic − HRA − DA (auto-calculated per run).
+                Ensure Basic + HRA + DA &le; 100%.
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold mb-3 border-bottom pb-2">Statutory Deductions (Optional)</h6>
+          <div class="row g-3 mb-4">
+            <!-- PF -->
+            <div class="col-md-6">
+              <div class="card border rounded p-3">
+                <div class="form-check form-switch mb-2">
+                  <input type="checkbox" name="pfEnabled" value="true" class="form-check-input"
+                         id="pfEnabled" th:checked="${config.pfEnabled}"
+                         onchange="toggleSection('pfSection', this.checked)"/>
+                  <label class="form-check-label fw-bold" for="pfEnabled">
+                    Provident Fund (PF)
+                  </label>
+                </div>
+                <div id="pfSection" th:classappend="${config.pfEnabled} ? '' : 'd-none'">
+                  <label class="form-label small fw-bold">PF Rate %</label>
+                  <div class="input-group input-group-sm">
+                    <input type="number" name="pfPct" class="form-control" step="0.01" min="0" max="100"
+                           th:value="${config.pfPct}"/>
+                    <span class="input-group-text">% of Basic</span>
+                  </div>
+                  <div class="small text-muted mt-1">Employee: same %. Employer: same % (informational).</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- ESI -->
+            <div class="col-md-6">
+              <div class="card border rounded p-3">
+                <div class="form-check form-switch mb-2">
+                  <input type="checkbox" name="esiEnabled" value="true" class="form-check-input"
+                         id="esiEnabled" th:checked="${config.esiEnabled}"/>
+                  <label class="form-check-label fw-bold" for="esiEnabled">ESI</label>
+                </div>
+                <div class="small text-muted">
+                  Employee: 0.75% of gross. Employer: 3.25% of gross.<br/>
+                  Applicable only if gross &le; ₹21,000/month.
+                </div>
+              </div>
+            </div>
+
+            <!-- PT -->
+            <div class="col-md-6">
+              <div class="card border rounded p-3">
+                <div class="form-check form-switch mb-2">
+                  <input type="checkbox" name="ptEnabled" value="true" class="form-check-input"
+                         id="ptEnabled" th:checked="${config.ptEnabled}"
+                         onchange="toggleSection('ptSection', this.checked)"/>
+                  <label class="form-check-label fw-bold" for="ptEnabled">Professional Tax (PT)</label>
+                </div>
+                <div id="ptSection" th:classappend="${config.ptEnabled} ? '' : 'd-none'">
+                  <label class="form-label small fw-bold">State Code</label>
+                  <select name="ptState" class="form-select form-select-sm">
+                    <option value="">Select State</option>
+                    <option value="KA" th:selected="${config.ptState == 'KA'}">Karnataka (KA)</option>
+                    <option value="MH" th:selected="${config.ptState == 'MH'}">Maharashtra (MH)</option>
+                    <option value="TN" th:selected="${config.ptState == 'TN'}">Tamil Nadu (TN)</option>
+                    <option value="AP" th:selected="${config.ptState == 'AP'}">Andhra Pradesh (AP)</option>
+                    <option value="TS" th:selected="${config.ptState == 'TS'}">Telangana (TS)</option>
+                    <option value="WB" th:selected="${config.ptState == 'WB'}">West Bengal (WB)</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- TDS -->
+            <div class="col-md-6">
+              <div class="card border rounded p-3">
+                <div class="form-check form-switch mb-2">
+                  <input type="checkbox" name="tdsEnabled" value="true" class="form-check-input"
+                         id="tdsEnabled" th:checked="${config.tdsEnabled}"
+                         onchange="toggleSection('tdsSection', this.checked)"/>
+                  <label class="form-check-label fw-bold" for="tdsEnabled">TDS on Salary (Sec 192 / 26QB)</label>
+                </div>
+                <div id="tdsSection" th:classappend="${config.tdsEnabled} ? '' : 'd-none'">
+                  <label class="form-label small fw-bold">Annual TDS Amount (₹)</label>
+                  <input type="number" name="tdsAnnual" class="form-control form-control-sm"
+                         step="0.01" min="0" th:value="${config.tdsAnnual}"/>
+                  <div class="small text-muted mt-1">Monthly TDS = Annual ÷ 12</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold mb-3 border-bottom pb-2">Leave Encashment</h6>
+          <div class="row g-3 mb-4">
+            <div class="col-md-4">
+              <label class="form-label fw-bold">Encashable Leave Days / Year</label>
+              <input type="number" name="encashableLeaveDays" class="form-control" min="0"
+                     th:value="${config.encashableLeaveDays}"/>
+              <div class="form-text">Applied at year-end via Leave Encashment process.</div>
+            </div>
+          </div>
+
+          <div class="d-flex gap-2 mt-2">
+            <button type="submit" class="btn btn-gold px-4"><i class="bi bi-save me-1"></i>Save Configuration</button>
+            <a th:href="@{/admin/payroll/employee/{id}(id=${employee.id})}"
+               class="btn btn-outline-secondary">View Payslip History</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function toggleSection(id, show) {
+  document.getElementById(id).classList.toggle('d-none', !show);
+}
+</script>
+</body>
+</html>
