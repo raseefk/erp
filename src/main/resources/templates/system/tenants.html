@@ -164,11 +164,9 @@
             </div>
             <div class="modal-footer border-0 bg-light">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <form id="expiryCheckForm" method="POST" th:action="@{/system/tenants/expire/check-now}" style="display: inline;">
-                    <button type="submit" class="btn btn-warning" id="runNowBtn">
-                        <i class="bi bi-play-fill me-2"></i> Run Check Now
-                    </button>
-                </form>
+                <button type="button" class="btn btn-warning" id="runNowBtn">
+                    <i class="bi bi-play-fill me-2"></i> Run Check Now
+                </button>
                 <button type="button" class="btn btn-outline-primary" id="refreshStatusBtn" style="display: none;">
                     <i class="bi bi-arrow-clockwise me-2"></i> Refresh Status
                 </button>
@@ -177,7 +175,7 @@
     </div>
 </div>
 
-<div th:replace="~{fragments/layout :: scripts}"></div>
+<div th:replace="~{fragments/system-layout :: scripts}"></div>
 
 <!-- ── Tenant Expiry Check Script ──────────────────────────────────────────── -->
 <script>
@@ -190,30 +188,40 @@
             loadJobStatus();
         });
 
-        // Handle form submission
-        document.getElementById('expiryCheckForm').addEventListener('submit', function(e) {
+        // Handle button click
+        document.getElementById('runNowBtn').addEventListener('click', function(e) {
             e.preventDefault();
             
             const runNowBtn = document.getElementById('runNowBtn');
             const refreshBtn = document.getElementById('refreshStatusBtn');
             
             runNowBtn.disabled = true;
-            runNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Running...';
+            runNowBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting job...';
             
-            // Submit the form
+            // Fire-and-forget: submit the AJAX request
+            // Global CSRF interceptor from system-layout.html will add the token automatically
             fetch('/system/tenants/expire/check-now', {
                 method: 'POST',
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
                 }
             }).then(response => {
-                if (response.ok) {
-                    // Start polling for status
-                    startStatusPolling();
+                console.log('Response status:', response.status);
+                if (response.status === 403) {
+                    alert('Access denied. Please ensure you have SYSTEM_ADMIN permissions.');
+                    runNowBtn.disabled = false;
+                    runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
+                } else if (response.ok) {
                     refreshBtn.style.display = 'inline-block';
+                    startStatusPolling();
+                } else {
+                    alert('Error: ' + response.statusText);
+                    runNowBtn.disabled = false;
+                    runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
                 }
             }).catch(error => {
-                console.error('Error:', error);
+                console.error('Fetch error:', error);
+                alert('Error: ' + error.message);
                 runNowBtn.disabled = false;
                 runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
             });
@@ -242,44 +250,72 @@
             document.getElementById('deactivatedValue').textContent = data.deactivatedCount || '0';
             document.getElementById('messageValue').textContent = data.message || 'No job run yet';
             
-            // Update badge
+            // Update badge color based on status
             if (data.status === 'RUNNING') {
                 statusBadge.className = 'badge bg-primary';
                 statusBadge.textContent = 'RUNNING';
                 statusIcon.classList.remove('d-none');
+                runNowBtn.disabled = true;
+                runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
             } else if (data.status === 'COMPLETED') {
                 statusBadge.className = 'badge bg-success';
-                statusBadge.textContent = 'COMPLETED';
+                statusBadge.textContent = 'COMPLETED ✓';
                 statusIcon.classList.add('d-none');
+                runNowBtn.disabled = false;
+                runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
             } else if (data.status === 'FAILED') {
                 statusBadge.className = 'badge bg-danger';
-                statusBadge.textContent = 'FAILED';
+                statusBadge.textContent = 'FAILED ✕';
                 statusIcon.classList.add('d-none');
+                runNowBtn.disabled = false;
+                runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
             } else {
                 statusBadge.className = 'badge bg-secondary';
                 statusBadge.textContent = 'IDLE';
                 statusIcon.classList.add('d-none');
-            }
-            
-            // Enable/disable run button
-            if (data.status === 'RUNNING') {
-                runNowBtn.disabled = true;
-            } else {
                 runNowBtn.disabled = false;
                 runNowBtn.innerHTML = '<i class="bi bi-play-fill me-2"></i> Run Check Now';
             }
         }
 
         function startStatusPolling() {
-            // Poll every 2 seconds for 60 seconds max
-            let pollCount = 0;
+            // Clear any existing polling interval
+            if (pollInterval) clearInterval(pollInterval);
+            
+            // Poll immediately
+            loadJobStatus();
+            
+            // Then poll every 1.5 seconds until job completes (or 5 minutes max)
+            let completionCheckCount = 0;
             pollInterval = setInterval(function() {
                 loadJobStatus();
-                pollCount++;
-                if (pollCount > 30) {
+                completionCheckCount++;
+                
+                // Stop polling after 5 minutes
+                if (completionCheckCount > 200) {
                     clearInterval(pollInterval);
+                    console.log('Polling stopped after 5 minutes');
                 }
-            }, 2000);
+            }, 1500);
+        }
+
+        // Auto-poll in background if modal is closed
+        window.addEventListener('beforeunload', function() {
+            sessionStorage.setItem('tenantExpiryJobRunning', 'true');
+        });
+
+        // Check on page load if a job was running
+        if (sessionStorage.getItem('tenantExpiryJobRunning') === 'true') {
+            // Check current status
+            fetch('/system/api/tenants/expiry-job-status')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'RUNNING') {
+                        startStatusPolling();
+                    } else {
+                        sessionStorage.removeItem('tenantExpiryJobRunning');
+                    }
+                });
         }
     });
 </script>

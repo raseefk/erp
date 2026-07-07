@@ -304,7 +304,7 @@ public class SystemAdminController {
     @AuditAction(value = "TENANT_EXPIRY_CHECK_MANUAL", entityType = "Tenant")
     public String runTenantExpiryCheckNow(RedirectAttributes ra) {
         try {
-            // Mark job as running
+            // Mark job as running immediately
             lastJobStatus = new ExpiryJobStatus();
             lastJobStatus.setStatus("RUNNING");
             lastJobStatus.setStartedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
@@ -312,20 +312,28 @@ public class SystemAdminController {
             lastJobStatus.setDeactivatedCount(0);
             lastJobStatus.setMessage("Checking expired tenants...");
 
-            // Run the check
-            com.supererp.erp.tenant.TenantExpiryScheduler.ExpiryCheckResult result = tenantExpiryScheduler.runExpiryCheck();
+            // Run the check asynchronously in a background thread
+            new Thread(() -> {
+                try {
+                    com.supererp.erp.tenant.TenantExpiryScheduler.ExpiryCheckResult result = tenantExpiryScheduler.runExpiryCheck();
 
-            // Mark job as completed
-            lastJobStatus.setStatus("COMPLETED");
-            lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            lastJobStatus.setDeactivatedCount(result.getDeactivatedCount());
-            lastJobStatus.setMessage(result.getMessage());
+                    // Update job status after completion
+                    lastJobStatus.setStatus("COMPLETED");
+                    lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    lastJobStatus.setDeactivatedCount(result.getDeactivatedCount());
+                    lastJobStatus.setMessage(result.getMessage());
+                } catch (Exception e) {
+                    lastJobStatus.setStatus("FAILED");
+                    lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    lastJobStatus.setMessage("Error: " + e.getMessage());
+                }
+            }).start();
 
-            ra.addFlashAttribute("success", "Tenant expiry check completed. Deactivated: " + result.getDeactivatedCount());
+            ra.addFlashAttribute("success", "Tenant expiry check started in background. Check status in the modal.");
         } catch (Exception e) {
             lastJobStatus.setStatus("FAILED");
             lastJobStatus.setMessage(e.getMessage());
-            ra.addFlashAttribute("error", "Tenant expiry check failed: " + e.getMessage());
+            ra.addFlashAttribute("error", "Failed to start tenant expiry check: " + e.getMessage());
         }
         return "redirect:/system/tenants";
     }
