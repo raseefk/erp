@@ -4,6 +4,8 @@
 <head th:fragment="head(pageTitle)">
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
   <title th:text="${pageTitle} + ' | Super ERP Admin'">Super ERP Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@600;700&display=swap" rel="stylesheet"/>
@@ -178,6 +180,28 @@
 <!-- ── SCRIPTS ─────────────────────────────────────────────────────────── -->
 <div th:fragment="scripts">
   <th:block th:replace="${scripts} ?: ~{}"></th:block>
+  
+  <!-- Global CSRF Token Interceptor for fetch() -->
+  <script>
+    (function() {
+      const originalFetch = window.fetch;
+      window.fetch = function(url, options) {
+        if (options && ['POST', 'PUT', 'DELETE', 'PATCH'].includes(options.method?.toUpperCase())) {
+          const token = document.querySelector('meta[name="_csrf"]')?.content;
+          const header = document.querySelector('meta[name="_csrf_header"]')?.content;
+          if (token && header) {
+            options.headers = options.headers || {};
+            if (!(options.headers instanceof Headers)) {
+              options.headers[header] = token;
+            } else {
+              options.headers.set(header, token);
+            }
+          }
+        }
+        return originalFetch(url, options);
+      };
+    })();
+  </script>
 </div>
 
 </body>

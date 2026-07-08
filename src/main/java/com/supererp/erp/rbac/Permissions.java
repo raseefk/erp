@@ -103,6 +103,13 @@ public final class Permissions {
     public static final String HR_HOLIDAYS_MANAGE           = "HR_HOLIDAYS_MANAGE";
     public static final String HR_ATTENDANCE_REPORT_VIEW   = "HR_ATTENDANCE_REPORT_VIEW";
 
+    // ── PAYROLL Feature (extended HR) ─────────────────────────────────────────
+    public static final String HR_PAYROLL_VIEW              = "HR_PAYROLL_VIEW";
+    public static final String HR_PAYROLL_RUN               = "HR_PAYROLL_RUN";
+    public static final String HR_PAYROLL_APPROVE           = "HR_PAYROLL_APPROVE";
+    public static final String HR_PAYROLL_DISBURSE          = "HR_PAYROLL_DISBURSE";
+    public static final String HR_PAYROLL_FORM16            = "HR_PAYROLL_FORM16";
+
     // ── FINANCE Feature ───────────────────────────────────────────────────────
     public static final String FINANCE_VIEW                 = "FINANCE_VIEW";
     public static final String FIN_TRANSACTIONS_VIEW        = "FIN_TRANSACTIONS_VIEW";

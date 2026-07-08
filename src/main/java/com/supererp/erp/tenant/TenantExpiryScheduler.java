@@ -36,6 +36,15 @@ public class TenantExpiryScheduler {
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
     public void deactivateExpiredTenants() {
+        runExpiryCheck();
+    }
+
+    /**
+     * Executes the expiry check and returns a result summary.
+     * Used by manual trigger from SystemAdminController.
+     */
+    @Transactional
+    public ExpiryCheckResult runExpiryCheck() {
         OffsetDateTime now = OffsetDateTime.now();
         log.info("TenantExpiryScheduler: checking for expired tenants at {}", now);
 
@@ -43,7 +52,7 @@ public class TenantExpiryScheduler {
 
         if (expired.isEmpty()) {
             log.info("TenantExpiryScheduler: no expired tenants found.");
-            return;
+            return new ExpiryCheckResult(0, "No expired tenants found.");
         }
 
         for (Tenant tenant : expired) {
@@ -54,5 +63,18 @@ public class TenantExpiryScheduler {
         }
 
         log.info("TenantExpiryScheduler: deactivated {} expired tenant(s).", expired.size());
+        return new ExpiryCheckResult(expired.size(), 
+            "Successfully deactivated " + expired.size() + " expired tenant(s).");
+    }
+
+    /**
+     * Result object returned from expiry check.
+     */
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class ExpiryCheckResult {
+        private int deactivatedCount;
+        private String message;
     }
 }

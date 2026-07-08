@@ -31,6 +31,24 @@ public class SystemAdminController {
     private final com.supererp.erp.rbac.repository.MenuRepository menuRepo;
     private final jakarta.persistence.EntityManager entityManager;
     private final com.supererp.erp.repository.AppUserRepository appUserRepository;
+    private final com.supererp.erp.tenant.TenantExpiryScheduler tenantExpiryScheduler;
+
+    /**
+     * In-memory job state for the manual expiry check trigger.
+     * Replaced on each run — only one run tracked at a time (single-node).
+     */
+    private static volatile com.supererp.erp.controller.system.SystemAdminController.ExpiryJobStatus lastJobStatus = null;
+
+    @lombok.Data
+    @lombok.AllArgsConstructor
+    @lombok.NoArgsConstructor
+    public static class ExpiryJobStatus {
+        private String status;       // RUNNING | COMPLETED | FAILED
+        private String startedAt;
+        private String finishedAt;
+        private int deactivatedCount;
+        private String message;
+    }
     
     @InitBinder
     public void initBinder(org.springframework.web.bind.WebDataBinder binder) {
@@ -279,5 +297,51 @@ public class SystemAdminController {
         tenantService.deactivate(id);
         ra.addFlashAttribute("success", "Tenant deactivated.");
         return "redirect:/system/tenants";
+    }
+
+    // ── Manual Tenant Expiry Check (Trigger manually & get status) ───────────
+    @PostMapping("/tenants/expire/check-now")
+    @AuditAction(value = "TENANT_EXPIRY_CHECK_MANUAL", entityType = "Tenant")
+    public String runTenantExpiryCheckNow(RedirectAttributes ra) {
+        try {
+            // Mark job as running immediately
+            lastJobStatus = new ExpiryJobStatus();
+            lastJobStatus.setStatus("RUNNING");
+            lastJobStatus.setStartedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+            lastJobStatus.setFinishedAt(null);
+            lastJobStatus.setDeactivatedCount(0);
+            lastJobStatus.setMessage("Checking expired tenants...");
+
+            // Run the check asynchronously in a background thread
+            new Thread(() -> {
+                try {
+                    com.supererp.erp.tenant.TenantExpiryScheduler.ExpiryCheckResult result = tenantExpiryScheduler.runExpiryCheck();
+
+                    // Update job status after completion
+                    lastJobStatus.setStatus("COMPLETED");
+                    lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    lastJobStatus.setDeactivatedCount(result.getDeactivatedCount());
+                    lastJobStatus.setMessage(result.getMessage());
+                } catch (Exception e) {
+                    lastJobStatus.setStatus("FAILED");
+                    lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+                    lastJobStatus.setMessage("Error: " + e.getMessage());
+                }
+            }).start();
+
+            ra.addFlashAttribute("success", "Tenant expiry check started in background. Check status in the modal.");
+        } catch (Exception e) {
+            lastJobStatus.setStatus("FAILED");
+            lastJobStatus.setMessage(e.getMessage());
+            ra.addFlashAttribute("error", "Failed to start tenant expiry check: " + e.getMessage());
+        }
+        return "redirect:/system/tenants";
+    }
+
+    // ── Get last job status (AJAX endpoint) ────────────────────────────────────
+    @GetMapping("/api/tenants/expiry-job-status")
+    @org.springframework.web.bind.annotation.ResponseBody
+    public ExpiryJobStatus getTenantExpiryJobStatus() {
+        return lastJobStatus != null ? lastJobStatus : new ExpiryJobStatus("IDLE", null, null, 0, "No job run yet");
     }
 }
