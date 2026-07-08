@@ -1,21 +1,24 @@
 package com.supererp.erp.controller;
+
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * Handles the single login page for all users.
+ */
 @Controller
 public class AuthController {
+
     @GetMapping("/login")
-    public String login(@RequestParam(required=false) String error,
-                        @RequestParam(required=false) String logout,
-                        @RequestParam(required=false) String expired,
+    public String login(@RequestParam(required = false) String error,
+                        @RequestParam(required = false) String logout,
+                        @RequestParam(required = false) String expired,
                         Authentication auth, Model model) {
         if (auth != null && auth.isAuthenticated()) {
-            boolean isSystem = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
-            return isSystem ? "redirect:/system/tenants" : "redirect:/admin/home";
+            return "redirect:/admin/home";
         }
         if (error   != null) model.addAttribute("errorMsg",   "Invalid username or password.");
         if (logout  != null) model.addAttribute("logoutMsg",  "Logged out successfully.");

@@ -2,20 +2,21 @@ package com.supererp.erp.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.MappedSuperclass;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.Filter;
-import org.hibernate.annotations.FilterDef;
-import org.hibernate.annotations.ParamDef;
+import lombok.experimental.SuperBuilder;
 
 import java.util.UUID;
-import lombok.experimental.SuperBuilder;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 
 /**
- * Base class for all tenant-aware entities.
- * Automatically adds tenant_id column and defines Hibernate filter.
+ * Base class for all entities that previously carried a tenant_id column.
+ * In single-tenant mode the tenant_id column is still present in the schema for
+ * backward compatibility, but is always populated with the application's fixed UUID
+ * and is never used for data isolation.
+ *
+ * The Hibernate multi-tenant @FilterDef / @Filter annotations have been removed.
  */
 @MappedSuperclass
 @Getter
@@ -23,17 +24,20 @@ import lombok.AllArgsConstructor;
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-@FilterDef(name = "tenantFilter", parameters = @ParamDef(name = "tenantId", type = UUID.class))
-@Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
 public abstract class TenantAwareEntity {
 
     @Column(name = "tenant_id", nullable = false, updatable = false)
     private UUID tenantId;
 
+    /**
+     * Auto-populates tenant_id with the application's fixed singleton UUID on INSERT.
+     * This ensures existing schema constraints (NOT NULL) are satisfied without
+     * requiring any caller to supply the value.
+     */
     @jakarta.persistence.PrePersist
     public void ensureTenantId() {
         if (this.tenantId == null) {
-            this.tenantId = com.supererp.erp.tenant.TenantContext.getTenantId();
+            this.tenantId = com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID;
         }
     }
 }

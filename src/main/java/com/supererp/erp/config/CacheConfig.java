@@ -7,12 +7,12 @@ import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Caffeine cache configuration.
- * Uses Spring Cache abstraction — can be swapped to Redis
- * by replacing this config + adding spring-boot-starter-data-redis dependency.
+ * Caffeine cache configuration — single-tenant mode.
+ * Tenant-scoped caches replaced by application-level caches.
  */
 @Configuration
 @EnableCaching
@@ -26,14 +26,11 @@ public class CacheConfig {
             .expireAfterWrite(10, TimeUnit.MINUTES)
             .recordStats());
 
-        // Register named caches with different TTLs
-        manager.setCacheNames(java.util.List.of(
-            "tenantBySlug",       // 10 min — tenant metadata
-            "tenantById",         // 10 min
-            "tenantFeatures",     // 5 min — feature toggles per tenant
-            "tenantMenus",        // 5 min — menu toggles per tenant
-            "permissionManifest", // 5 min — full permission tree per user
-            "tokenBlacklist"      // checked per-request
+        manager.setCacheNames(List.of(
+            "tenantFeatures",      // application-level feature toggles
+            "tenantMenus",         // application-level menu toggles
+            "permissionManifest",  // full permission tree per user
+            "tokenBlacklist"       // checked per-request
         ));
 
         return manager;

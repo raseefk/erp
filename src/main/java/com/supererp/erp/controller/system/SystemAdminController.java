@@ -1,163 +1,114 @@
 package com.supererp.erp.controller.system;
 
 import com.supererp.erp.rbac.annotation.AuditAction;
-import com.supererp.erp.tenant.Tenant;
-import com.supererp.erp.tenant.TenantService;
-import jakarta.validation.Valid;
+import com.supererp.erp.rbac.entity.Feature;
+import com.supererp.erp.rbac.repository.FeatureRepository;
+import com.supererp.erp.rbac.repository.MenuRepository;
+import com.supererp.erp.rbac.service.RbacService;
+import com.supererp.erp.repository.AppUserRepository;
+import com.supererp.erp.service.CompanySettingsService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.time.OffsetDateTime;
-import com.supererp.erp.rbac.entity.Feature;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.lang.management.ManagementFactory;
+import java.util.*;
 
+/**
+ * Application administration controller — single-tenant mode.
+ *
+ * Previously the "system admin" portal managed multiple tenants.
+ * Now this controller manages the single application: features, menus,
+ * users, roles, and system health — all accessible to ADMIN role users.
+ *
+ * URL prefix changed from /system to /app-admin to disambiguate from
+ * the tenant dashboard.
+ */
 @Controller
-@RequestMapping("/system")
+@RequestMapping("/app-admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ROLE_SYSTEM_ADMIN')")
+@PreAuthorize("hasRole('ROLE_ADMIN')")
 public class SystemAdminController {
 
-    private final TenantService tenantService;
-    private final com.supererp.erp.rbac.service.RbacService rbacService;
-    private final com.supererp.erp.rbac.repository.FeatureRepository featureRepo;
-    private final com.supererp.erp.rbac.repository.MenuRepository menuRepo;
-    private final jakarta.persistence.EntityManager entityManager;
-    private final com.supererp.erp.repository.AppUserRepository appUserRepository;
-    private final com.supererp.erp.tenant.TenantExpiryScheduler tenantExpiryScheduler;
+    private final RbacService           rbacService;
+    private final FeatureRepository     featureRepo;
+    private final MenuRepository        menuRepo;
+    private final AppUserRepository     appUserRepository;
+    private final CompanySettingsService companySettingsService;
 
-    /**
-     * In-memory job state for the manual expiry check trigger.
-     * Replaced on each run — only one run tracked at a time (single-node).
-     */
-    private static volatile com.supererp.erp.controller.system.SystemAdminController.ExpiryJobStatus lastJobStatus = null;
-
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
-    public static class ExpiryJobStatus {
-        private String status;       // RUNNING | COMPLETED | FAILED
-        private String startedAt;
-        private String finishedAt;
-        private int deactivatedCount;
-        private String message;
-    }
-    
-    @InitBinder
-    public void initBinder(org.springframework.web.bind.WebDataBinder binder) {
-        binder.registerCustomEditor(java.time.OffsetDateTime.class, new java.beans.PropertyEditorSupport() {
-            @Override
-            public void setAsText(String text) {
-                if (text == null || text.trim().isEmpty()) {
-                    setValue(null);
-                } else {
-                    try {
-                        // datetime-local format: yyyy-MM-dd'T'HH:mm
-                        java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(text);
-                        setValue(ldt.atOffset(java.time.ZoneOffset.UTC));
-                    } catch (Exception e) {
-                        // Fallback to standard OffsetDateTime parsing
-                        setValue(java.time.OffsetDateTime.parse(text));
-                    }
-                }
-            }
-        });
-    }
-
-    // ── System Dashboard ───────────────────────────────────────────────────
-    @GetMapping({"", "/dashboard", "/"})
-    public String systemDashboard(Model model) {
-        List<Tenant> tenants = tenantService.findAll();
-        
-        // 1. OS Metrics
-        com.sun.management.OperatingSystemMXBean osBean = 
-            (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
-        double cpuLoad = osBean.getSystemCpuLoad() * 100.0;
-        if (cpuLoad < 0) cpuLoad = 0.0; // Can be negative on first call
+    // ── Application Health Dashboard ─────────────────────────────────────────
+    @GetMapping({"", "/", "/dashboard"})
+    public String appDashboard(Model model) {
+        // OS Metrics
+        com.sun.management.OperatingSystemMXBean osBean =
+            (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+        double cpuLoad = Math.max(0.0, osBean.getSystemCpuLoad() * 100.0);
         double totalRamGb = osBean.getTotalMemorySize() / (1024.0 * 1024.0 * 1024.0);
-        double freeRamGb = osBean.getFreeMemorySize() / (1024.0 * 1024.0 * 1024.0);
-        double usedRamGb = totalRamGb - freeRamGb;
-        double ramPercent = (usedRamGb / totalRamGb) * 100.0;
+        double freeRamGb  = osBean.getFreeMemorySize()  / (1024.0 * 1024.0 * 1024.0);
+        double usedRamGb  = totalRamGb - freeRamGb;
+        double ramPercent = totalRamGb > 0 ? (usedRamGb / totalRamGb) * 100.0 : 0.0;
 
-        // 2. Global DB Size
-        Number dbSizeBytes = (Number) entityManager.createNativeQuery("SELECT pg_database_size(current_database())").getSingleResult();
-        double dbSizeGb = dbSizeBytes.longValue() / (1024.0 * 1024.0 * 1024.0);
+        // JVM Heap
+        var memBean = ManagementFactory.getMemoryMXBean();
+        long heapUsed = memBean.getHeapMemoryUsage().getUsed();
+        long heapMax  = memBean.getHeapMemoryUsage().getMax();
+        double jvmHeapPercent = heapMax > 0 ? (heapUsed / (double) heapMax) * 100.0 : 0.0;
 
-        // 3. Tenant Stats (Uploads and Est Rows)
-        List<Object[]> userCounts = appUserRepository.countUsersGroupedByTenant();
-        java.util.Map<UUID, Long> userCountMap = new java.util.HashMap<>();
-        for (Object[] row : userCounts) {
-            userCountMap.put((UUID) row[0], (Long) row[1]);
-        }
+        // User count
+        long totalUsers   = appUserRepository.count();
+        long enabledUsers = appUserRepository.findAllByEnabledTrueOrderByFullNameAsc().size();
 
-        List<java.util.Map<String, Object>> tenantStats = tenants.stream()
-            .sorted((a, b) -> b.getCreatedAt().compareTo(a.getCreatedAt()))
-            .map(t -> {
-                double uploadSize = (t.getUploadSizeBytes() != null ? t.getUploadSizeBytes() : 0L) / (1024.0 * 1024.0 * 1024.0);
-                long activeUsers = userCountMap.getOrDefault(t.getId(), 0L);
-                return java.util.Map.<String, Object>of(
-                    "tenant", t,
-                    "uploadSizeGb", uploadSize,
-                    "activeUsers", activeUsers
-                );
-            }).toList();
+        // Feature stats
+        Set<String> enabledFeatures = rbacService.getEnabledFeatures();
+        long totalFeatures   = featureRepo.count();
+        long enabledFeatCount = enabledFeatures.size();
 
-        model.addAttribute("totalTenants", tenants.size());
-        model.addAttribute("activeTenants", tenants.stream().filter(Tenant::isActive).count());
-        model.addAttribute("tenantStats", tenantStats);
-        model.addAttribute("cpuLoad", String.format("%.1f", cpuLoad));
-        model.addAttribute("usedRamGb", String.format("%.1f", usedRamGb));
-        model.addAttribute("totalRamGb", String.format("%.1f", totalRamGb));
-        model.addAttribute("ramPercent", String.format("%.1f", ramPercent));
-        model.addAttribute("dbSizeGb", String.format("%.3f", dbSizeGb));
-        model.addAttribute("pageTitle", "System Health Dashboard");
+        model.addAttribute("cpuLoad",        String.format("%.1f", cpuLoad));
+        model.addAttribute("usedRamGb",      String.format("%.1f", usedRamGb));
+        model.addAttribute("totalRamGb",     String.format("%.1f", totalRamGb));
+        model.addAttribute("ramPercent",     String.format("%.1f", ramPercent));
+        model.addAttribute("jvmHeapPercent", String.format("%.1f", jvmHeapPercent));
+        model.addAttribute("heapUsedMb",     String.format("%.0f", heapUsed / (1024.0 * 1024.0)));
+        model.addAttribute("heapMaxMb",      String.format("%.0f", heapMax  / (1024.0 * 1024.0)));
+        model.addAttribute("totalUsers",     totalUsers);
+        model.addAttribute("enabledUsers",   enabledUsers);
+        model.addAttribute("totalFeatures",  totalFeatures);
+        model.addAttribute("enabledFeatureCount", enabledFeatCount);
+        model.addAttribute("companySettings", companySettingsService.getSettings());
+        model.addAttribute("pageTitle", "Application Dashboard");
         return "system/dashboard";
     }
 
-    // ── Live Server Stats API (Server-Sent Events) ───────────────────────
+    // ── Live Server Stats (SSE) ───────────────────────────────────────────────
     @GetMapping(value = "/api/stats", produces = org.springframework.http.MediaType.TEXT_EVENT_STREAM_VALUE)
-    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter liveStatsStream() {
-        org.springframework.web.servlet.mvc.method.annotation.SseEmitter emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(0L); // No timeout
-        java.util.concurrent.ExecutorService sseMvcExecutor = java.util.concurrent.Executors.newSingleThreadExecutor();
-
-        sseMvcExecutor.execute(() -> {
+    public org.springframework.web.servlet.mvc.method.annotation.SseEmitter liveStats() {
+        var emitter = new org.springframework.web.servlet.mvc.method.annotation.SseEmitter(0L);
+        java.util.concurrent.Executors.newSingleThreadExecutor().execute(() -> {
             try {
                 com.sun.management.OperatingSystemMXBean osBean =
-                    (com.sun.management.OperatingSystemMXBean) java.lang.management.ManagementFactory.getOperatingSystemMXBean();
-                java.lang.management.MemoryMXBean memBean = java.lang.management.ManagementFactory.getMemoryMXBean();
-
+                    (com.sun.management.OperatingSystemMXBean) ManagementFactory.getOperatingSystemMXBean();
+                var memBean = ManagementFactory.getMemoryMXBean();
                 while (true) {
-                    double cpuLoad = osBean.getSystemCpuLoad() * 100.0;
-                    if (cpuLoad < 0) cpuLoad = 0.0;
-
-                    double totalRamGb = osBean.getTotalMemorySize() / (1024.0 * 1024.0 * 1024.0);
-                    double freeRamGb  = osBean.getFreeMemorySize()  / (1024.0 * 1024.0 * 1024.0);
-                    double usedRamGb  = totalRamGb - freeRamGb;
-                    double ramPercent = (usedRamGb / totalRamGb) * 100.0;
-
-                    long heapUsedBytes = memBean.getHeapMemoryUsage().getUsed();
-                    long heapMaxBytes  = memBean.getHeapMemoryUsage().getMax();
-                    double jvmHeapPercent = heapMaxBytes > 0 ? (heapUsedBytes / (double) heapMaxBytes) * 100.0 : 0.0;
+                    double cpu       = Math.max(0.0, osBean.getSystemCpuLoad() * 100.0);
+                    double totalRam  = osBean.getTotalMemorySize() / (1024.0 * 1024.0 * 1024.0);
+                    double usedRam   = totalRam - osBean.getFreeMemorySize() / (1024.0 * 1024.0 * 1024.0);
+                    long   heapUsed  = memBean.getHeapMemoryUsage().getUsed();
+                    long   heapMax   = memBean.getHeapMemoryUsage().getMax();
 
                     Map<String, Object> stats = Map.of(
-                        "cpuLoad",       String.format("%.1f", cpuLoad),
-                        "ramPercent",    String.format("%.1f", ramPercent),
-                        "usedRamGb",     String.format("%.1f", usedRamGb),
-                        "totalRamGb",    String.format("%.1f", totalRamGb),
-                        "jvmHeapPercent",String.format("%.1f", jvmHeapPercent),
-                        "heapUsedMb",    String.format("%.0f", heapUsedBytes / (1024.0 * 1024.0)),
-                        "heapMaxMb",     String.format("%.0f", heapMaxBytes  / (1024.0 * 1024.0))
+                        "cpuLoad",        String.format("%.1f", cpu),
+                        "ramPercent",     String.format("%.1f", totalRam > 0 ? (usedRam / totalRam) * 100.0 : 0.0),
+                        "usedRamGb",      String.format("%.1f", usedRam),
+                        "totalRamGb",     String.format("%.1f", totalRam),
+                        "jvmHeapPercent", String.format("%.1f", heapMax > 0 ? (heapUsed / (double) heapMax) * 100.0 : 0.0),
+                        "heapUsedMb",     String.format("%.0f", heapUsed / (1024.0 * 1024.0)),
+                        "heapMaxMb",      String.format("%.0f", heapMax  / (1024.0 * 1024.0))
                     );
-
                     emitter.send(stats, org.springframework.http.MediaType.APPLICATION_JSON);
-                    Thread.sleep(3000); // Stream every 3 seconds
+                    Thread.sleep(3000);
                 }
             } catch (Exception ex) {
                 emitter.completeWithError(ex);
@@ -166,182 +117,41 @@ public class SystemAdminController {
         return emitter;
     }
 
-    @org.springframework.beans.factory.annotation.Value("${app.tenant.domain:myerponline.in}")
-    private String tenantDomain;
+    // ── Feature & Menu Management ─────────────────────────────────────────────
+    @GetMapping("/features")
+    public String featuresPage(Model model) {
+        List<Feature> allFeatures = featureRepo.findAllWithMenus();
+        Set<String>   enabled     = rbacService.getEnabledFeatures();
+        List<String>  disabledMenuIds = rbacService.getMenuMappingsForApplication().stream()
+            .filter(m -> !m.isEnabled()).map(m -> m.getMenuId()).toList();
 
-    // ── Tenant List ─────────────────────────────────────────────────────────
-    @GetMapping("/tenants")
-    public String listTenants(Model model) {
-        List<Tenant> tenants = tenantService.findAll();
-        // Build a feature summary map: tenantId → enabled feature display names
-        List<Feature> allFeatures = featureRepo.findAllOrdered();
-        Map<UUID, List<String>> tenantEnabledFeatures = new java.util.LinkedHashMap<>();
-        for (Tenant t : tenants) {
-            Set<String> enabled = rbacService.getEnabledFeatures(t.getId());
-            List<String> names = allFeatures.stream()
-                    .filter(f -> enabled.contains(f.getId()))
-                    .map(Feature::getDisplayName)
-                    .toList();
-            tenantEnabledFeatures.put(t.getId(), names);
-        }
-        model.addAttribute("tenants", tenants);
-        model.addAttribute("tenantEnabledFeatures", tenantEnabledFeatures);
-        model.addAttribute("pageTitle", "Tenant Management");
-        model.addAttribute("tenantDomain", tenantDomain);
-        return "system/tenants";
-    }
-
-    // ── New Tenant Form ──────────────────────────────────────────────────────
-    @GetMapping("/tenants/new")
-    public String newTenantForm(Model model) {
-        model.addAttribute("tenant", Tenant.builder().build());
-        model.addAttribute("plans", new String[]{"TRIAL", "STANDARD", "ENTERPRISE"});
-        model.addAttribute("pageTitle", "Create New Tenant");
-        model.addAttribute("isNew", true);
-        model.addAttribute("tenantDomain", tenantDomain);
-        return "system/tenant-form";
-    }
-
-    @PostMapping("/tenants/new")
-    @AuditAction(value = "TENANT_CREATE", entityType = "Tenant")
-    public String createTenant(@ModelAttribute Tenant tenant,
-                                @RequestParam String adminUsername,
-                                @RequestParam String adminPassword,
-                                @RequestParam String adminFullName,
-                                @RequestParam String adminEmail,
-                                RedirectAttributes ra) {
-        try {
-            tenantService.createWithAdmin(tenant, adminUsername, adminPassword, adminFullName, adminEmail);
-            ra.addFlashAttribute("success", "Tenant '" + tenant.getName() + "' and Administrator account created successfully!");
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
-            return "redirect:/system/tenants/new";
-        }
-        return "redirect:/system/tenants";
-    }
-
-    // ── Edit Tenant Form ─────────────────────────────────────────────────────
-    @GetMapping("/tenants/{id}/edit")
-    public String editTenantForm(@PathVariable UUID id, Model model) {
-        Tenant tenant = tenantService.findById(id)
-            .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + id));
-        model.addAttribute("tenant", tenant);
-        model.addAttribute("plans", new String[]{"TRIAL", "STANDARD", "ENTERPRISE"});
-        model.addAttribute("pageTitle", "Edit Tenant — " + tenant.getName());
-        model.addAttribute("isNew", false);
-        model.addAttribute("tenantDomain", tenantDomain);
-
-        // Feature & Menu toggling data
-        model.addAttribute("allFeatures", featureRepo.findAllWithMenus());
-        model.addAttribute("enabledFeatures", rbacService.getEnabledFeatures(id));
-        
-        // Disabled menus: find all menu mappings for this tenant that have enabled=false
-        List<String> disabledMenuIds = rbacService.getMenuMappingsForTenant(id).stream()
-                .filter(m -> !m.isEnabled())
-                .map(m -> m.getMenuId())
-                .toList();
+        model.addAttribute("allFeatures",    allFeatures);
+        model.addAttribute("enabledFeatures", enabled);
         model.addAttribute("disabledMenuIds", disabledMenuIds);
-
-        return "system/tenant-form";
+        model.addAttribute("pageTitle",       "Feature & Menu Management");
+        return "system/features";
     }
 
-    @PostMapping("/tenants/{id}/edit")
-    @AuditAction(value = "TENANT_UPDATE", entityType = "Tenant")
-    public String updateTenant(@PathVariable UUID id,
-                                @ModelAttribute Tenant tenant,
-                                RedirectAttributes ra) {
-        try {
-            tenantService.update(id, tenant);
-            ra.addFlashAttribute("success", "Tenant updated successfully!");
-        } catch (Exception e) {
-            ra.addFlashAttribute("error", e.getMessage());
-        }
-        return "redirect:/system/tenants";
-    }
-
-    // ── Update Tenant Features & Menus ──────────────────────────────────────
-    @PostMapping("/tenants/{id}/features")
-    @AuditAction(value = "TENANT_FEATURE_UPDATE", entityType = "Tenant")
-    public String updateTenantFeatures(@PathVariable UUID id,
-                                       @RequestParam(name = "featureIds", required = false) List<String> featureIds,
-                                       @RequestParam(name = "menuIds", required = false) List<String> menuIds,
-                                       RedirectAttributes ra) {
+    @PostMapping("/features")
+    @AuditAction(value = "APP_FEATURE_UPDATE", entityType = "ApplicationSettings")
+    public String updateFeatures(
+            @RequestParam(name = "featureIds", required = false) List<String> featureIds,
+            @RequestParam(name = "menuIds",    required = false) List<String> menuIds,
+            RedirectAttributes ra) {
         try {
             List<String> enabledFeatIds = featureIds != null ? featureIds : List.of();
-            List<String> enabledMenuIds = menuIds != null ? menuIds : List.of();
-            
-            // 1. Update Features
-            List<String> allFeatIds = featureRepo.findAll().stream().map(f -> f.getId()).toList();
-            for (String fid : allFeatIds) {
-                rbacService.toggleFeature(id, fid, enabledFeatIds.contains(fid));
-            }
+            List<String> enabledMenuIds = menuIds    != null ? menuIds    : List.of();
 
-            // 2. Update Menus (Granular control)
-            List<String> allMenuIds = menuRepo.findAll().stream().map(m -> m.getId()).toList();
-            for (String mid : allMenuIds) {
-                // If mid is in enabledMenuIds, toggle(enabled=true), else toggle(enabled=false)
-                rbacService.toggleMenu(id, mid, enabledMenuIds.contains(mid));
-            }
+            featureRepo.findAll().forEach(f ->
+                rbacService.toggleFeature(f.getId(), enabledFeatIds.contains(f.getId())));
 
-            ra.addFlashAttribute("success", "Feature and Menu permissions updated for tenant.");
+            menuRepo.findAll().forEach(m ->
+                rbacService.toggleMenu(m.getId(), enabledMenuIds.contains(m.getId())));
+
+            ra.addFlashAttribute("success", "Feature and menu settings updated.");
         } catch (Exception e) {
             ra.addFlashAttribute("error", e.getMessage());
         }
-        return "redirect:/system/tenants/" + id + "/edit";
-    }
-
-    // ── Deactivate Tenant ────────────────────────────────────────────────────
-    @PostMapping("/tenants/{id}/deactivate")
-    @AuditAction(value = "TENANT_DEACTIVATE", entityType = "Tenant")
-    public String deactivateTenant(@PathVariable UUID id, RedirectAttributes ra) {
-        tenantService.deactivate(id);
-        ra.addFlashAttribute("success", "Tenant deactivated.");
-        return "redirect:/system/tenants";
-    }
-
-    // ── Manual Tenant Expiry Check (Trigger manually & get status) ───────────
-    @PostMapping("/tenants/expire/check-now")
-    @AuditAction(value = "TENANT_EXPIRY_CHECK_MANUAL", entityType = "Tenant")
-    public String runTenantExpiryCheckNow(RedirectAttributes ra) {
-        try {
-            // Mark job as running immediately
-            lastJobStatus = new ExpiryJobStatus();
-            lastJobStatus.setStatus("RUNNING");
-            lastJobStatus.setStartedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-            lastJobStatus.setFinishedAt(null);
-            lastJobStatus.setDeactivatedCount(0);
-            lastJobStatus.setMessage("Checking expired tenants...");
-
-            // Run the check asynchronously in a background thread
-            new Thread(() -> {
-                try {
-                    com.supererp.erp.tenant.TenantExpiryScheduler.ExpiryCheckResult result = tenantExpiryScheduler.runExpiryCheck();
-
-                    // Update job status after completion
-                    lastJobStatus.setStatus("COMPLETED");
-                    lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                    lastJobStatus.setDeactivatedCount(result.getDeactivatedCount());
-                    lastJobStatus.setMessage(result.getMessage());
-                } catch (Exception e) {
-                    lastJobStatus.setStatus("FAILED");
-                    lastJobStatus.setFinishedAt(java.time.LocalDateTime.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
-                    lastJobStatus.setMessage("Error: " + e.getMessage());
-                }
-            }).start();
-
-            ra.addFlashAttribute("success", "Tenant expiry check started in background. Check status in the modal.");
-        } catch (Exception e) {
-            lastJobStatus.setStatus("FAILED");
-            lastJobStatus.setMessage(e.getMessage());
-            ra.addFlashAttribute("error", "Failed to start tenant expiry check: " + e.getMessage());
-        }
-        return "redirect:/system/tenants";
-    }
-
-    // ── Get last job status (AJAX endpoint) ────────────────────────────────────
-    @GetMapping("/api/tenants/expiry-job-status")
-    @org.springframework.web.bind.annotation.ResponseBody
-    public ExpiryJobStatus getTenantExpiryJobStatus() {
-        return lastJobStatus != null ? lastJobStatus : new ExpiryJobStatus("IDLE", null, null, 0, "No job run yet");
+        return "redirect:/app-admin/features";
     }
 }

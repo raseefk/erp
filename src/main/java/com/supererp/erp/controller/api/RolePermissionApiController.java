@@ -25,7 +25,7 @@ public class RolePermissionApiController {
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_SETTINGS_ROLES_VIEW')")
     public ResponseEntity<List<AppRole>> listRoles() {
-        return ResponseEntity.ok(rbacService.getRolesForCurrentTenant());
+        return ResponseEntity.ok(rbacService.getAllRoles());
     }
 
     @PostMapping

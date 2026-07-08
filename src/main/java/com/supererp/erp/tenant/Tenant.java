@@ -5,6 +5,14 @@ import lombok.*;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+/**
+ * Represents the single application instance record.
+ * In single-tenant mode there is exactly one row in this table
+ * with id = AppTenantConfig.APP_TENANT_ID.
+ *
+ * Fields like plan/maxUsers/expiresAt are kept for schema compatibility
+ * but are not operationally meaningful in single-tenant mode.
+ */
 @Entity
 @Table(name = "tenants")
 @Data @NoArgsConstructor @AllArgsConstructor @Builder
@@ -37,11 +45,11 @@ public class Tenant {
 
     @Column(name = "max_users")
     @Builder.Default
-    private int maxUsers = 10;
+    private int maxUsers = 1000;
 
     @Column(name = "max_storage_gb")
     @Builder.Default
-    private Double maxStorageGb = 5.0;
+    private Double maxStorageGb = 100.0;
 
     @Column(name = "upload_size_bytes")
     @Builder.Default

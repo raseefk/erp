@@ -10,8 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 
 /**
- * Ensures that the application fails fast if critical environment variables
- * are missing when running in the 'prod' profile.
+ * Ensures critical environment variables are set when running in the 'prod' profile.
  */
 @Component
 @Slf4j
@@ -25,8 +24,8 @@ public class StartupValidator implements CommandLineRunner {
     @Value("${spring.datasource.password:}")
     private String dbPassword;
 
-    @Value("${app.system.admin.password:}")
-    private String systemAdminPassword;
+    @Value("${app.admin.password:}")
+    private String adminPassword;
 
     public StartupValidator(Environment env) {
         this.env = env;
@@ -35,27 +34,22 @@ public class StartupValidator implements CommandLineRunner {
     @Override
     public void run(String... args) {
         List<String> activeProfiles = Arrays.asList(env.getActiveProfiles());
-        
         if (activeProfiles.contains("prod")) {
             log.info("StartupValidator: Verifying production configuration...");
-
-            validateSecret("app.jwt.secret", jwtSecret);
+            validateSecret("app.jwt.secret",            jwtSecret);
             validateSecret("spring.datasource.password", dbPassword);
-            validateSecret("app.system.admin.password", systemAdminPassword);
-
-            log.info("StartupValidator: Production configuration looks valid.");
+            validateSecret("app.admin.password",         adminPassword);
+            log.info("StartupValidator: Production configuration OK.");
         }
     }
 
     private void validateSecret(String name, String value) {
         if (value == null || value.trim().isEmpty() || value.contains("${")) {
-            log.error("CRITICAL ERROR: Production secret '{}' is NOT set. Application cannot start in 'prod' profile safely.", name);
+            log.error("CRITICAL: Production secret '{}' is not set.", name);
             throw new IllegalStateException("Missing required production secret: " + name);
         }
-        
-        // Basic check for placeholder values that might have been accidentally left
-        if (value.equalsIgnoreCase("secret") || value.equalsIgnoreCase("password") || value.contains("placeholder")) {
-             log.warn("WARNING: Production secret '{}' seems to have a generic placeholder value. Please ensure this is rotated.", name);
+        if (value.equalsIgnoreCase("secret") || value.equalsIgnoreCase("password")) {
+            log.warn("WARNING: Production secret '{}' appears to be a placeholder value.", name);
         }
     }
 }

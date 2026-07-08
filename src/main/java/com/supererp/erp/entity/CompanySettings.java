@@ -3,13 +3,27 @@ package com.supererp.erp.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
-@Entity @Table(name = "company_settings")
-@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
-@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-public class CompanySettings extends TenantAwareEntity {
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+/**
+ * Application-level company settings.
+ * There is exactly one row in this table in single-tenant mode.
+ * tenant_id is kept for schema compatibility.
+ */
+@Entity
+@Table(name = "company_settings")
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+public class CompanySettings {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * Kept for schema compatibility — always AppTenantConfig.APP_TENANT_ID.
+     */
+    @Column(name = "tenant_id", nullable = false, unique = true, updatable = false)
+    private UUID tenantId;
 
     @Column(length = 200)
     private String companyName;
@@ -46,8 +60,17 @@ public class CompanySettings extends TenantAwareEntity {
 
     private LocalDateTime updatedAt;
 
-    @PrePersist void onCreate() { createdAt = LocalDateTime.now(); updatedAt = LocalDateTime.now(); }
-    @PreUpdate void onUpdate() { updatedAt = LocalDateTime.now(); }
+    @PrePersist
+    void onCreate() {
+        createdAt = LocalDateTime.now();
+        updatedAt = LocalDateTime.now();
+        if (tenantId == null) {
+            tenantId = com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID;
+        }
+    }
+
+    @PreUpdate
+    void onUpdate() { updatedAt = LocalDateTime.now(); }
 
     public java.util.List<java.time.DayOfWeek> getWeeklyOffDaysList() {
         if (weeklyOffDays == null || weeklyOffDays.isBlank()) return java.util.Collections.emptyList();
@@ -58,4 +81,3 @@ public class CompanySettings extends TenantAwareEntity {
                 .collect(java.util.stream.Collectors.toList());
     }
 }
-

@@ -14,12 +14,13 @@ services:
       - super_erp_logs:/app/logs
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://erp-db:5432/super_erp
-      - SPRING_DATASOURCE_USERNAME=super_erp_app_user
-      - SPRING_DATASOURCE_PASSWORD=StrongP@$$sword123!
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@erp-db:1521/XEPDB1
+      - SPRING_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.OracleDriver
+      - SPRING_DATASOURCE_USERNAME=super_erp
+      - SPRING_DATASOURCE_PASSWORD=StrongP@ssword123!
+      - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.OracleDialect
       - APP_JWT_SECRET=super-erp-jwt-secret-key-must-be-256-bits-long-for-hs256-algorithm
-      - APP_SYSTEM_ADMIN_PASSWORD=SuperAdmin@2026!
-      - APP_TENANT_DOMAIN=myerponline.in
+      - APP_ADMIN_PASSWORD=SuperAdmin@2026!
       - APP_UPLOAD_DIR=/app/uploads
       - LOGGING_FILE_NAME=/app/logs/super-erp.log
       # ── Company Details ──

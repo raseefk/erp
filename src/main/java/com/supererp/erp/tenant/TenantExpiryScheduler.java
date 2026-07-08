@@ -1,78 +1,26 @@
 package com.supererp.erp.tenant;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.scheduling.annotation.Scheduled;
+import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.OffsetDateTime;
-import java.util.List;
 
 /**
- * Scheduled job that runs every day at midnight (00:00) to deactivate
- * tenants whose subscription / trial has expired.
- *
- * A tenant is deactivated when:
- *   - expiresAt is set (not null), AND
- *   - expiresAt is in the past, AND
- *   - the tenant is still marked active
- *
- * Once deactivated, the tenant's users cannot log in and subdomain returns 403.
- * The tenant data is preserved and can be reactivated by a system admin.
+ * Removed in single-tenant conversion.
+ * Tenant expiry scheduling is no longer needed — there is only one application instance.
+ * Stub retained to avoid breaking bean dependencies in SystemAdminController until
+ * that controller is also refactored.
  */
 @Component
-@RequiredArgsConstructor
-@Slf4j
 public class TenantExpiryScheduler {
 
-    private final TenantRepository tenantRepository;
-
-    /**
-     * Runs every day at midnight UTC.
-     * Cron: second  minute  hour  day  month  weekday
-     *        0       0       0     *    *       *
-     */
-    @Scheduled(cron = "0 0 0 * * *")
-    @Transactional
-    public void deactivateExpiredTenants() {
-        runExpiryCheck();
-    }
-
-    /**
-     * Executes the expiry check and returns a result summary.
-     * Used by manual trigger from SystemAdminController.
-     */
-    @Transactional
     public ExpiryCheckResult runExpiryCheck() {
-        OffsetDateTime now = OffsetDateTime.now();
-        log.info("TenantExpiryScheduler: checking for expired tenants at {}", now);
-
-        List<Tenant> expired = tenantRepository.findExpiredActiveTenants(now);
-
-        if (expired.isEmpty()) {
-            log.info("TenantExpiryScheduler: no expired tenants found.");
-            return new ExpiryCheckResult(0, "No expired tenants found.");
-        }
-
-        for (Tenant tenant : expired) {
-            tenant.setActive(false);
-            tenantRepository.save(tenant);
-            log.warn("TenantExpiryScheduler: deactivated tenant '{}' (id={}, slug={}, expiredAt={})",
-                    tenant.getName(), tenant.getId(), tenant.getSlug(), tenant.getExpiresAt());
-        }
-
-        log.info("TenantExpiryScheduler: deactivated {} expired tenant(s).", expired.size());
-        return new ExpiryCheckResult(expired.size(), 
-            "Successfully deactivated " + expired.size() + " expired tenant(s).");
+        return new ExpiryCheckResult(0, "Single-tenant mode — expiry check not applicable.");
     }
 
-    /**
-     * Result object returned from expiry check.
-     */
-    @lombok.Data
-    @lombok.AllArgsConstructor
-    @lombok.NoArgsConstructor
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
     public static class ExpiryCheckResult {
         private int deactivatedCount;
         private String message;

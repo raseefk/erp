@@ -1,7 +1,5 @@
 package com.supererp.erp.rbac.entity;
 
-import com.supererp.erp.entity.AppUser;
-import com.supererp.erp.entity.TenantAwareEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -13,16 +11,18 @@ import java.util.UUID;
 @Entity
 @Table(name = "roles",
     uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "name"}))
-@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
-@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-@EqualsAndHashCode(callSuper = true, exclude = {"permissions"})
-public class AppRole extends TenantAwareEntity {
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@EqualsAndHashCode(exclude = {"permissions"})
+public class AppRole {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "tenant_id", nullable = false)
+    /**
+     * Kept for schema compatibility — always set to AppTenantConfig.APP_TENANT_ID.
+     */
+    @Column(name = "tenant_id", nullable = false, updatable = false)
     private UUID tenantId;
 
     @Column(nullable = false, length = 100)
@@ -47,5 +47,10 @@ public class AppRole extends TenantAwareEntity {
     private Set<Permission> permissions = new HashSet<>();
 
     @PrePersist
-    void onCreate() { createdAt = OffsetDateTime.now(); }
+    void onCreate() {
+        createdAt = OffsetDateTime.now();
+        if (tenantId == null) {
+            tenantId = com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID;
+        }
+    }
 }

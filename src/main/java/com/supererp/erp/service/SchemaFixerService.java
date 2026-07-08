@@ -9,8 +9,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 /**
- * Utility service to fix database schema issues caused by Hibernate's ddl-auto=update.
- * Specifically drops stale CHECK constraints on enum columns so new enum values can be inserted.
+ * Drops stale CHECK constraints on enum columns so new enum values can be inserted.
+ * Adapted for Oracle — uses USER_CONSTRAINTS instead of INFORMATION_SCHEMA.
  */
 @Service
 @RequiredArgsConstructor
@@ -21,32 +21,24 @@ public class SchemaFixerService {
 
     @PostConstruct
     public void fixEnumConstraints() {
+        dropCheckConstraintsForTable("EXPENSES");
+        dropCheckConstraintsForTable("PROJECT_EXPENSES");
+    }
+
+    private void dropCheckConstraintsForTable(String tableName) {
         try {
-            // Find all CHECK constraints on EXPENSES table (Hibernate enum checks)
-            List<String> expenseConstraints = jdbcTemplate.queryForList(
-                "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS " +
-                "WHERE UPPER(TABLE_NAME) = 'EXPENSES' AND CONSTRAINT_TYPE = 'CHECK'",
-                String.class
+            List<String> constraints = jdbcTemplate.queryForList(
+                "SELECT constraint_name FROM user_constraints " +
+                "WHERE table_name = ? AND constraint_type = 'C' " +
+                "AND constraint_name NOT LIKE 'SYS_%'",
+                String.class, tableName
             );
-            
-            for (String constraint : expenseConstraints) {
-                log.info("Dropping check constraint {} on EXPENSES", constraint);
-                jdbcTemplate.execute("ALTER TABLE EXPENSES DROP CONSTRAINT \"" + constraint + "\"");
-            }
-
-            // Find all CHECK constraints on PROJECT_EXPENSES table
-            List<String> projExpenseConstraints = jdbcTemplate.queryForList(
-                "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS " +
-                "WHERE UPPER(TABLE_NAME) = 'PROJECT_EXPENSES' AND CONSTRAINT_TYPE = 'CHECK'",
-                String.class
-            );
-
-            for (String constraint : projExpenseConstraints) {
-                log.info("Dropping check constraint {} on PROJECT_EXPENSES", constraint);
-                jdbcTemplate.execute("ALTER TABLE PROJECT_EXPENSES DROP CONSTRAINT \"" + constraint + "\"");
+            for (String c : constraints) {
+                log.info("Dropping check constraint {} on {}", c, tableName);
+                jdbcTemplate.execute("ALTER TABLE " + tableName + " DROP CONSTRAINT \"" + c + "\"");
             }
         } catch (Exception e) {
-            log.warn("Could not automatically fix schema constraints: {}", e.getMessage());
+            log.warn("Could not fix schema constraints for {}: {}", tableName, e.getMessage());
         }
     }
 }

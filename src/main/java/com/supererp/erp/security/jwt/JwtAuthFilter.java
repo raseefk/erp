@@ -2,7 +2,6 @@ package com.supererp.erp.security.jwt;
 
 import com.supererp.erp.entity.TokenBlacklist;
 import com.supererp.erp.repository.TokenBlacklistRepository;
-import com.supererp.erp.tenant.TenantContext;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
@@ -11,10 +10,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.annotation.Order;
 import org.springframework.lang.NonNull;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
@@ -22,21 +19,13 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 /**
- * JWT authentication filter — Priority -90 (runs after TenantResolutionFilter).
- *
- * Security checks:
- *  1. Extract Bearer token
- *  2. Validate signature + expiry
- *  3. Check token blacklist
- *  4. Compare JWT tenant_id with TenantContext (set by TenantResolutionFilter)
- *     → MISMATCH = Security Breach: blacklist token + 403
- *  5. Set SecurityContext
- *  6. Set PostgreSQL session variables (RLS)
+ * JWT authentication filter — single-tenant mode.
+ * Validates JWT signature, checks blacklist, and sets SecurityContext.
+ * All tenant-mismatch and RLS logic has been removed.
  */
 @Component
 @Order(-90)
@@ -44,15 +33,13 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private final JwtTokenProvider    jwtTokenProvider;
+    private final JwtTokenProvider         jwtTokenProvider;
     private final TokenBlacklistRepository blacklistRepo;
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
         return path.startsWith("/api/v1/auth/")
-            || path.startsWith("/system/login")
-            || path.startsWith("/api/v1/tenant/metadata")
             || path.startsWith("/css/")
             || path.startsWith("/js/")
             || path.startsWith("/images/")
@@ -73,59 +60,42 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         try {
             Claims claims = jwtTokenProvider.validateAndParse(token);
-            String jti          = claims.getId();
-            String jwtTenantId  = claims.get("tenant_id", String.class);
-            String username     = claims.getSubject();
-            Long   userId       = claims.get("user_id", Long.class);
+            String jti      = claims.getId();
+            String username = claims.getSubject();
+            Long   userId   = claims.get("user_id", Long.class);
 
             // ── 1. Token blacklist check ──────────────────────────────────
-            if (isBlacklisted(jti)) {
+            if (blacklistRepo.existsByJti(jti)) {
                 log.warn("Blacklisted token used: jti={}, user={}", jti, username);
                 sendForbidden(response, "Token has been revoked");
                 return;
             }
 
-            // ── 2. Tenant mismatch = SECURITY BREACH ──────────────────────
-            if (!"SYSTEM".equals(jwtTenantId) && TenantContext.hasActiveTenant()) {
-                UUID contextTenant = TenantContext.getTenantId();
-                if (!jwtTenantId.equals(contextTenant.toString())) {
-                    triggerSecurityBreach(jti, username, jwtTenantId,
-                        contextTenant.toString(), request, response);
-                    return;
-                }
-            }
-
-            // ── 3. Set SecurityContext ─────────────────────────────────────
+            // ── 2. Build authorities from claims ──────────────────────────
             @SuppressWarnings("unchecked")
             List<String> permissions = claims.get("permissions", List.class);
             @SuppressWarnings("unchecked")
             List<String> roles = claims.get("roles", List.class);
 
-            List<SimpleGrantedAuthority> authorities = new java.util.ArrayList<>();
+            List<SimpleGrantedAuthority> authorities = new ArrayList<>();
             if (permissions != null) {
-                permissions.forEach(p -> authorities.add(new SimpleGrantedAuthority("PERM_" + p)));
+                permissions.stream()
+                    .filter(p -> !"*".equals(p))
+                    .forEach(p -> authorities.add(new SimpleGrantedAuthority("PERM_" + p)));
             }
             if (roles != null) {
                 roles.forEach(r -> authorities.add(new SimpleGrantedAuthority(r)));
             }
 
-            // Add SYSTEM_ADMIN role if applicable
-            if ("SYSTEM".equals(jwtTenantId)) {
-                authorities.add(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN"));
+            Boolean isSystem = claims.get("isSystem", Boolean.class);
+            if (Boolean.TRUE.equals(isSystem)) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             }
 
-            boolean isSystem = claims.get("isSystem", Boolean.class) != null && claims.get("isSystem", Boolean.class);
- 
+            String tenantIdClaim = claims.get("tenant_id", String.class);
             JwtAuthToken auth = new JwtAuthToken(username, userId,
-                jwtTenantId, authorities, token, isSystem);
+                tenantIdClaim, authorities, token, Boolean.TRUE.equals(isSystem));
             SecurityContextHolder.getContext().setAuthentication(auth);
-
-            // ── 4. Populate TenantContext (Critical for RLS/Filters) ───────
-            if (!"SYSTEM".equals(jwtTenantId)) {
-                UUID tid = UUID.fromString(jwtTenantId);
-                TenantContext.setTenantId(tid);
-                log.debug("JwtAuthFilter: Set TenantContext for user {} to {}", username, tid);
-            }
 
             chain.doFilter(request, response);
 
@@ -137,12 +107,10 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     private String extractToken(HttpServletRequest request) {
-        // 1. Authorization header
         String header = request.getHeader("Authorization");
         if (header != null && header.startsWith("Bearer ")) {
             return header.substring(7);
         }
-        // 2. Cookie (for Thymeleaf-based auth)
         if (request.getCookies() != null) {
             for (var cookie : request.getCookies()) {
                 if ("erp_token".equals(cookie.getName())) {
@@ -151,30 +119,6 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             }
         }
         return null;
-    }
-
-    private boolean isBlacklisted(String jti) {
-        return blacklistRepo.existsByJti(jti);
-    }
-
-    private void triggerSecurityBreach(String jti, String username,
-                                        String jwtTenantId, String contextTenant,
-                                        HttpServletRequest request,
-                                        HttpServletResponse response) throws IOException {
-        log.error("🚨 SECURITY BREACH DETECTED — user={}, jwtTenant={}, contextTenant={}, ip={}",
-            username, jwtTenantId, contextTenant, request.getRemoteAddr());
-
-        // Blacklist the token immediately
-        TokenBlacklist blacklisted = TokenBlacklist.builder()
-            .jti(jti)
-            .reason("SECURITY_BREACH_TENANT_MISMATCH")
-            .expiresAt(OffsetDateTime.now().plusDays(7))
-            .build();
-        blacklistRepo.save(blacklisted);
-
-        SecurityContextHolder.clearContext();
-        sendForbidden(response,
-            "Security violation detected. Session terminated. Please contact support.");
     }
 
     private void sendForbidden(HttpServletResponse response, String message) throws IOException {

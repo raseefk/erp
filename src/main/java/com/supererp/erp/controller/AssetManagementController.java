@@ -1,5 +1,6 @@
 package com.supererp.erp.controller;
 
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.entity.*;
 import com.supererp.erp.enums.*;
 import com.supererp.erp.rbac.Permissions;
@@ -8,7 +9,6 @@ import com.supererp.erp.rbac.annotation.RequiresPermission;
 import com.supererp.erp.repository.*;
 import com.supererp.erp.service.AssetManagementService;
 import com.supererp.erp.service.ProjectService;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
@@ -242,7 +242,7 @@ public class AssetManagementController {
     }
 
     private AppUser currentUser(Authentication authentication) {
-        if (authentication == null || TenantContext.getTenantId() == null) return null;
-        return appUserRepo.findByUsernameAndTenantId(authentication.getName(), TenantContext.getTenantId()).orElse(null);
+        if (authentication == null) return null;
+        return appUserRepo.findByUsernameAndTenantId(authentication.getName(), AppTenantConfig.APP_TENANT_ID).orElse(null);
     }
 }

@@ -1,35 +1,27 @@
 services:
-  postgres:
-    image: postgres:18-alpine
+  oracle:
+    image: gvenzl/oracle-xe:21-slim-faststart
     container_name: erp-db
     restart: unless-stopped
-    # ⚠️ Port 5432 intentionally NOT exposed to the host.
-    # The app connects via Docker internal network (erp-db:5432).
-    # Exposing 5432 publicly allows bots to exhaust max_connections.
     environment:
-      # The Superuser for manual setup/migrations
-      POSTGRES_USER: erp_admin
-      POSTGRES_PASSWORD: -SuperErp@Postgres2026
-      # The specific database name for your ERP
-      POSTGRES_DB: super_erp
+      ORACLE_RANDOM_PASSWORD: "true"
+      ORACLE_SYS_PASSWORD: SuperErp@Oracle2026
+      ORACLE_PDB: XEPDB1
+      ORACLE_PWD: SuperErp@Oracle2026
+      APP_USER: erp_app
+      APP_USER_PASSWORD: SuperErp@App2026
     deploy:
       resources:
         limits:
-          memory: 512M
-    command: >-
-      postgres
-      -c shared_buffers=128MB
-      -c max_connections=30
-      -c work_mem=8MB
-      -c authentication_timeout=5s
+          memory: 2G
+    ports:
+      - "1521:1521"
     volumes:
-      # PG 18+ requires mount at /var/lib/postgresql (NOT /data).
-      # The image creates its own subdirectory: /var/lib/postgresql/18/main
-      - postgres_data:/var/lib/postgresql
+      - oracle_data:/opt/oracle/oradata
     networks:
       - erp-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U erp_admin -d super_erp"]
+      test: ["CMD", "sqlplus", "-L", "sys/SuperErp@Oracle2026@XEPDB1", "as", "sysdba", "exit"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,5 +32,5 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  oracle_data:
     driver: local

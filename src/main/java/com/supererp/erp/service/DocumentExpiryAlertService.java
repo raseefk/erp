@@ -3,11 +3,11 @@ package com.supererp.erp.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.entity.Document;
 import com.supererp.erp.entity.DocumentExpiryAlert;
 import com.supererp.erp.repository.DocumentExpiryAlertRepository;
 import com.supererp.erp.repository.DocumentRepository;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -69,8 +69,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional
     public DocumentExpiryAlert updateAlert(Long alertId, DocumentExpiryAlert updated) {
-        UUID tenantId = TenantContext.getTenantId();
-        DocumentExpiryAlert existing = alertRepo.findByIdAndTenantId(alertId, tenantId)
+        DocumentExpiryAlert existing = alertRepo.findByIdAndTenantId(alertId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
 
         existing.setExpiryDate(updated.getExpiryDate());
@@ -92,7 +91,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional(readOnly = true)
     public Optional<DocumentExpiryAlert> getAlertById(Long id) {
-        return alertRepo.findByIdAndTenantId(id, TenantContext.getTenantId());
+        return alertRepo.findByIdAndTenantId(id, AppTenantConfig.APP_TENANT_ID);
     }
 
     /**
@@ -100,7 +99,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional(readOnly = true)
     public Page<DocumentExpiryAlert> getAllAlerts(Pageable pageable) {
-        return alertRepo.findByTenantIdOrderByExpiryDateAsc(TenantContext.getTenantId(), pageable);
+        return alertRepo.findByTenantIdOrderByExpiryDateAsc(AppTenantConfig.APP_TENANT_ID, pageable);
     }
 
     /**
@@ -108,7 +107,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional(readOnly = true)
     public List<DocumentExpiryAlert> getAlertsByStatus(String status) {
-        return alertRepo.findByTenantIdAndAlertStatus(TenantContext.getTenantId(), status);
+        return alertRepo.findByTenantIdAndAlertStatus(AppTenantConfig.APP_TENANT_ID, status);
     }
 
     /**
@@ -140,8 +139,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional
     public DocumentExpiryAlert acknowledgeAlert(Long alertId, String acknowledgedBy) {
-        UUID tenantId = TenantContext.getTenantId();
-        DocumentExpiryAlert alert = alertRepo.findByIdAndTenantId(alertId, tenantId)
+        DocumentExpiryAlert alert = alertRepo.findByIdAndTenantId(alertId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
 
         alert.setAlertStatus("ACKNOWLEDGED");
@@ -158,8 +156,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional
     public DocumentExpiryAlert resolveAlert(Long alertId, String resolutionNotes, Long renewalDocumentId) {
-        UUID tenantId = TenantContext.getTenantId();
-        DocumentExpiryAlert alert = alertRepo.findByIdAndTenantId(alertId, tenantId)
+        DocumentExpiryAlert alert = alertRepo.findByIdAndTenantId(alertId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
 
         alert.setAlertStatus("RESOLVED");
@@ -176,8 +173,7 @@ public class DocumentExpiryAlertService {
      */
     @Transactional
     public void deleteAlert(Long alertId) {
-        UUID tenantId = TenantContext.getTenantId();
-        DocumentExpiryAlert alert = alertRepo.findByIdAndTenantId(alertId, tenantId)
+        DocumentExpiryAlert alert = alertRepo.findByIdAndTenantId(alertId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Alert not found: " + alertId));
         alertRepo.delete(alert);
         log.info("Alert {} deleted", alertId);
@@ -242,12 +238,11 @@ public class DocumentExpiryAlertService {
      */
     @Transactional(readOnly = true)
     public Map<String, Long> getAlertStatistics() {
-        UUID tenantId = TenantContext.getTenantId();
         return Map.of(
-            "pending",      alertRepo.countByTenantIdAndAlertStatus(tenantId, "PENDING"),
-            "sent",         alertRepo.countByTenantIdAndAlertStatus(tenantId, "SENT"),
-            "acknowledged", alertRepo.countByTenantIdAndAlertStatus(tenantId, "ACKNOWLEDGED"),
-            "resolved",     alertRepo.countByTenantIdAndAlertStatus(tenantId, "RESOLVED")
+            "pending",      alertRepo.countByTenantIdAndAlertStatus(AppTenantConfig.APP_TENANT_ID, "PENDING"),
+            "sent",         alertRepo.countByTenantIdAndAlertStatus(AppTenantConfig.APP_TENANT_ID, "SENT"),
+            "acknowledged", alertRepo.countByTenantIdAndAlertStatus(AppTenantConfig.APP_TENANT_ID, "ACKNOWLEDGED"),
+            "resolved",     alertRepo.countByTenantIdAndAlertStatus(AppTenantConfig.APP_TENANT_ID, "RESOLVED")
         );
     }
 }

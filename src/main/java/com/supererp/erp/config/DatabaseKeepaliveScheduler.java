@@ -37,7 +37,7 @@ public class DatabaseKeepaliveScheduler {
     public void keepalive() {
         try (Connection conn = dataSource.getConnection();
              Statement stmt = conn.createStatement()) {
-            stmt.execute("SELECT 1");
+            stmt.execute("SELECT 1 FROM DUAL");
             log.debug("DB keepalive ping successful");
         } catch (SQLException e) {
             // Single-line warn — no stack trace spam when DB is temporarily down

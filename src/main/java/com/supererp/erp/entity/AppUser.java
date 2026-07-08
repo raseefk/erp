@@ -6,22 +6,29 @@ import lombok.*;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import lombok.experimental.SuperBuilder;
-import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
+/**
+ * Application user entity.
+ * tenant_id column is kept for schema compatibility and always set to
+ * AppTenantConfig.APP_TENANT_ID in single-tenant mode.
+ * The unique constraint is on (tenant_id, username) — effectively just username.
+ */
 @Entity
 @Table(name = "app_users",
     uniqueConstraints = @UniqueConstraint(columnNames = {"tenant_id", "username"}))
-@Data @NoArgsConstructor @AllArgsConstructor @SuperBuilder
-@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-public class AppUser extends TenantAwareEntity {
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+public class AppUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /**
+     * Kept for schema compatibility — always set to AppTenantConfig.APP_TENANT_ID.
+     */
+    @Column(name = "tenant_id", nullable = false, updatable = false)
+    private UUID tenantId;
 
     @Column(nullable = false, length = 100)
     private String username;
@@ -58,6 +65,9 @@ public class AppUser extends TenantAwareEntity {
     void onCreate() {
         createdAt = OffsetDateTime.now();
         updatedAt = OffsetDateTime.now();
+        if (tenantId == null) {
+            tenantId = com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID;
+        }
     }
 
     @PreUpdate

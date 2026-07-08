@@ -26,7 +26,7 @@ public class RoleManagementController {
     @GetMapping
     @PreAuthorize("hasAuthority('PERM_SETTINGS_ROLES_VIEW')")
     public String listRoles(Model model) {
-        model.addAttribute("roles", rbacService.getRolesForCurrentTenant());
+        model.addAttribute("roles", rbacService.getAllRoles());
         model.addAttribute("pageTitle", "Roles & Permissions");
         return "settings/roles";
     }

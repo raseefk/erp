@@ -9,15 +9,21 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Audit log entity — single-tenant mode.
+ * tenant_id column kept for schema compatibility but always set to APP_TENANT_ID.
+ */
 @Entity
 @Table(name = "audit_log")
-@Data @NoArgsConstructor @AllArgsConstructor @lombok.experimental.SuperBuilder
-@org.hibernate.annotations.Filter(name = "tenantFilter", condition = "tenant_id = :tenantId")
-public class AuditLog extends TenantAwareEntity {
+@Data @NoArgsConstructor @AllArgsConstructor @Builder
+public class AuditLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "tenant_id")
+    private UUID tenantId;
 
     @Column(name = "user_id")
     private Long userId;
@@ -47,4 +53,12 @@ public class AuditLog extends TenantAwareEntity {
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private OffsetDateTime createdAt = OffsetDateTime.now();
+
+    @PrePersist
+    void onCreate() {
+        if (tenantId == null) {
+            tenantId = com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID;
+        }
+        if (createdAt == null) createdAt = OffsetDateTime.now();
+    }
 }

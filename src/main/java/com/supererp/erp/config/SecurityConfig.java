@@ -1,7 +1,6 @@
 package com.supererp.erp.config;
 
 import com.supererp.erp.security.jwt.JwtAuthFilter;
-import com.supererp.erp.tenant.TenantResolutionFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,13 +9,19 @@ import org.springframework.security.config.annotation.method.configuration.Enabl
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import com.supererp.erp.security.CustomUserDetailsService;
 
+/**
+ * Security configuration — single-tenant mode.
+ * - Single login page at /login (no separate system admin portal)
+ * - Admin users are ordinary AppUsers with the ADMIN role
+ * - JWT filter handles token auth for /api/** endpoints
+ * - Form login handles browser sessions for the Thymeleaf UI
+ */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true)
@@ -24,7 +29,6 @@ import com.supererp.erp.security.CustomUserDetailsService;
 public class SecurityConfig {
 
     private final JwtAuthFilter            jwtAuthFilter;
-    private final TenantResolutionFilter   tenantResolutionFilter;
     private final CustomUserDetailsService userDetailsService;
     private final com.supererp.erp.security.jwt.JwtTokenProvider jwtTokenProvider;
     private final com.supererp.erp.repository.TokenBlacklistRepository blacklistRepo;
@@ -37,57 +41,35 @@ public class SecurityConfig {
         return p;
     }
 
-    /**
-     * Main filter chain — JWT stateless for all /admin/**, /api/**, /settings/**, /hr/**
-     */
     @Bean
     public SecurityFilterChain mainFilterChain(HttpSecurity http, PasswordEncoder passwordEncoder) throws Exception {
         http
             .securityMatcher(new AntPathRequestMatcher("/**"))
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authenticationProvider(authProvider(passwordEncoder))
-            .addFilterBefore(tenantResolutionFilter, UsernamePasswordAuthenticationFilter.class)
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
             .authorizeHttpRequests(auth -> auth
-                // ── Fully Public ──────────────────────────────────────────────────
+                // ── Public ──────────────────────────────────────────────────
                 .requestMatchers(
                     "/",
                     "/login", "/login/**",
                     "/api/v1/auth/**",
-                    "/api/v1/tenant/metadata",
                     "/api/enquiries/submit",
                     "/api/public/erp-enquiries",
                     "/css/**", "/js/**", "/images/**", "/static/**",
                     "/favicon.ico",
                     "/actuator/health", "/actuator/info"
                 ).permitAll()
-                // ── System Admin ──────────────────────────────────────────────────
-                .requestMatchers("/system/login").permitAll()
-                .requestMatchers("/system/**").hasRole("SYSTEM_ADMIN")
-                // ── Authenticated (permission checks happen via @PreAuthorize) ────
+                // ── Everything else requires authentication ─────────────────
                 .anyRequest().authenticated()
             )
-            // ── Thymeleaf form login (for browser-based sessions) ──────────────
+            // ── Form login (Thymeleaf UI) ───────────────────────────────────
             .formLogin(f -> f
                 .loginPage("/login")
                 .loginProcessingUrl("/login")
-                .successHandler((request, response, authentication) -> {
-                    boolean isSystemAdmin = authentication.getAuthorities().stream()
-                        .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
-                    if (isSystemAdmin) {
-                        response.sendRedirect(request.getContextPath() + "/system/tenants");
-                    } else {
-                        response.sendRedirect(request.getContextPath() + "/admin/home");
-                    }
-                })
-                .failureHandler((request, response, exception) -> {
-                    String referer = request.getHeader("Referer");
-                    if (referer != null && referer.contains("/system/login")) {
-                        response.sendRedirect(request.getContextPath() + "/system/login?error=true");
-                    } else {
-                        response.sendRedirect(request.getContextPath() + "/login?error=true");
-                    }
-                })
+                .successHandler((request, response, authentication) ->
+                    response.sendRedirect(request.getContextPath() + "/admin/home"))
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
             .logout(l -> l
@@ -106,7 +88,8 @@ public class SecurityConfig {
                         try {
                             String jti = jwtTokenProvider.extractJti(token);
                             java.util.Date expDate = jwtTokenProvider.extractExpiration(token);
-                            java.time.OffsetDateTime expiresAt = java.time.OffsetDateTime.ofInstant(expDate.toInstant(), java.time.ZoneId.systemDefault());
+                            java.time.OffsetDateTime expiresAt = java.time.OffsetDateTime
+                                .ofInstant(expDate.toInstant(), java.time.ZoneId.systemDefault());
                             blacklistRepo.save(com.supererp.erp.entity.TokenBlacklist.builder()
                                 .jti(jti)
                                 .reason("USER_LOGOUT")
@@ -115,37 +98,15 @@ public class SecurityConfig {
                         } catch (Exception ignored) {}
                     }
                 })
-                .logoutSuccessHandler((request, response, authentication) -> {
-                    boolean isSystem = false;
-                    if (authentication != null) {
-                        isSystem = authentication.getAuthorities().stream()
-                            .anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"));
-                    } else {
-                        // Fallback check based on referer if authentication is already gone
-                        String referer = request.getHeader("Referer");
-                        if (referer != null && referer.contains("/system/")) {
-                            isSystem = true;
-                        }
-                    }
-                    
-                    if (isSystem) {
-                        response.sendRedirect(request.getContextPath() + "/system/login?logout=true");
-                    } else {
-                        response.sendRedirect(request.getContextPath() + "/login?logout=true");
-                    }
-                })
+                .logoutSuccessUrl("/login?logout=true")
                 .invalidateHttpSession(true)
                 .deleteCookies("JSESSIONID", "erp_token", "SUPERERP_SESSION")
                 .permitAll()
             )
-            .csrf(c -> c.ignoringRequestMatchers(
-                new AntPathRequestMatcher("/api/**")
-            ))
+            .csrf(c -> c.ignoringRequestMatchers(new AntPathRequestMatcher("/api/**")))
             .headers(h -> h
                 .frameOptions(f -> f.sameOrigin())
-                .httpStrictTransportSecurity(s -> s
-                    .includeSubDomains(true)
-                    .maxAgeInSeconds(0)) // Disable HSTS for now to avoid HTTP/HTTPS loops
+                .httpStrictTransportSecurity(s -> s.includeSubDomains(true).maxAgeInSeconds(0))
                 .contentTypeOptions(org.springframework.security.config.Customizer.withDefaults())
                 .contentSecurityPolicy(c -> c.policyDirectives(
                     "default-src 'self'; " +

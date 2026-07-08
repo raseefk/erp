@@ -1,5 +1,6 @@
 package com.supererp.erp.controller;
 
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.dto.ApiResponse;
 import com.supererp.erp.entity.Employee;
 import com.supererp.erp.service.EmployeeService;
@@ -40,16 +41,16 @@ public class EmployeeController {
     @GetMapping("/new")
     public String newForm(Model m) {
         m.addAttribute("employee", new Employee());
-        m.addAttribute("users", userRepo.findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(com.supererp.erp.tenant.TenantContext.getTenantId()));
-        m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.tenant.TenantContext.getTenantId()));
+        m.addAttribute("users", userRepo.findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID));
+        m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID));
         return "employee/form";
     }
 
     @GetMapping("/{id}/edit")
     public String edit(@PathVariable Long id, Model m) {
         m.addAttribute("employee", service.getById(id));
-        m.addAttribute("users", userRepo.findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(com.supererp.erp.tenant.TenantContext.getTenantId()));
-        m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.tenant.TenantContext.getTenantId()));
+        m.addAttribute("users", userRepo.findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID));
+        m.addAttribute("roles", rbacService.getRoles(com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID));
         return "employee/form";
     }
 
@@ -75,7 +76,7 @@ public class EmployeeController {
             }
 
             com.supererp.erp.entity.AppUser newUser = com.supererp.erp.entity.AppUser.builder()
-                .tenantId(com.supererp.erp.tenant.TenantContext.getTenantId())
+                .tenantId(com.supererp.erp.config.AppTenantConfig.APP_TENANT_ID)
                 .username(username)
                 .password(passwordEncoder.encode(password))
                 .fullName(emp.getName())

@@ -1,52 +1,32 @@
 package com.supererp.erp.tenant;
 
-import java.util.UUID;
-
 /**
- * ThreadLocal holder for the current tenant's UUID.
- * Set by TenantResolutionFilter before any business logic executes.
- * Cleared in a finally block after the request completes.
+ * Stub retained for backward compatibility.
+ * This application is single-tenant — there is no tenant context.
+ * All methods are no-ops or return null.
+ *
+ * @deprecated This class will be removed in a future cleanup pass.
  */
+@Deprecated(forRemoval = true)
 public final class TenantContext {
-
-    private static final ThreadLocal<UUID>   TENANT_ID   = new ThreadLocal<>();
-    private static final ThreadLocal<String> TENANT_SLUG = new ThreadLocal<>();
 
     private TenantContext() {}
 
-    public static void setTenantId(UUID id)     { TENANT_ID.set(id); }
-    
-    public static UUID getTenantId() {
-        UUID id = TENANT_ID.get();
-        if (id == null) {
-            // Fallback: Try to resolve from SecurityContext if available
-            try {
-                org.springframework.security.core.Authentication auth = 
-                    org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
-                if (auth != null) {
-                    if (auth.getPrincipal() instanceof com.supererp.erp.security.SecurityUser) {
-                        return ((com.supererp.erp.security.SecurityUser) auth.getPrincipal()).getTenantId();
-                    } else if (auth instanceof com.supererp.erp.security.jwt.JwtAuthToken) {
-                        String tid = ((com.supererp.erp.security.jwt.JwtAuthToken) auth).getTenantId();
-                        if (tid != null && !"SYSTEM".equals(tid)) {
-                            return UUID.fromString(tid);
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                // Ignore if security context is not available
-            }
-        }
-        return id;
-    }
+    /** Always returns null — single-tenant, no tenant ID concept. */
+    public static java.util.UUID getTenantId() { return null; }
 
-    public static void setTenantSlug(String slug){ TENANT_SLUG.set(slug); }
-    public static String getTenantSlug()         { return TENANT_SLUG.get(); }
+    /** No-op. */
+    public static void setTenantId(java.util.UUID id) {}
 
-    public static boolean hasActiveTenant() { return TENANT_ID.get() != null; }
+    /** Always returns null. */
+    public static String getTenantSlug() { return null; }
 
-    public static void clear() {
-        TENANT_ID.remove();
-        TENANT_SLUG.remove();
-    }
+    /** No-op. */
+    public static void setTenantSlug(String slug) {}
+
+    /** Always returns false. */
+    public static boolean hasActiveTenant() { return false; }
+
+    /** No-op. */
+    public static void clear() {}
 }

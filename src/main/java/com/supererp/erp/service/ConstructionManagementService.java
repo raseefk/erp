@@ -1,9 +1,9 @@
 package com.supererp.erp.service;
 
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.entity.*;
 import com.supererp.erp.enums.*;
 import com.supererp.erp.repository.*;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -48,8 +48,8 @@ public class ConstructionManagementService {
 
     @Transactional
     public BillOfQuantity saveBoq(BillOfQuantity boq) {
-        if (boq.getTenantId() == null) boq.setTenantId(TenantContext.getTenantId());
-        boqRepo.findByTenantIdAndBoqNumber(TenantContext.getTenantId(), boq.getBoqNumber()).ifPresent(existing -> {
+        if (boq.getTenantId() == null) boq.setTenantId(AppTenantConfig.APP_TENANT_ID);
+        boqRepo.findByTenantIdAndBoqNumber(AppTenantConfig.APP_TENANT_ID, boq.getBoqNumber()).ifPresent(existing -> {
             if (boq.getId() == null || !existing.getId().equals(boq.getId())) {
                 throw new IllegalArgumentException("BOQ number already exists: " + boq.getBoqNumber());
             }
@@ -59,7 +59,7 @@ public class ConstructionManagementService {
 
     @Transactional
     public BoqItem saveBoqItem(BoqItem item) {
-        if (item.getTenantId() == null) item.setTenantId(TenantContext.getTenantId());
+        if (item.getTenantId() == null) item.setTenantId(AppTenantConfig.APP_TENANT_ID);
         if (item.getProject() == null && item.getBoq() != null) {
             item.setProject(item.getBoq().getProject());
         }
@@ -128,8 +128,8 @@ public class ConstructionManagementService {
 
     @Transactional
     public SubcontractorRunningBill saveRunningBill(SubcontractorRunningBill bill) {
-        if (bill.getTenantId() == null) bill.setTenantId(TenantContext.getTenantId());
-        runningBillRepo.findByTenantIdAndBillNumber(TenantContext.getTenantId(), bill.getBillNumber()).ifPresent(existing -> {
+        if (bill.getTenantId() == null) bill.setTenantId(AppTenantConfig.APP_TENANT_ID);
+        runningBillRepo.findByTenantIdAndBillNumber(AppTenantConfig.APP_TENANT_ID, bill.getBillNumber()).ifPresent(existing -> {
             if (bill.getId() == null || !existing.getId().equals(bill.getId())) {
                 throw new IllegalArgumentException("Running bill number already exists: " + bill.getBillNumber());
             }
@@ -139,7 +139,7 @@ public class ConstructionManagementService {
 
     @Transactional
     public SubcontractorRunningBillItem saveRunningBillItem(SubcontractorRunningBillItem item) {
-        if (item.getTenantId() == null) item.setTenantId(TenantContext.getTenantId());
+        if (item.getTenantId() == null) item.setTenantId(AppTenantConfig.APP_TENANT_ID);
         return runningBillItemRepo.save(item);
     }
 
@@ -155,7 +155,7 @@ public class ConstructionManagementService {
             .billDate(billDate)
             .periodFrom(periodFrom)
             .periodTo(periodTo)
-            .tenantId(TenantContext.getTenantId())
+            .tenantId(AppTenantConfig.APP_TENANT_ID)
             .build();
             
         if (jobCardId != null) {
@@ -242,7 +242,7 @@ public class ConstructionManagementService {
 
     @Transactional
     public MaterialSiteTransaction recordMaterialTransaction(MaterialSiteTransaction transaction) {
-        if (transaction.getTenantId() == null) transaction.setTenantId(TenantContext.getTenantId());
+        if (transaction.getTenantId() == null) transaction.setTenantId(AppTenantConfig.APP_TENANT_ID);
         if (transaction.getTransactionType() == MaterialSiteTransactionType.CONSUMPTION
             || transaction.getTransactionType() == MaterialSiteTransactionType.RETURN) {
             BigDecimal balance = materialBalance(transaction.getProject().getId(), transaction.getInventoryItem().getId());
@@ -283,7 +283,7 @@ public class ConstructionManagementService {
 
     @Transactional
     public ProjectMilestone saveMilestone(ProjectMilestone milestone) {
-        if (milestone.getTenantId() == null) milestone.setTenantId(TenantContext.getTenantId());
+        if (milestone.getTenantId() == null) milestone.setTenantId(AppTenantConfig.APP_TENANT_ID);
         
         // If contract amount is not set, inherit from Project
         if (value(milestone.getContractAmount()).compareTo(BigDecimal.ZERO) == 0 && milestone.getProject() != null) {

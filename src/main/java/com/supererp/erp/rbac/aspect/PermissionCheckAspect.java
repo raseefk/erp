@@ -3,7 +3,6 @@ package com.supererp.erp.rbac.aspect;
 import com.supererp.erp.rbac.annotation.RequiresPermission;
 import com.supererp.erp.rbac.service.RbacService;
 import com.supererp.erp.security.jwt.JwtAuthToken;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
@@ -27,8 +26,10 @@ public class PermissionCheckAspect {
             throw new AccessDeniedException("Full authentication is required to access this resource");
         }
 
-        // System admins have all permissions
-        if (auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_SYSTEM_ADMIN"))) {
+        // Admins have all permissions
+        if (auth.getAuthorities().stream().anyMatch(a ->
+                a.getAuthority().equals("ROLE_ADMIN") ||
+                a.getAuthority().equals("ROLE_SYSTEM_ADMIN"))) {
             return;
         }
 

@@ -50,6 +50,20 @@ public class GlobalExceptionHandlerLogger {
             .body(new com.supererp.erp.dto.ApiResponse<>(false, ex.getMessage(), null));
     }
 
+    @ExceptionHandler(org.springframework.dao.InvalidDataAccessResourceUsageException.class)
+    public ResponseEntity<Object> handleInvalidDataAccessResourceUsage(org.springframework.dao.InvalidDataAccessResourceUsageException ex, WebRequest request) {
+        String message = ex.getMessage();
+        if (message != null && message.contains("ORA-00942")) {
+            log.warn("Table not found - schema not fully initialized: {}", request.getDescription(false));
+            return ResponseEntity.status(org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE)
+                .body(new com.supererp.erp.dto.ApiResponse<>(false, 
+                    "Database schema not initialized. Please run Liquibase migrations or restart with ddl-auto=create", null));
+        }
+        log.error("Data access error on request [{}]: {}", request.getDescription(false), message, ex);
+        return ResponseEntity.internalServerError()
+            .body(new com.supererp.erp.dto.ApiResponse<>(false, message, null));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Object> handleAllExceptions(Exception ex, WebRequest request) {
         // Log via SLF4J — output destination is controlled by logging.file.name in application properties.

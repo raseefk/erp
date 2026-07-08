@@ -2,27 +2,20 @@ package com.supererp.erp.controller.system;
 
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 
+/**
+ * Redirects old /system/login URL to the unified login page.
+ * Kept to avoid 404 errors from bookmarks or cached links.
+ */
 @Controller
 public class SystemAuthController {
 
     @GetMapping("/system/login")
-    public String systemLogin(@RequestParam(required = false) String error,
-                               @RequestParam(required = false) String logout,
-                               Authentication auth, Model model) {
+    public String systemLogin(Authentication auth) {
         if (auth != null && auth.isAuthenticated()) {
-            return "redirect:/system/tenants";
+            return "redirect:/admin/home";
         }
-        if (error != null) {
-            model.addAttribute("errorMsg", "Invalid system credentials.");
-        }
-        if (logout != null) {
-            model.addAttribute("logoutMsg", "System session ended.");
-        }
-        model.addAttribute("pageTitle", "System Administration Login");
-        return "system/login";
+        return "redirect:/login";
     }
 }

@@ -3,57 +3,43 @@ package com.supererp.erp.security;
 import com.supererp.erp.entity.AppUser;
 import com.supererp.erp.rbac.entity.Permission;
 import com.supererp.erp.repository.AppUserRepository;
-import com.supererp.erp.repository.SystemUserRepository;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
+/**
+ * Single-tenant UserDetailsService.
+ * Loads application users by username from app_users.
+ * The SYSTEM_ADMIN concept (separate system_users table) has been unified:
+ * admin users are just AppUsers with the ADMIN role.
+ */
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {
 
-    private final AppUserRepository    userRepo;
-    private final SystemUserRepository systemUserRepo;
+    private final AppUserRepository userRepo;
 
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UUID tenantId = TenantContext.getTenantId();
-        
-        // 1. If no tenant context, try loading as a System Admin
-        if (tenantId == null) {
-            return systemUserRepo.findByUsernameAndEnabledTrue(username)
-                .map(sysUser -> new SecurityUser(
-                    sysUser.getUsername(),
-                    sysUser.getPassword(),
-                    sysUser.isEnabled(),
-                    List.of(new SimpleGrantedAuthority("ROLE_SYSTEM_ADMIN")),
-                    null,
-                    true
-                ))
-                .orElseThrow(() -> new UsernameNotFoundException("System admin not found: " + username));
-        }
+        AppUser user = userRepo.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
 
-        // 2. Otherwise load as a Tenant User
-        AppUser user = userRepo.findByUsernameAndTenantId(username, tenantId)
-            .orElseThrow(() -> new UsernameNotFoundException(
-                "User not found: " + username + " in tenant: " + tenantId));
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
 
-        List<SimpleGrantedAuthority> authorities = user.getRoles().stream()
+        // Add permission-based authorities
+        user.getRoles().stream()
             .flatMap(r -> r.getPermissions().stream())
             .map(Permission::getId)
             .distinct()
-            .map(p -> new SimpleGrantedAuthority("PERM_" + p))
-            .collect(Collectors.toList());
+            .forEach(p -> authorities.add(new SimpleGrantedAuthority("PERM_" + p)));
 
-        // Add role names as authorities too (ensure ROLE_ prefix for hasRole() support)
+        // Add role-based authorities
         user.getRoles().forEach(r -> {
             String roleName = r.getName();
             if (!roleName.startsWith("ROLE_")) {
@@ -62,17 +48,24 @@ public class CustomUserDetailsService implements UserDetailsService {
             authorities.add(new SimpleGrantedAuthority(roleName));
         });
 
-        boolean hasSystemRole = user.getRoles().stream().anyMatch(com.supererp.erp.rbac.entity.AppRole::isSystem);
- 
+        boolean isAdmin = user.getRoles().stream().anyMatch(com.supererp.erp.rbac.entity.AppRole::isSystem);
+
         return new SecurityUser(
             user.getUsername(), user.getPassword(), user.isEnabled(),
-            authorities, user.getTenantId(), hasSystemRole);
+            authorities, null, isAdmin);
     }
 
     @Transactional(readOnly = true)
-    public AppUser loadAppUser(String username, UUID tenantId) {
-        return userRepo.findByUsernameAndTenantId(username, tenantId)
-            .orElseThrow(() -> new UsernameNotFoundException(
-                "User not found: " + username));
+    public AppUser loadAppUser(String username) {
+        return userRepo.findByUsername(username)
+            .orElseThrow(() -> new UsernameNotFoundException("User not found: " + username));
+    }
+
+    /**
+     * Backward-compatible overload — tenantId parameter is ignored.
+     */
+    @Transactional(readOnly = true)
+    public AppUser loadAppUser(String username, java.util.UUID tenantId) {
+        return loadAppUser(username);
     }
 }

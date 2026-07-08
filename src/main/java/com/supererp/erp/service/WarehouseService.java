@@ -1,9 +1,9 @@
 package com.supererp.erp.service;
 
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.entity.*;
 import com.supererp.erp.enums.*;
 import com.supererp.erp.repository.*;
-import com.supererp.erp.tenant.TenantContext;
 import com.supererp.erp.util.BarcodeUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,8 +61,7 @@ public class WarehouseService {
     public Warehouse saveWarehouse(Warehouse warehouse) {
         // If marked default, clear existing default
         if (Boolean.TRUE.equals(warehouse.getIsDefault())) {
-            UUID tid = TenantContext.getTenantId();
-            warehouseRepo.findByIsDefaultTrueAndTenantId(tid).ifPresent(existing -> {
+            warehouseRepo.findByIsDefaultTrueAndTenantId(AppTenantConfig.APP_TENANT_ID).ifPresent(existing -> {
                 if (!existing.getId().equals(warehouse.getId())) {
                     existing.setIsDefault(false);
                     warehouseRepo.save(existing);
@@ -140,7 +139,7 @@ public class WarehouseService {
 
     @Transactional(readOnly = true)
     public List<StockBalance> getLowStockItems() {
-        return balanceRepo.findBelowReorderPointByTenant(TenantContext.getTenantId());
+        return balanceRepo.findBelowReorderPointByTenant(AppTenantConfig.APP_TENANT_ID);
     }
 
     @Transactional(readOnly = true)
@@ -532,7 +531,7 @@ public class WarehouseService {
     @Scheduled(cron = "0 0 7 * * ?")
     @Transactional(readOnly = true)
     public void checkReorderAlerts() {
-        List<StockBalance> low = balanceRepo.findBelowReorderPointByTenant(TenantContext.getTenantId());
+        List<StockBalance> low = balanceRepo.findBelowReorderPointByTenant(AppTenantConfig.APP_TENANT_ID);
         for (StockBalance sb : low) {
             if (!Boolean.TRUE.equals(sb.getAlertSent())) {
                 log.warn("REORDER ALERT: Item '{}' at '{}' — Available: {}, Reorder Point: {}",
@@ -554,10 +553,10 @@ public class WarehouseService {
         Map<String, Object> m = new LinkedHashMap<>();
         m.put("totalWarehouses", warehouseRepo.findByActiveTrueOrderByNameAsc().size());
         m.put("totalLocations", locationRepo.findByActiveTrueOrderByFullAddressAsc().size());
-        m.put("lowStockItems", balanceRepo.findBelowReorderPointByTenant(TenantContext.getTenantId()).size());
+        m.put("lowStockItems", balanceRepo.findBelowReorderPointByTenant(AppTenantConfig.APP_TENANT_ID).size());
         m.put("expiringBatches", batchLotRepo.findExpiringBetween(LocalDate.now(), LocalDate.now().plusDays(30)).size());
         m.put("warehouses", warehouseRepo.findByActiveTrueOrderByNameAsc());
-        m.put("lowStockList", balanceRepo.findBelowReorderPointByTenant(TenantContext.getTenantId()));
+        m.put("lowStockList", balanceRepo.findBelowReorderPointByTenant(AppTenantConfig.APP_TENANT_ID));
         m.put("expiringBatchList", batchLotRepo.findExpiringBetween(LocalDate.now(), LocalDate.now().plusDays(30)));
         return m;
     }

@@ -1,10 +1,10 @@
 package com.supererp.erp.service;
 
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.entity.DigitalSignature;
 import com.supererp.erp.entity.Document;
 import com.supererp.erp.repository.DigitalSignatureRepository;
 import com.supererp.erp.repository.DocumentRepository;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -75,8 +75,7 @@ public class DigitalSignatureService {
     @Transactional
     public DigitalSignature signDocument(Long signatureId, String signatureData,
                                           String ipAddress, String userAgent, String geoLocation) {
-        UUID tenantId = TenantContext.getTenantId();
-        DigitalSignature signature = signatureRepo.findByIdAndTenantId(signatureId, tenantId)
+        DigitalSignature signature = signatureRepo.findByIdAndTenantId(signatureId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Signature not found: " + signatureId));
 
         if (!"PENDING".equals(signature.getSignatureStatus())) {
@@ -104,8 +103,7 @@ public class DigitalSignatureService {
      */
     @Transactional
     public DigitalSignature verifySignature(Long signatureId, String verifiedBy) {
-        UUID tenantId = TenantContext.getTenantId();
-        DigitalSignature signature = signatureRepo.findByIdAndTenantId(signatureId, tenantId)
+        DigitalSignature signature = signatureRepo.findByIdAndTenantId(signatureId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Signature not found: " + signatureId));
 
         if (!"SIGNED".equals(signature.getSignatureStatus())) {
@@ -135,8 +133,7 @@ public class DigitalSignatureService {
      */
     @Transactional
     public DigitalSignature rejectSignature(Long signatureId, String rejectionReason) {
-        UUID tenantId = TenantContext.getTenantId();
-        DigitalSignature signature = signatureRepo.findByIdAndTenantId(signatureId, tenantId)
+        DigitalSignature signature = signatureRepo.findByIdAndTenantId(signatureId, AppTenantConfig.APP_TENANT_ID)
             .orElseThrow(() -> new IllegalArgumentException("Signature not found: " + signatureId));
 
         signature.setSignatureStatus("REJECTED");
@@ -160,7 +157,7 @@ public class DigitalSignatureService {
      */
     @Transactional(readOnly = true)
     public Optional<DigitalSignature> getSignatureById(Long id) {
-        return signatureRepo.findByIdAndTenantId(id, TenantContext.getTenantId());
+        return signatureRepo.findByIdAndTenantId(id, AppTenantConfig.APP_TENANT_ID);
     }
 
     /**
@@ -168,7 +165,7 @@ public class DigitalSignatureService {
      */
     @Transactional(readOnly = true)
     public Page<DigitalSignature> getAllSignatures(Pageable pageable) {
-        return signatureRepo.findByTenantIdOrderByCreatedAtDesc(TenantContext.getTenantId(), pageable);
+        return signatureRepo.findByTenantIdOrderByCreatedAtDesc(AppTenantConfig.APP_TENANT_ID, pageable);
     }
 
     /**
@@ -177,7 +174,7 @@ public class DigitalSignatureService {
     @Transactional(readOnly = true)
     public Page<DigitalSignature> getSignaturesByStatus(String status, Pageable pageable) {
         return signatureRepo.findByTenantIdAndSignatureStatus(
-                TenantContext.getTenantId(), status, pageable);
+                AppTenantConfig.APP_TENANT_ID, status, pageable);
     }
 
     /**
@@ -201,12 +198,11 @@ public class DigitalSignatureService {
      */
     @Transactional(readOnly = true)
     public Map<String, Long> getSignatureStatistics() {
-        UUID tenantId = TenantContext.getTenantId();
         return Map.of(
-            "pending",  signatureRepo.findByTenantIdAndSignatureStatus(tenantId, "PENDING",  Pageable.unpaged()).getTotalElements(),
-            "signed",   signatureRepo.findByTenantIdAndSignatureStatus(tenantId, "SIGNED",   Pageable.unpaged()).getTotalElements(),
-            "verified", signatureRepo.findByTenantIdAndSignatureStatus(tenantId, "VERIFIED", Pageable.unpaged()).getTotalElements(),
-            "rejected", signatureRepo.findByTenantIdAndSignatureStatus(tenantId, "REJECTED", Pageable.unpaged()).getTotalElements()
+            "pending",  signatureRepo.findByTenantIdAndSignatureStatus(AppTenantConfig.APP_TENANT_ID, "PENDING",  Pageable.unpaged()).getTotalElements(),
+            "signed",   signatureRepo.findByTenantIdAndSignatureStatus(AppTenantConfig.APP_TENANT_ID, "SIGNED",   Pageable.unpaged()).getTotalElements(),
+            "verified", signatureRepo.findByTenantIdAndSignatureStatus(AppTenantConfig.APP_TENANT_ID, "VERIFIED", Pageable.unpaged()).getTotalElements(),
+            "rejected", signatureRepo.findByTenantIdAndSignatureStatus(AppTenantConfig.APP_TENANT_ID, "REJECTED", Pageable.unpaged()).getTotalElements()
         );
     }
 

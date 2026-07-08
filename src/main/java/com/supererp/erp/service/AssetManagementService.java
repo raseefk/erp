@@ -1,9 +1,9 @@
 package com.supererp.erp.service;
 
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.entity.*;
 import com.supererp.erp.enums.*;
 import com.supererp.erp.repository.*;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
@@ -40,8 +40,7 @@ public class AssetManagementService {
 
     @Transactional(readOnly = true)
     public List<Asset> activeAssets() {
-        UUID tenantId = TenantContext.getTenantId();
-        return assetRepo.findByTenantIdAndStatusOrderByNameAsc(tenantId, AssetStatus.ACTIVE);
+        return assetRepo.findByTenantIdAndStatusOrderByNameAsc(AppTenantConfig.APP_TENANT_ID, AssetStatus.ACTIVE);
     }
 
     @Transactional(readOnly = true)
@@ -51,9 +50,8 @@ public class AssetManagementService {
 
     @Transactional
     public Asset saveAsset(Asset asset, Long vendorId) {
-        UUID tenantId = TenantContext.getTenantId();
-        asset.setTenantId(asset.getTenantId() != null ? asset.getTenantId() : tenantId);
-        assetRepo.findByTenantIdAndAssetCode(tenantId, asset.getAssetCode()).ifPresent(existing -> {
+        asset.setTenantId(asset.getTenantId() != null ? asset.getTenantId() : AppTenantConfig.APP_TENANT_ID);
+        assetRepo.findByTenantIdAndAssetCode(AppTenantConfig.APP_TENANT_ID, asset.getAssetCode()).ifPresent(existing -> {
             if (asset.getId() == null || !existing.getId().equals(asset.getId())) {
                 throw new IllegalArgumentException("Asset code already exists: " + asset.getAssetCode());
             }

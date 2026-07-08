@@ -1,9 +1,8 @@
 package com.supererp.erp.rbac.service;
 
-import com.supererp.erp.entity.AppUser;
+import com.supererp.erp.config.AppTenantConfig;
 import com.supererp.erp.rbac.entity.*;
 import com.supererp.erp.rbac.repository.*;
-import com.supererp.erp.tenant.TenantContext;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -12,6 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
+/**
+ * RBAC service — single-tenant mode.
+ * Feature/menu activation is application-level (not per-tenant).
+ * All methods that previously took a tenantId parameter now use
+ * AppTenantConfig.APP_TENANT_ID.
+ */
 @Service
 @RequiredArgsConstructor
 public class RbacService {
@@ -23,12 +28,14 @@ public class RbacService {
 
     // ── Role Management ──────────────────────────────────────────────────────
 
-    public List<AppRole> getRolesForCurrentTenant() {
-        return getRoles(TenantContext.getTenantId());
+    /** Returns all application roles (single tenant). */
+    public List<AppRole> getAllRoles() {
+        return roleRepo.findAllByOrderByNameAsc();
     }
 
+    /** Backward-compatible: returns all roles regardless of tenantId argument. */
     public List<AppRole> getRoles(UUID tenantId) {
-        return roleRepo.findByTenantIdOrderByNameAsc(tenantId);
+        return roleRepo.findAllByOrderByNameAsc();
     }
 
     public Optional<AppRole> getRole(Long roleId) {
@@ -42,12 +49,11 @@ public class RbacService {
     @Transactional
     @CacheEvict(value = "permissionManifest", allEntries = true)
     public AppRole createRole(String name, String description) {
-        UUID tenantId = TenantContext.getTenantId();
-        if (roleRepo.existsByTenantIdAndName(tenantId, name)) {
+        if (roleRepo.existsByName(name)) {
             throw new IllegalArgumentException("Role already exists: " + name);
         }
         return roleRepo.save(AppRole.builder()
-            .tenantId(tenantId)
+            .tenantId(AppTenantConfig.APP_TENANT_ID)
             .name(name)
             .description(description)
             .system(false)
@@ -59,12 +65,6 @@ public class RbacService {
     public AppRole updateRolePermissions(Long roleId, Set<String> permissionIds) {
         AppRole role = roleRepo.findByIdWithPermissions(roleId)
             .orElseThrow(() -> new NoSuchElementException("Role not found: " + roleId));
-
-        // Verify role belongs to current tenant
-        if (!role.getTenantId().equals(TenantContext.getTenantId())) {
-            throw new SecurityException("Access denied: role does not belong to current tenant");
-        }
-
         Set<Permission> newPerms = new HashSet<>(permRepo.findAllById(permissionIds));
         role.setPermissions(newPerms);
         return roleRepo.save(role);
@@ -78,72 +78,95 @@ public class RbacService {
         if (role.isSystem()) {
             throw new IllegalStateException("Cannot delete system role: " + role.getName());
         }
-        if (!role.getTenantId().equals(TenantContext.getTenantId())) {
-            throw new SecurityException("Access denied");
-        }
         roleRepo.delete(role);
     }
 
-    // ── Feature Toggle Management ────────────────────────────────────────────
- 
-    @Cacheable(value = "tenantFeatures", key = "#tenantId")
+    // ── Feature Toggle Management (Application-Level) ────────────────────────
+
+    /**
+     * Returns the set of enabled feature IDs for the application.
+     * Uses APP_TENANT_ID as the key.
+     */
+    @Cacheable(value = "tenantFeatures", key = "'app'")
     @Transactional(readOnly = true)
-    public Set<String> getEnabledFeatures(UUID tenantId) {
+    public Set<String> getEnabledFeatures() {
         Set<String> enabled = new HashSet<>();
-        featureMapRepo.findByTenantId(tenantId)
+        featureMapRepo.findByTenantId(AppTenantConfig.APP_TENANT_ID)
             .forEach(m -> { if (m.isEnabled()) enabled.add(m.getFeatureId()); });
         return enabled;
     }
- 
+
+    /** Backward-compatible overload — ignores tenantId, uses app-level. */
+    @Cacheable(value = "tenantFeatures", key = "'app'")
+    @Transactional(readOnly = true)
+    public Set<String> getEnabledFeatures(UUID tenantId) {
+        return getEnabledFeatures();
+    }
+
     @Transactional
     @CacheEvict(value = {"tenantFeatures", "permissionManifest"}, allEntries = true)
-    public void toggleFeature(UUID tenantId, String featureId, boolean enabled) {
+    public void toggleFeature(String featureId, boolean enabled) {
         TenantFeatureMapping mapping = featureMapRepo
-            .findById(new TenantFeatureId(tenantId, featureId))
+            .findById(new TenantFeatureId(AppTenantConfig.APP_TENANT_ID, featureId))
             .orElse(TenantFeatureMapping.builder()
-                .tenantId(tenantId)
+                .tenantId(AppTenantConfig.APP_TENANT_ID)
                 .featureId(featureId)
                 .build());
         mapping.setEnabled(enabled);
         featureMapRepo.save(mapping);
     }
- 
-    public boolean isFeatureEnabled(String featureId) {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return true; // Super admins see everything or system context
-        return getEnabledFeatures(tenantId).contains(featureId);
-    }
- 
-    // ── Menu Toggle Management ────────────────────────────────────────────────
- 
+
+    /** Backward-compatible overload with tenantId — ignored. */
     @Transactional
-    @CacheEvict(value = {"tenantMenus"}, allEntries = true)
-    public void toggleMenu(UUID tenantId, String menuId, boolean enabled) {
+    @CacheEvict(value = {"tenantFeatures", "permissionManifest"}, allEntries = true)
+    public void toggleFeature(UUID tenantId, String featureId, boolean enabled) {
+        toggleFeature(featureId, enabled);
+    }
+
+    public boolean isFeatureEnabled(String featureId) {
+        return getEnabledFeatures().contains(featureId);
+    }
+
+    // ── Menu Toggle Management (Application-Level) ────────────────────────────
+
+    @Transactional
+    @CacheEvict(value = "tenantMenus", allEntries = true)
+    public void toggleMenu(String menuId, boolean enabled) {
         TenantMenuMapping mapping = menuMapRepo
-            .findById(new TenantMenuId(tenantId, menuId))
+            .findById(new TenantMenuId(AppTenantConfig.APP_TENANT_ID, menuId))
             .orElse(TenantMenuMapping.builder()
-                .tenantId(tenantId)
+                .tenantId(AppTenantConfig.APP_TENANT_ID)
                 .menuId(menuId)
                 .build());
         mapping.setEnabled(enabled);
         menuMapRepo.save(mapping);
     }
- 
-    /**
-     * Returns true if the menu is enabled for the current tenant.
-     * Default is ENABLED — a menu is only hidden when explicitly set to disabled.
-     */
-    @Cacheable(value = "tenantMenus", key = "T(com.supererp.erp.tenant.TenantContext).getTenantId() + '-' + #menuId")
-    @Transactional(readOnly = true)
-    public boolean isMenuEnabled(String menuId) {
-        UUID tenantId = TenantContext.getTenantId();
-        if (tenantId == null) return true;
-        // If a row exists with enabled=false, then it is disabled
-        return !menuMapRepo.existsByTenantIdAndMenuIdAndEnabledFalse(tenantId, menuId);
+
+    /** Backward-compatible overload with tenantId — ignored. */
+    @Transactional
+    @CacheEvict(value = "tenantMenus", allEntries = true)
+    public void toggleMenu(UUID tenantId, String menuId, boolean enabled) {
+        toggleMenu(menuId, enabled);
     }
 
+    /**
+     * Returns true if the menu is enabled at the application level.
+     * Default is ENABLED.
+     */
+    @Cacheable(value = "tenantMenus", key = "'app-' + #menuId")
+    @Transactional(readOnly = true)
+    public boolean isMenuEnabled(String menuId) {
+        return !menuMapRepo.existsByTenantIdAndMenuIdAndEnabledFalse(
+                AppTenantConfig.APP_TENANT_ID, menuId);
+    }
+
+    public List<TenantMenuMapping> getMenuMappingsForApplication() {
+        return menuMapRepo.findByTenantId(AppTenantConfig.APP_TENANT_ID);
+    }
+
+    /** Backward-compatible overload. */
     public List<TenantMenuMapping> getMenuMappingsForTenant(UUID tenantId) {
-        return menuMapRepo.findByTenantId(tenantId);
+        return getMenuMappingsForApplication();
     }
 
     // ── Permission Query ─────────────────────────────────────────────────────

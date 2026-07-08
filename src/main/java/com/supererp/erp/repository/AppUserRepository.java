@@ -1,35 +1,48 @@
 package com.supererp.erp.repository;
 
 import com.supererp.erp.entity.AppUser;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Repository for application users in single-tenant mode.
+ * Tenant-scoped methods still exist for backward compatibility but operate
+ * on the single fixed APP_TENANT_ID.
+ */
 @Repository
 public interface AppUserRepository extends JpaRepository<AppUser, Long> {
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
+    @EntityGraph(attributePaths = {"roles", "roles.permissions"})
     Optional<AppUser> findByUsername(String username);
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
-    @Query("SELECT u FROM AppUser u WHERE u.id = :id AND u.tenantId = :tenantId")
-    Optional<AppUser> findByIdWithRolesAndTenant(@org.springframework.data.repository.query.Param("id") Long id, @org.springframework.data.repository.query.Param("tenantId") UUID tenantId);
+    @EntityGraph(attributePaths = {"roles", "roles.permissions"})
+    Optional<AppUser> findByUsernameAndTenantId(String username, UUID tenantId);
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles", "roles.permissions"})
-    Optional<AppUser> findByUsernameAndTenantId(String username, java.util.UUID tenantId);
+    @EntityGraph(attributePaths = {"roles"})
+    @Query("SELECT u FROM AppUser u WHERE u.id = :id")
+    Optional<AppUser> findByIdWithRoles(@Param("id") Long id);
 
-    boolean existsByUsernameAndTenantId(String username, UUID tenantId);
     boolean existsByUsername(String username);
+    boolean existsByUsernameAndTenantId(String username, UUID tenantId);
 
-    java.util.List<AppUser> findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(UUID tenantId);
+    @EntityGraph(attributePaths = {"roles"})
+    List<AppUser> findAllByEnabledTrueOrderByFullNameAsc();
+
+    List<AppUser> findAllByTenantIdAndEnabledTrueOrderByFullNameAsc(UUID tenantId);
+
     long countByTenantId(UUID tenantId);
 
-    @Query("SELECT u.tenantId, COUNT(u) FROM AppUser u GROUP BY u.tenantId")
-    java.util.List<Object[]> countUsersGroupedByTenant();
+    @EntityGraph(attributePaths = {"roles", "roles.permissions"})
+    @Query("SELECT u FROM AppUser u")
+    List<AppUser> findAllWithRoles();
 
-    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"roles"})
-    @Query("SELECT u FROM AppUser u WHERE u.tenantId = :tenantId")
-    java.util.List<AppUser> findAllWithRoles(@org.springframework.data.repository.query.Param("tenantId") UUID tenantId);
+    @Query("SELECT u.tenantId, COUNT(u) FROM AppUser u GROUP BY u.tenantId")
+    List<Object[]> countUsersGroupedByTenant();
 }
