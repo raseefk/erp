@@ -12,10 +12,10 @@
   </parent>
 
   <groupId>com.super</groupId>
-  <artifactId>erp</artifactId>
+  <artifactId>super-erp-single-tenant</artifactId>
   <version>1.0.0</version>
   <packaging>jar</packaging>
-  <name>Super ERP</name>
+  <name>super-erp-single tenant</name>
   <description>Comprehensive Single-Tenant ERP System</description>
 
   <properties>

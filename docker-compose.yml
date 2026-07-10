@@ -3,10 +3,10 @@ version: '3.9'
 services:
   app:
     build: .
-    container_name: super-erp-app
-    image: raseefk/super-erp:latest
+    container_name: super-erp-single-tenant-app
+    image: raseefk/super-erp-single-tenant:latest
     ports:
-      - "8085:8085"
+      - "8087:8087"
     networks:
       - erp-network
     volumes:
@@ -14,15 +14,16 @@ services:
       - super_erp_logs:/app/logs
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@erp-db:1521/XEPDB1
+      - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g0640c7a3df714d_mthjttv6ulke3bjy_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.OracleDriver
-      - SPRING_DATASOURCE_USERNAME=super_erp
-      - SPRING_DATASOURCE_PASSWORD=StrongP@ssword123!
+      - SPRING_DATASOURCE_USERNAME=super_erp_db_admin_user
+      - SPRING_DATASOURCE_PASSWORD=Str0ngP@s$worD123!
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.OracleDialect
       - APP_JWT_SECRET=super-erp-jwt-secret-key-must-be-256-bits-long-for-hs256-algorithm
-      - APP_ADMIN_PASSWORD=SuperAdmin@2026!
+      - APP_ADMIN_USERNAME=admin
+      - APP_ADMIN_PASSWORD=Admin@1234
       - APP_UPLOAD_DIR=/app/uploads
-      - LOGGING_FILE_NAME=/app/logs/super-erp.log
+      - LOGGING_FILE_NAME=/app/logs/super-erp-single-tenant.log
       # ── Company Details ──
       - APP_COMPANY_NAME=${COMPANY_NAME:-Super ERP}
       - APP_COMPANY_ADDRESS=${COMPANY_ADDRESS:-Main Business District, City, State}
@@ -30,8 +31,12 @@ services:
       - APP_COMPANY_EMAIL=${COMPANY_EMAIL:-info@supererp.com}
       - APP_COMPANY_GSTNUMBER=${COMPANY_GSTIN:-YOUR_GSTIN_HERE}
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:8085/actuator/health | grep UP || exit 1"]
+      test: [ "CMD-SHELL", "wget -qO- http://localhost:8087/actuator/health | grep UP || exit 1" ]
       interval: 30s
       timeout: 10s
       retries: 3
