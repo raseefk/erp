@@ -103,39 +103,43 @@
 
         <div class="row g-4">
             <!-- Recent Activity / Newest Tenants -->
+            <!-- Application Modules / Features -->
             <div class="col-lg-8">
                 <div class="card border-0 shadow-sm rounded-4 overflow-hidden h-100">
                     <div class="card-header bg-white border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
-                        <h5 class="fw-bold mb-0">Tenant Storage Metrics</h5>
-                        <a href="/system/tenants" class="btn btn-sm btn-link text-decoration-none">Manage</a>
+                        <h5 class="fw-bold mb-0">System Modules Status</h5>
+                        <a href="/app-admin/features" class="btn btn-sm btn-link text-decoration-none">Manage Features</a>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
                             <table class="table table-hover align-middle mb-0">
                                 <thead class="bg-light">
                                     <tr>
-                                        <th class="ps-4">Organization</th>
-                                        <th>Active Users</th>
-                                        <th>Upload Size</th>
-                                        <th>Joined</th>
+                                        <th class="ps-4">Module Name</th>
+                                        <th>Identifier</th>
+                                        <th>Menus</th>
+                                        <th>Status</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr th:each="stat : ${tenantStats}">
+                                    <tr th:each="feat : ${allFeatures}">
                                         <td class="ps-4">
-                                            <div class="fw-bold text-dark" th:text="${stat.tenant.name}">Tenant Name</div>
-                                            <div class="text-muted x-small" th:text="${stat.tenant.id}">UUID</div>
-                                        </td>
-                                        <td>
-                                            <span class="badge bg-primary-subtle text-primary border" th:text="${stat.activeUsers}">0</span>
-                                        </td>
-                                        <td>
-                                            <div class="fw-bold text-dark" th:text="${#numbers.formatDecimal(stat.uploadSizeGb, 1, 3)} + ' GB'">0 GB</div>
-                                            <div class="progress mt-1" style="height: 4px; width: 60px;">
-                                                <div class="progress-bar bg-success" role="progressbar" th:style="'width: ' + (${stat.uploadSizeGb} * 10) + '%'"></div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <div class="rounded-2 d-flex align-items-center justify-content-center"
+                                                     style="width:28px;height:28px;background:rgba(15,35,56,.08);color:#0F2338;">
+                                                    <i class="bi" th:classappend="'bi-' + (${feat.icon} ?: 'grid')"></i>
+                                                </div>
+                                                <span class="fw-bold text-dark text-wrap" th:text="${feat.displayName}">Feature Name</span>
                                             </div>
                                         </td>
-                                        <td class="text-muted small" th:text="${#temporals.format(stat.tenant.createdAt, 'dd MMM yyyy')}">Date</td>
+                                        <td class="text-muted small" th:text="${feat.id}">feature_id</td>
+                                        <td class="text-muted small">
+                                            <span th:text="${feat.menus != null ? feat.menus.size() : 0} + ' Menus'">0 Menus</span>
+                                        </td>
+                                        <td>
+                                            <span th:if="${enabledFeatures.contains(feat.id)}" class="badge bg-success-subtle text-success border border-success-subtle">Active</span>
+                                            <span th:unless="${enabledFeatures.contains(feat.id)}" class="badge bg-danger-subtle text-danger border border-danger-subtle">Inactive</span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -149,11 +153,11 @@
                 <div class="card border-0 shadow-sm rounded-4 p-4 h-100 bg-navy text-white" style="background: var(--navy-deep);">
                     <h5 class="fw-bold mb-4">Admin Quick Links</h5>
                     <div class="d-grid gap-3">
-                        <a href="/system/tenants/new" class="btn btn-primary rounded-3 text-start p-3">
-                            <i class="bi bi-plus-circle me-2"></i> Register New Tenant
+                        <a href="/app-admin/features" class="btn btn-primary rounded-3 text-start p-3">
+                            <i class="bi bi-gear-wide-connected me-2"></i> Feature & Menu Settings
                         </a>
-                        <a href="/system/tenants" class="btn btn-outline-light rounded-3 text-start p-3">
-                            <i class="bi bi-gear-wide-connected me-2"></i> Infrastructure Settings
+                        <a href="/admin/erp-enquiries" class="btn btn-outline-light rounded-3 text-start p-3">
+                            <i class="bi bi-envelope-paper-fill me-2"></i> ERP Enquiries
                         </a>
                         <div class="mt-4 p-3 rounded-4 bg-white bg-opacity-10 border border-white border-opacity-10">
                             <div class="small fw-bold opacity-75 mb-2 uppercase">Platform Notice</div>
@@ -177,7 +181,7 @@
 
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const eventSource = new EventSource('/system/api/stats');
+        const eventSource = new EventSource('/app-admin/api/stats');
         
         eventSource.onmessage = function(event) {
             const data = JSON.parse(event.data);

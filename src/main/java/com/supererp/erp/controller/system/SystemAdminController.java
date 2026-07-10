@@ -30,7 +30,7 @@ import java.util.*;
 @Controller
 @RequestMapping("/app-admin")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ROLE_ADMIN')")
+@PreAuthorize("hasRole('ROLE_SUPER_ADMIN')")
 public class SystemAdminController {
 
     private final RbacService           rbacService;
@@ -65,6 +65,7 @@ public class SystemAdminController {
         Set<String> enabledFeatures = rbacService.getEnabledFeatures();
         long totalFeatures   = featureRepo.count();
         long enabledFeatCount = enabledFeatures.size();
+        List<com.supererp.erp.rbac.entity.Feature> allFeatures = featureRepo.findAllWithMenus();
 
         model.addAttribute("cpuLoad",        String.format("%.1f", cpuLoad));
         model.addAttribute("usedRamGb",      String.format("%.1f", usedRamGb));
@@ -77,8 +78,11 @@ public class SystemAdminController {
         model.addAttribute("enabledUsers",   enabledUsers);
         model.addAttribute("totalFeatures",  totalFeatures);
         model.addAttribute("enabledFeatureCount", enabledFeatCount);
+        model.addAttribute("allFeatures",    allFeatures);
+        model.addAttribute("enabledFeatures", enabledFeatures);
         model.addAttribute("companySettings", companySettingsService.getSettings());
         model.addAttribute("pageTitle", "Application Dashboard");
+        model.addAttribute("activePage", "system-dashboard");
         return "system/dashboard";
     }
 
@@ -129,6 +133,7 @@ public class SystemAdminController {
         model.addAttribute("enabledFeatures", enabled);
         model.addAttribute("disabledMenuIds", disabledMenuIds);
         model.addAttribute("pageTitle",       "Feature & Menu Management");
+        model.addAttribute("activePage",      "system-features");
         return "system/features";
     }
 

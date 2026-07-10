@@ -20,7 +20,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 @Controller
 @RequestMapping("/admin/erp-enquiries")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ROLE_ADMIN')")
+@PreAuthorize("hasRole('ROLE_SUPER_ADMIN')")
 public class SystemErpEnquiryController {
 
     private final ErpEnquiryService service;
@@ -44,6 +44,7 @@ public class SystemErpEnquiryController {
         model.addAttribute("newCount",       service.countNew());
         model.addAttribute("contactedCount", service.countContacted());
         model.addAttribute("pageTitle",      "ERP Enquiries");
+        model.addAttribute("activePage",     "system-enquiries");
         return "system/erp-enquiry/list";
     }
 
@@ -52,6 +53,7 @@ public class SystemErpEnquiryController {
         model.addAttribute("enquiry",       service.getById(id));
         model.addAttribute("EnquiryStatus", EnquiryStatus.values());
         model.addAttribute("pageTitle",     "View ERP Enquiry");
+        model.addAttribute("activePage",    "system-enquiries");
         return "system/erp-enquiry/view";
     }
 

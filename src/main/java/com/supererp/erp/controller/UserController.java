@@ -53,7 +53,9 @@ public class UserController {
     @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String newUserForm(Model model) {
         model.addAttribute("user",  new AppUser());
-        model.addAttribute("roles", rbacService.getAllRoles());
+        model.addAttribute("roles", rbacService.getAllRoles().stream()
+            .filter(r -> !"SUPER_ADMIN".equalsIgnoreCase(r.getName()))
+            .toList());
         return "user/form";
     }
 
@@ -64,9 +66,14 @@ public class UserController {
                              @RequestParam String newPassword,
                              RedirectAttributes ra) {
         try {
+            com.supererp.erp.rbac.entity.AppRole chosenRole = rbacService.getRole(roleId)
+                .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+            if ("SUPER_ADMIN".equalsIgnoreCase(chosenRole.getName())) {
+                throw new IllegalArgumentException("Cannot assign SUPER_ADMIN role.");
+            }
             user.setPassword(newPassword);
             if (user.getRoles() == null) user.setRoles(new java.util.HashSet<>());
-            rbacService.getRole(roleId).ifPresent(role -> user.getRoles().add(role));
+            user.getRoles().add(chosenRole);
             userService.createUser(user);
             ra.addFlashAttribute("success", "User created successfully.");
             return "redirect:/admin/users";
@@ -92,7 +99,9 @@ public class UserController {
     @com.supererp.erp.rbac.annotation.RequiresFeature("ADMIN")
     public String editUserForm(@PathVariable Long id, Model model) {
         model.addAttribute("user",  userService.getById(id));
-        model.addAttribute("roles", rbacService.getAllRoles());
+        model.addAttribute("roles", rbacService.getAllRoles().stream()
+            .filter(r -> !"SUPER_ADMIN".equalsIgnoreCase(r.getName()))
+            .toList());
         return "user/form";
     }
 
@@ -104,6 +113,13 @@ public class UserController {
                              @RequestParam(required = false) String newPassword,
                              RedirectAttributes ra) {
         try {
+            if (roleId != null) {
+                com.supererp.erp.rbac.entity.AppRole chosenRole = rbacService.getRole(roleId)
+                    .orElseThrow(() -> new IllegalArgumentException("Role not found"));
+                if ("SUPER_ADMIN".equalsIgnoreCase(chosenRole.getName())) {
+                    throw new IllegalArgumentException("Cannot assign SUPER_ADMIN role.");
+                }
+            }
             userService.updateUser(id, userDetails, roleId, newPassword);
             ra.addFlashAttribute("success", "User updated successfully.");
             return "redirect:/admin/users";

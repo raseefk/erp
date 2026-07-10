@@ -110,7 +110,7 @@
 <!-- ── SIDEBAR ─────────────────────────────────────────────────────────── -->
 <nav th:fragment="sidebar(activePage)" id="sys-sidebar">
 
-  <a href="/system/dashboard" class="sys-brand" style="display:block;">
+  <a href="/app-admin/dashboard" class="sys-brand" style="display:block;">
     <div class="brand-title">Super ERP</div>
     <span class="brand-badge">&#x2022; System Admin</span>
   </a>
@@ -119,21 +119,21 @@
     <li class="nav-sec">Management</li>
 
     <li>
-      <a href="/system/dashboard"
+      <a href="/app-admin/dashboard"
          th:classappend="${activePage == 'system-dashboard'} ? ' active' : ''">
-        <i class="bi bi-grid-1x2-fill"></i> Tenant Dashboard
+        <i class="bi bi-grid-1x2-fill"></i> Application Dashboard
       </a>
     </li>
 
     <li>
-      <a href="/system/tenants"
-         th:classappend="${activePage == 'system-tenants'} ? ' active' : ''">
-        <i class="bi bi-building-fill-gear"></i> Tenant Management
+      <a href="/app-admin/features"
+         th:classappend="${activePage == 'system-features'} ? ' active' : ''">
+        <i class="bi bi-building-fill-gear"></i> Feature & Menu Management
       </a>
     </li>
 
     <li>
-      <a href="/system/enquiries"
+      <a href="/admin/erp-enquiries"
          th:classappend="${activePage == 'system-enquiries'} ? ' active' : ''">
         <i class="bi bi-envelope-paper-fill"></i> ERP Enquiries
       </a>

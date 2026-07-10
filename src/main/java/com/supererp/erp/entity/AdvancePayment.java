@@ -41,7 +41,7 @@ public class AdvancePayment extends TenantAwareEntity {
     private String description;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
-    @Column(nullable = false)
+    @Column(name = "payment_date", nullable = false)
     private LocalDate date;
 
     @Column(updatable = false)

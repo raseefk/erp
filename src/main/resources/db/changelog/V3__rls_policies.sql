@@ -1,9 +1,0 @@
--- ============================================================
---  V3: Oracle Single-Tenant (RLS disabled, no row filtering)
--- ============================================================
--- changeset system:V3-001 runOnChange:false
--- NOTE: Oracle does not support PostgreSQL-style RLS.
---       For single-tenant application, tenant filtering is done
---       in application code using AppTenantConfig.APP_TENANT_ID.
---       This migration is kept for schema migration continuity.
---       All RLS policies have been removed.

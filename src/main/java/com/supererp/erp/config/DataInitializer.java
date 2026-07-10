@@ -73,16 +73,11 @@ public class DataInitializer implements CommandLineRunner {
 
     private void seedApplicationTenant() {
         try {
-            if (tenantRepo.existsById(AppTenantConfig.APP_TENANT_ID)) {
+            if (tenantRepo.count() > 0) {
                 log.info("✅ Application tenant already exists");
                 return;
             }
-        } catch (Exception e) {
-            log.warn("⚠️ Could not check if tenant exists (table may not be created yet): {}", e.getMessage());
-            return;
-        }
-        
-        try {
+            
             Tenant app = Tenant.builder()
                 .id(AppTenantConfig.APP_TENANT_ID)
                 .slug("app")
@@ -93,15 +88,26 @@ public class DataInitializer implements CommandLineRunner {
                 .maxStorageGb(1000.0)
                 .active(true)
                 .build();
-            tenantRepo.save(app);
+            tenantRepo.saveAndFlush(app);
             log.info("✅ Application tenant seeded — id: {}", AppTenantConfig.APP_TENANT_ID);
+        } catch (org.springframework.dao.DataIntegrityViolationException e) {
+            log.info("✅ Application tenant already exists (constraint violation - data already present)");
         } catch (Exception e) {
-            log.warn("⚠️ Could not seed tenant (may already exist or table not ready): {}", e.getMessage());
+            log.warn("⚠️ Could not seed tenant: {}", e.getMessage());
         }
     }
 
     private void seedRoles() {
         try {
+            if (!roleRepo.existsByName("SUPER_ADMIN")) {
+                roleRepo.save(AppRole.builder()
+                    .tenantId(AppTenantConfig.APP_TENANT_ID)
+                    .name("SUPER_ADMIN")
+                    .description("Super Administrator with application administration access")
+                    .system(true)
+                    .build());
+                log.info("✅ SUPER_ADMIN role created");
+            }
             if (!roleRepo.existsByName("ADMIN")) {
                 roleRepo.save(AppRole.builder()
                     .tenantId(AppTenantConfig.APP_TENANT_ID)
@@ -126,27 +132,40 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void seedAdminUser() {
-        if (userRepo.existsByUsername(adminUsername)) {
-            // Sync password from env/config on every startup
-            userRepo.findByUsername(adminUsername).ifPresent(u -> {
-                u.setPassword(encoder.encode(adminPassword));
-                u.setEnabled(true);
-                userRepo.save(u);
-            });
-            log.info("✅ Admin user '{}' synchronized", adminUsername);
-            return;
-        }
-
         AppRole adminRole = roleRepo.findByName("ADMIN")
             .orElseThrow(() -> new IllegalStateException("ADMIN role not found — seedRoles() must run first"));
+            
+        AppRole superAdminRole = roleRepo.findByName("SUPER_ADMIN")
+            .orElseThrow(() -> new IllegalStateException("SUPER_ADMIN role not found — seedRoles() must run first"));
 
-        // Assign all permissions to the ADMIN role
+        // Assign all permissions to both roles
         entityManager.createNativeQuery(
             "INSERT INTO role_permissions (role_id, permission_id) " +
             "SELECT :roleId, id FROM permissions " +
             "WHERE id NOT IN (SELECT permission_id FROM role_permissions WHERE role_id = :roleId)")
             .setParameter("roleId", adminRole.getId())
             .executeUpdate();
+
+        entityManager.createNativeQuery(
+            "INSERT INTO role_permissions (role_id, permission_id) " +
+            "SELECT :roleId, id FROM permissions " +
+            "WHERE id NOT IN (SELECT permission_id FROM role_permissions WHERE role_id = :roleId)")
+            .setParameter("roleId", superAdminRole.getId())
+            .executeUpdate();
+
+        if (userRepo.existsByUsername(adminUsername)) {
+            // Sync password and roles on every startup
+            userRepo.findByUsername(adminUsername).ifPresent(u -> {
+                u.setPassword(encoder.encode(adminPassword));
+                u.setEnabled(true);
+                if (u.getRoles() == null) u.setRoles(new HashSet<>());
+                u.getRoles().add(adminRole);
+                u.getRoles().add(superAdminRole);
+                userRepo.save(u);
+            });
+            log.info("✅ Admin user '{}' synchronized with SUPER_ADMIN role", adminUsername);
+            return;
+        }
 
         AppUser admin = AppUser.builder()
             .tenantId(AppTenantConfig.APP_TENANT_ID)
@@ -155,10 +174,10 @@ public class DataInitializer implements CommandLineRunner {
             .fullName("Administrator")
             .email(adminEmail)
             .enabled(true)
-            .roles(new HashSet<>(Set.of(adminRole)))
+            .roles(new HashSet<>(Set.of(adminRole, superAdminRole)))
             .build();
         userRepo.save(admin);
-        log.info("✅ Admin user '{}' created", adminUsername);
+        log.info("✅ Admin user '{}' created with SUPER_ADMIN role", adminUsername);
     }
 
     private void seedAllFeatures() {
