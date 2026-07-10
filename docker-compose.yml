@@ -7,8 +7,6 @@ services:
     image: raseefk/super-erp-single-tenant:latest
     ports:
       - "8087:8087"
-    networks:
-      - erp-network
     volumes:
       - super_erp_uploads:/app/uploads
       - super_erp_logs:/app/logs
@@ -17,7 +15,7 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:oracle:thin:@(description= (retry_count=20)(retry_delay=3)(address=(protocol=tcps)(port=1522)(host=adb.ap-hyderabad-1.oraclecloud.com))(connect_data=(service_name=g0640c7a3df714d_mthjttv6ulke3bjy_high.adb.oraclecloud.com))(security=(ssl_server_dn_match=yes)))
       - SPRING_DATASOURCE_DRIVER_CLASS_NAME=oracle.jdbc.OracleDriver
       - SPRING_DATASOURCE_USERNAME=super_erp_db_admin_user
-      - SPRING_DATASOURCE_PASSWORD=Str0ngP@s$worD123!
+      - SPRING_DATASOURCE_PASSWORD=Str0ngP@s$$worD123!
       - SPRING_JPA_DATABASE_PLATFORM=org.hibernate.dialect.OracleDialect
       - APP_JWT_SECRET=super-erp-jwt-secret-key-must-be-256-bits-long-for-hs256-algorithm
       - APP_ADMIN_USERNAME=admin
@@ -41,11 +39,6 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
-
-networks:
-  erp-network:
-    external: true
-    name: erp-shared-network
 
 volumes:
   super_erp_uploads:
