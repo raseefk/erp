@@ -23,8 +23,35 @@ public class SalaryService {
     private final EmployeeRepository       employeeRepo;
     private final ExpenseRepository        expenseRepo;
     private final PayrollRunRepository     runRepo;
+    private final PayrollEntryRepository   entryRepo;
 
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy");
+
+    @Transactional
+    public void syncDisbursedPayrollRuns() {
+        try {
+            List<PayrollRun> disbursedRuns = runRepo.findByStatusOrderByPayYearDescPayMonthDesc(com.supererp.erp.enums.PayrollRunStatus.DISBURSED);
+            for (PayrollRun run : disbursedRuns) {
+                List<PayrollEntry> entries = entryRepo.findByRunIdWithEmployee(run.getId());
+                for (PayrollEntry e : entries) {
+                    if (e.getEmployee() != null && e.getNetSalary() != null && e.getNetSalary().compareTo(BigDecimal.ZERO) > 0) {
+                        if (!salaryRepo.existsByEmployeeIdAndSalaryMonthYear(e.getEmployee().getId(), run.getPayPeriodLabel())) {
+                            LocalDate creditDate = run.getDisbursementDate() != null ? run.getDisbursementDate() : LocalDate.now();
+                            EmployeeSalary es = EmployeeSalary.builder()
+                                .employee(e.getEmployee())
+                                .salaryMonthYear(run.getPayPeriodLabel())
+                                .amount(e.getNetSalary())
+                                .salaryCreditedDate(creditDate)
+                                .build();
+                            salaryRepo.save(es);
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Failed to sync disbursed payroll runs to employee salaries: {}", e.getMessage());
+        }
+    }
 
     // ── Pay salary for one employee ───────────────────────────────────────────
     @Transactional
@@ -80,9 +107,17 @@ public class SalaryService {
         return salaryRepo.findByEmployeeOrderBySalaryCreditedDateDesc(emp);
     }
 
-    public Page<EmployeeSalary> getAll(int page, int size, LocalDate from, LocalDate to) {
+    public Page<EmployeeSalary> getAll(Long employeeId, int page, int size, LocalDate from, LocalDate to) {
         Pageable pg = PageRequest.of(page, size, Sort.by("salaryCreditedDate").descending());
-        if (from != null && to != null) return salaryRepo.findByDateRange(from, to, pg);
+        if (employeeId != null && from != null && to != null) {
+            return salaryRepo.findByEmployeeIdAndDateRange(employeeId, from, to, pg);
+        }
+        if (employeeId != null) {
+            return salaryRepo.findByEmployeeIdOrderBySalaryCreditedDateDesc(employeeId, pg);
+        }
+        if (from != null && to != null) {
+            return salaryRepo.findByDateRange(from, to, pg);
+        }
         return salaryRepo.findAllByOrderBySalaryCreditedDateDesc(pg);
     }
 

@@ -3,14 +3,14 @@
 <head th:insert="~{fragments/layout :: head('Payroll Run Detail')}"></head>
 <body>
 <th:block th:insert="~{fragments/layout :: sidebar('payroll-runs')}"></th:block>
-<div id="main">
+<div id="main" th:data-run-id="${run != null ? run.id : 0}">
   <th:block th:insert="~{fragments/layout :: topbar('Payroll Run Detail')}"></th:block>
   <div class="pb">
     <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
 
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
       <a href="/admin/payroll/runs" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-left me-1"></i>Back</a>
-      <div class="btn-group btn-group-sm">
+      <div class="btn-group btn-group-sm" th:if="${run != null and run.status != null}">
         <button th:if="${run.status.name() == 'DRAFT'}" class="btn btn-primary"
                 onclick="approveRun()"
                 sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_APPROVE')">
@@ -39,11 +39,11 @@
     </div>
 
     <!-- Run Summary -->
-    <div class="row g-3 mb-3">
+    <div class="row g-3 mb-3" th:if="${run != null}">
       <div class="col-md-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:rgba(26,58,92,.1);color:var(--navy)"><i class="bi bi-people"></i></div>
-          <div><div class="stat-num" th:text="${#lists.size(entries)}">0</div><div class="stat-lbl">Employees</div></div>
+          <div><div class="stat-num" th:text="${entries != null ? entries.size() : 0}">0</div><div class="stat-lbl">Employees</div></div>
         </div>
       </div>
       <div class="col-md-3">
@@ -51,7 +51,7 @@
           <div class="stat-icon" style="background:rgba(22,163,74,.1);color:#16a34a;"><i class="bi bi-cash-stack"></i></div>
           <div>
             <div class="stat-num" style="font-size:1.2rem;"
-                 th:text="${'₹' + #numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')}">0</div>
+                 th:text="${run.totalGross != null ? ('&#8377;' + #numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</div>
             <div class="stat-lbl">Total Gross</div>
           </div>
         </div>
@@ -61,7 +61,7 @@
           <div class="stat-icon" style="background:rgba(220,38,38,.1);color:#dc2626;"><i class="bi bi-dash-circle"></i></div>
           <div>
             <div class="stat-num" style="font-size:1.2rem;"
-                 th:text="${'₹' + #numbers.formatDecimal(run.totalDeductions, 1, 'COMMA', 2, 'POINT')}">0</div>
+                 th:text="${run.totalDeductions != null ? ('&#8377;' + #numbers.formatDecimal(run.totalDeductions, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</div>
             <div class="stat-lbl">Total Deductions</div>
           </div>
         </div>
@@ -71,7 +71,7 @@
           <div class="stat-icon" style="background:rgba(200,151,42,.1);color:var(--gold);"><i class="bi bi-wallet2"></i></div>
           <div>
             <div class="stat-num" style="font-size:1.2rem;"
-                 th:text="${'₹' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')}">0</div>
+                 th:text="${run.totalNet != null ? ('&#8377;' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</div>
             <div class="stat-lbl">Total Net</div>
           </div>
         </div>
@@ -79,21 +79,21 @@
     </div>
 
     <!-- Run info bar -->
-    <div class="card card-levanto mb-3">
+    <div class="card card-levanto mb-3" th:if="${run != null}">
       <div class="card-body py-2">
         <div class="row g-2 small">
-          <div class="col-md-3"><strong>Period:</strong> <span th:text="${run.payPeriodLabel}">-</span></div>
+          <div class="col-md-3"><strong>Period:</strong> <span th:text="${run.payPeriodLabel ?: '-'}">-</span></div>
           <div class="col-md-2"><strong>Status:</strong>
             <span class="badge"
-                  th:classappend="${run.status.name() == 'DISBURSED' ? 'bg-success' :
-                                   run.status.name() == 'APPROVED' ? 'bg-primary' :
-                                   run.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"
-                  th:text="${run.status}">-</span>
+                  th:classappend="${run.status != null and run.status.name() == 'DISBURSED' ? 'bg-success' :
+                                   (run.status != null and run.status.name() == 'APPROVED' ? 'bg-primary' :
+                                   (run.status != null and run.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'))}"
+                  th:text="${run.status ?: '-'}">-</span>
           </div>
-          <div class="col-md-3" th:if="${run.approvedBy}">
+          <div class="col-md-3" th:if="${run.approvedBy != null}">
             <strong>Approved By:</strong> <span th:text="${run.approvedBy}">-</span>
           </div>
-          <div class="col-md-3" th:if="${run.disbursementDate}">
+          <div class="col-md-3" th:if="${run.disbursementDate != null}">
             <strong>Disbursed:</strong> <span th:text="${run.disbursementDate}">-</span>
           </div>
         </div>
@@ -114,32 +114,41 @@
             <tbody>
               <tr th:each="e : ${entries}">
                 <td>
-                  <div class="fw-bold small" th:text="${e.employee?.name}">-</div>
+                  <a th:if="${e.employee != null}" th:href="@{/admin/payroll/employee/{id}(id=${e.employee.id})}" class="text-decoration-none text-navy fw-bold small" title="View Payroll History">
+                    <span th:text="${e.employee.name}">-</span>
+                  </a>
+                  <div th:if="${e.employee == null}" class="fw-bold small">-</div>
                   <div class="small text-muted" th:text="${e.employee?.designation ?: ''}">-</div>
                 </td>
                 <td class="small">
                   <span class="badge bg-secondary"
                         th:text="${(e.daysPresent ?: 0) + '/' + (e.totalWorkingDays ?: 0)}">-</span>
-                  <span th:if="${e.daysLop > 0}" class="badge bg-danger ms-1"
+                  <span th:if="${e.daysLop != null and e.daysLop > 0}" class="badge bg-danger ms-1"
                         th:text="${'LOP:' + e.daysLop}">-</span>
                 </td>
-                <td class="fw-bold"
-                    th:text="${'₹' + #numbers.formatDecimal(e.grossSalary, 1, 2)}">0</td>
-                <td class="small" th:text="${e.pfEmployee.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '₹' + #numbers.formatDecimal(e.pfEmployee, 1, 2) : '—'}">-</td>
-                <td class="small" th:text="${e.esiEmployee.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '₹' + #numbers.formatDecimal(e.esiEmployee, 1, 2) : '—'}">-</td>
-                <td class="small" th:text="${e.professionalTax.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '₹' + #numbers.formatDecimal(e.professionalTax, 1, 2) : '—'}">-</td>
-                <td class="small" th:text="${e.tds.compareTo(T(java.math.BigDecimal).ZERO) > 0 ? '₹' + #numbers.formatDecimal(e.tds, 1, 2) : '—'}">-</td>
+                <td class="fw-bold">
+                  <span th:text="${e.grossSalary != null ? ('&#8377;' + #numbers.formatDecimal(e.grossSalary, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</span>
+                  <span th:if="${e.leaveEncashment != null and e.leaveEncashment > 0}"
+                        class="badge bg-success-subtle text-success border border-success-subtle ms-1" style="font-size: 0.7rem;"
+                        th:title="${'Includes &#8377;' + #numbers.formatDecimal(e.leaveEncashment, 1, 'COMMA', 2, 'POINT') + ' Leave Encashment'}">
+                    +Encashment
+                  </span>
+                </td>
+                <td class="small" th:text="${e.pfEmployee != null and e.pfEmployee > 0 ? ('&#8377;' + #numbers.formatDecimal(e.pfEmployee, 1, 'COMMA', 2, 'POINT')) : '—'}">-</td>
+                <td class="small" th:text="${e.esiEmployee != null and e.esiEmployee > 0 ? ('&#8377;' + #numbers.formatDecimal(e.esiEmployee, 1, 'COMMA', 2, 'POINT')) : '—'}">-</td>
+                <td class="small" th:text="${e.professionalTax != null and e.professionalTax > 0 ? ('&#8377;' + #numbers.formatDecimal(e.professionalTax, 1, 'COMMA', 2, 'POINT')) : '—'}">-</td>
+                <td class="small" th:text="${e.tds != null and e.tds > 0 ? ('&#8377;' + #numbers.formatDecimal(e.tds, 1, 'COMMA', 2, 'POINT')) : '—'}">-</td>
                 <td class="text-danger small"
-                    th:text="${'₹' + #numbers.formatDecimal(e.totalDeductions, 1, 2)}">0</td>
+                    th:text="${e.totalDeductions != null ? ('&#8377;' + #numbers.formatDecimal(e.totalDeductions, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
                 <td class="fw-bold text-success"
-                    th:text="${'₹' + #numbers.formatDecimal(e.netSalary, 1, 2)}">0</td>
+                    th:text="${e.netSalary != null ? ('&#8377;' + #numbers.formatDecimal(e.netSalary, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
                 <td>
                   <div class="btn-group btn-group-sm">
                     <a th:href="@{/admin/payroll/entries/{id}/payslip(id=${e.id})}"
                        class="btn btn-outline-navy" title="Download Payslip" target="_blank">
                       <i class="bi bi-file-earmark-pdf"></i>
                     </a>
-                    <a th:href="@{/admin/payroll/config/{id}(id=${e.employee?.id})}"
+                    <a th:if="${e.employee != null}" th:href="@{/admin/payroll/config/{id}(id=${e.employee.id})}"
                        class="btn btn-outline-secondary" title="Config"
                        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_RUN')">
                       <i class="bi bi-gear"></i>
@@ -147,7 +156,7 @@
                   </div>
                 </td>
               </tr>
-              <tr th:if="${#lists.isEmpty(entries)}">
+              <tr th:if="${entries == null or entries.isEmpty()}">
                 <td colspan="10" class="text-center py-4 text-muted">No entries in this run.</td>
               </tr>
             </tbody>
@@ -158,9 +167,10 @@
   </div>
 </div>
 <th:block th:insert="~{fragments/layout :: scripts}"></th:block>
-<script th:inline="javascript">
-const runId = /*[[${run.id}]]*/ 0;
+<script>
 function approveRun() {
+  const main = document.getElementById('main');
+  const runId = main ? main.getAttribute('data-run-id') : 0;
   if (!confirm('Approve this payroll run? This will lock all entries.')) return;
   fetch('/admin/payroll/runs/' + runId + '/approve', { method: 'POST' })
     .then(r => r.json()).then(d => {
@@ -169,6 +179,8 @@ function approveRun() {
     });
 }
 function cancelRun() {
+  const main = document.getElementById('main');
+  const runId = main ? main.getAttribute('data-run-id') : 0;
   if (!confirm('Cancel this payroll run?')) return;
   fetch('/admin/payroll/runs/' + runId + '/cancel', { method: 'POST' })
     .then(r => r.json()).then(d => {

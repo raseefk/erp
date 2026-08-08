@@ -23,6 +23,8 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
     @EntityGraph(attributePaths = {"employee"})
     Optional<EmployeeSalary> findByEmployeeAndSalaryMonthYear(Employee employee, String monthYear);
 
+    boolean existsByEmployeeIdAndSalaryMonthYear(Long employeeId, String salaryMonthYear);
+
     @EntityGraph(attributePaths = {"employee"})
     Page<EmployeeSalary> findAllByOrderBySalaryCreditedDateDesc(Pageable pageable);
 
@@ -39,4 +41,11 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalary, 
     @EntityGraph(attributePaths = {"employee"})
     @Query("SELECT s FROM EmployeeSalary s WHERE s.salaryCreditedDate BETWEEN :from AND :to ORDER BY s.salaryCreditedDate DESC")
     Page<EmployeeSalary> findByDateRange(@Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"employee"})
+    Page<EmployeeSalary> findByEmployeeIdOrderBySalaryCreditedDateDesc(Long employeeId, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"employee"})
+    @Query("SELECT s FROM EmployeeSalary s WHERE s.employee.id = :empId AND s.salaryCreditedDate BETWEEN :from AND :to ORDER BY s.salaryCreditedDate DESC")
+    Page<EmployeeSalary> findByEmployeeIdAndDateRange(@Param("empId") Long empId, @Param("from") LocalDate from, @Param("to") LocalDate to, Pageable pageable);
 }

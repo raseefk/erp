@@ -5,12 +5,10 @@
 <th:block th:insert="~{fragments/layout :: sidebar('settings')}"></th:block>
 <div id="main">
     <th:block th:insert="~{fragments/layout :: topbar('Company Settings')}"></th:block>
-    <div class="px-5 py-4">
+    <div class="pb">
         <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
-        
-        <h2 class="mb-4" style="font-family: 'Inter', sans-serif; font-weight: 600; font-size: 2rem; color: #1a202c;">Company Settings</h2>
 
-        <div class="card border-0 shadow-sm col-lg-8" style="border-radius: 12px; overflow: hidden;">
+        <div class="card card-levanto col-lg-8">
             <div class="card-body p-4">
                 <form th:action="@{/settings}" th:object="${settings}" method="post">
                     <input type="hidden" th:field="*{id}">

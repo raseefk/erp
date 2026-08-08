@@ -167,32 +167,32 @@
           <i class="bi bi-cart"></i> Purchase Orders
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_GRN_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_GRN')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_GRN_VIEW')">
         <a href="/admin/scm/grn" th:classappend="${activePage=='scm-grn'}?' active':''">
           <i class="bi bi-box-seam"></i> Goods Receipt (GRN)
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_INVOICE_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_VENDOR_INVOICES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_INVOICE_VIEW')">
         <a href="/admin/scm/invoices" th:classappend="${activePage=='scm-invoice'}?' active':''">
           <i class="bi bi-file-earmark-check"></i> Vendor Invoices
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_RFQ_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_RFQ')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_RFQ_VIEW')">
         <a href="/admin/scm/rfq" th:classappend="${activePage=='scm-rfq'}?' active':''">
           <i class="bi bi-envelope-open-text"></i> RFQ
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_BLANKET_PO_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_BLANKET_PO')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_BLANKET_PO_VIEW')">
         <a href="/admin/scm/blanket-po" th:classappend="${activePage=='scm-blanket-po'}?' active':''">
           <i class="bi bi-file-earmark-ruled"></i> Blanket POs
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_APPROVAL_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PROCUREMENT_APPROVALS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_APPROVAL_VIEW')">
         <a href="/admin/scm/approvals" th:classappend="${activePage=='scm-approvals'}?' active':''">
           <i class="bi bi-check2-circle"></i> PO Approvals
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_VENDOR_RATING_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_VENDOR_SCORECARD')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_SCM_VENDOR_RATING_VIEW')">
         <a href="/admin/scm/vendor-ratings" th:classappend="${activePage=='vendor-scorecard'}?' active':''">
           <i class="bi bi-star-half"></i> Vendor Scorecard
         </a>
@@ -209,42 +209,42 @@
     </li>
     <div class="collapse" id="collapseWms"
          th:classappend="${#lists.contains({'wms','wms-warehouses','wms-stock','wms-transfers','wms-batches','wms-stockcount','wms-ledger','wms-scan'}, activePage)} ? 'show' : ''">
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_DASHBOARD')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW')">
         <a href="/admin/wms" th:classappend="${activePage == 'wms'} ? 'active'">
           <i class="bi bi-building"></i> WMS Dashboard
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_WAREHOUSES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_WAREHOUSES_VIEW')">
         <a href="/admin/wms/warehouses" th:classappend="${activePage == 'wms-warehouses'} ? 'active'">
           <i class="bi bi-houses"></i> Warehouses
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCK_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_STOCK')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCK_VIEW')">
         <a href="/admin/wms/stock" th:classappend="${activePage == 'wms-stock'} ? 'active'">
           <i class="bi bi-boxes"></i> Stock Overview
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_TRANSFERS_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_TRANSFERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_TRANSFERS_VIEW')">
         <a href="/admin/wms/transfers" th:classappend="${activePage == 'wms-transfers'} ? 'active'">
           <i class="bi bi-arrow-left-right"></i> Stock Transfers
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_BATCHES_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_BATCHES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_BATCHES_VIEW')">
         <a href="/admin/wms/batches" th:classappend="${activePage == 'wms-batches'} ? 'active'">
           <i class="bi bi-layers"></i> Batch / Lot Tracking
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCKCOUNT_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_STOCKCOUNT')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCKCOUNT_VIEW')">
         <a href="/admin/wms/stockcounts" th:classappend="${activePage == 'wms-stockcount'} ? 'active'">
           <i class="bi bi-clipboard-check"></i> Stock Count
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_LEDGER_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_LEDGER')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_LEDGER_VIEW')">
         <a href="/admin/wms/ledger" th:classappend="${activePage == 'wms-ledger'} ? 'active'">
           <i class="bi bi-journal-bookmark"></i> Stock Ledger
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCK_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_WMS_SCAN')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_WMS_STOCK_VIEW')">
         <a href="/admin/wms/scan" th:classappend="${activePage == 'wms-scan'} ? 'active'">
           <i class="bi bi-qr-code-scan"></i> Barcode Scan
         </a>
@@ -261,22 +261,22 @@
     </li>
     <div class="collapse" id="collapseDms"
          th:classappend="${#lists.contains({'dms','dms-folders','dms-signatures','dms-expiry-alerts'}, activePage)} ? 'show' : ''">
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DOCUMENTS_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_DMS_VAULT')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DOCUMENTS_VIEW')">
         <a href="/admin/dms" th:classappend="${activePage=='dms'} ? 'active'">
           <i class="bi bi-cloud-arrow-up"></i> Document Vault
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_FOLDERS_MANAGE')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_DMS_FOLDERS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_FOLDERS_MANAGE')">
         <a href="/admin/dms/folders" th:classappend="${activePage=='dms-folders'} ? 'active'">
           <i class="bi bi-folder2-open"></i> Manage Folders
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DIGITAL_SIGNATURE_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_DMS_DIGITAL_SIGNATURE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_DIGITAL_SIGNATURE_VIEW')">
         <a href="/admin/dms/digital-signatures" th:classappend="${activePage=='dms-signatures'} ? 'active'">
           <i class="bi bi-pen"></i> Digital Signatures
         </a>
       </li>
-      <li sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_EXPIRY_ALERTS_VIEW')">
+      <li th:if="${@rbacService.isMenuEnabled('MENU_DMS_EXPIRY_ALERTS')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_DMS_EXPIRY_ALERTS_VIEW')">
         <a href="/admin/dms/expiry-alerts" th:classappend="${activePage=='dms-expiry-alerts'} ? 'active'">
           <i class="bi bi-clock-history"></i> Expiry Alerts
         </a>
@@ -289,7 +289,7 @@
         sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_PROJ_LIST_VIEW', 'PERM_PROJ_DAILYLOG_VIEW', 'PERM_PROJ_EXPENSES_VIEW', 'PERM_CONSTRUCTION_BOQ_VIEW', 'PERM_CONSTRUCTION_MATERIAL_SITE_VIEW', 'PERM_CONSTRUCTION_SUBCONTRACTOR_BILL_VIEW', 'PERM_CONSTRUCTION_MILESTONE_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseProjects"
         th:attr="aria-expanded=${#lists.contains({'projects','sitelogs','approval','boq','materials-site','subcontractor-bills','milestones'}, activePage) ? 'true' : 'false'}">
-      <span><i class="bi bi-briefcase me-2"></i>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
+      <span>Projects</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseProjects"
          th:classappend="${#lists.contains({'projects','sitelogs','approval','boq','materials-site','subcontractor-bills','milestones'}, activePage)} ? 'show' : ''">
@@ -352,8 +352,13 @@
         </a>
       </li>
       <li th:if="${@rbacService.isMenuEnabled('MENU_PAYROLL')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_PAYROLL_VIEW')">
-        <a href="/admin/payroll" th:classappend="${#lists.contains({'payroll','payroll-runs','payroll-arrears'}, activePage)} ? 'active'">
-          <i class="bi bi-receipt-cutoff"></i> Payroll
+        <a href="/admin/payroll" th:classappend="${activePage=='payroll'} ? 'active'">
+          <i class="bi bi-speedometer2"></i> Payroll Dashboard
+        </a>
+      </li>
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PAYROLL')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_PAYROLL_VIEW')">
+        <a href="/admin/payroll/runs" th:classappend="${activePage=='payroll-runs'} ? 'active'">
+          <i class="bi bi-receipt-cutoff"></i> Payroll Runs &amp; History
         </a>
       </li>
       <li th:if="${@rbacService.isMenuEnabled('MENU_PAYROLL_COMPLIANCE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_PAYROLL_VIEW', 'PERM_HR_PAYROLL_COMPLIANCE')">

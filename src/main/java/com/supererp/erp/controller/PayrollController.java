@@ -84,6 +84,7 @@ public class PayrollController {
         PayrollRun run = payrollService.getRunById(id);
         model.addAttribute("run", run);
         model.addAttribute("entries", payrollService.getRunEntries(id));
+        model.addAttribute("activePage", "payroll-runs");
         return "payroll/run-detail";
     }
 
@@ -197,6 +198,7 @@ public class PayrollController {
         model.addAttribute("entries", payrollService.getEmployeeHistory(employeeId));
         model.addAttribute("arrears", payrollService.getEmployeeArrears(employeeId));
         model.addAttribute("currentYear", LocalDate.now().getYear());
+        model.addAttribute("activePage", "payroll-runs");
         return "payroll/employee-history";
     }
 

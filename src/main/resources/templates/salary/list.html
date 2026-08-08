@@ -14,6 +14,17 @@
       <div class="d-flex justify-content-between align-items-end mb-3 flex-wrap gap-2">
         <form action="/admin/salaries" method="get" class="d-flex gap-2 flex-wrap align-items-end">
           <div>
+            <label class="form-label mb-1" style="font-size:.72rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;">Employee</label>
+            <select name="employeeId" class="form-select form-select-sm" style="min-width: 180px;">
+              <option value="">All Employees</option>
+              <option th:each="emp : ${employees}"
+                      th:value="${emp.id}"
+                      th:text="${emp.name + (emp.employeeCode != null ? ' (' + emp.employeeCode + ')' : '')}"
+                      th:selected="${selectedEmployeeId == emp.id}">
+              </option>
+            </select>
+          </div>
+          <div>
             <label class="form-label mb-1" style="font-size:.72rem;color:#6b8099;text-transform:uppercase;letter-spacing:.08em;">From</label>
             <input type="date" name="from" class="form-control form-control-sm" th:value="${from}"/>
           </div>
@@ -51,7 +62,9 @@
                 <tr th:each="s, idx : ${salariesPage.content}">
                   <td th:text="${idx.count}">1</td>
                   <td>
-                    <strong th:text="${s.employee.name}">-</strong><br/>
+                    <a th:href="@{/admin/payroll/employee/{id}(id=${s.employee.id})}" class="text-decoration-none text-navy" title="View Payroll History">
+                      <strong th:text="${s.employee.name}">-</strong>
+                    </a><br/>
                     <small class="text-muted" th:text="${s.employee.designation ?: ''}">-</small>
                   </td>
                   <td>

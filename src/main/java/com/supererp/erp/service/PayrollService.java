@@ -469,10 +469,20 @@ public class PayrollService {
         if (run.getStatus() == PayrollRunStatus.APPROVED) {
             run.setStatus(PayrollRunStatus.DISBURSED);
             run.setDisbursementDate(LocalDate.now());
-            // Mark all entries disbursed
-            entries.forEach(e -> e.setDisbursed(true));
-            entryRepo.saveAll(entries);
-            runRepo.save(run);
+            // Sync each employee's payout to employee_salaries table for unified view in /admin/salaries
+            for (PayrollEntry e : entries) {
+                if (e.getEmployee() != null && e.getNetSalary() != null && e.getNetSalary().compareTo(BigDecimal.ZERO) > 0) {
+                    if (!employeeSalaryRepo.existsByEmployeeIdAndSalaryMonthYear(e.getEmployee().getId(), run.getPayPeriodLabel())) {
+                        com.supererp.erp.entity.EmployeeSalary es = com.supererp.erp.entity.EmployeeSalary.builder()
+                            .employee(e.getEmployee())
+                            .salaryMonthYear(run.getPayPeriodLabel())
+                            .amount(e.getNetSalary())
+                            .salaryCreditedDate(LocalDate.now())
+                            .build();
+                        employeeSalaryRepo.save(es);
+                    }
+                }
+            }
 
             // Auto-post payroll expense to Finance module (deducting any individual payouts already posted)
             try {

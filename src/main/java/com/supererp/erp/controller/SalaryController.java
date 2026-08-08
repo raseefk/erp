@@ -27,14 +27,18 @@ public class SalaryController {
     public String list(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "25") int size,
+            @RequestParam(required = false) Long employeeId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
             Model m) {
-        m.addAttribute("salariesPage",  salaryService.getAll(page, size, from, to));
+        salaryService.syncDisbursedPayrollRuns();
+        m.addAttribute("salariesPage",  salaryService.getAll(employeeId, page, size, from, to));
         m.addAttribute("employees",     employeeService.getActive());
+        m.addAttribute("selectedEmployeeId", employeeId);
         m.addAttribute("from", from);
         m.addAttribute("to",   to);
         m.addAttribute("currentPage",   page);
+        m.addAttribute("activePage",    "salaries");
         if (from != null && to != null)
             m.addAttribute("totalSalary", salaryService.totalSalaryPaid(from, to));
         return "salary/list";

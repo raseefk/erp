@@ -30,15 +30,22 @@
         <tbody>
           <tr th:each="emp, idx : ${employees}">
             <td th:text="${idx.count}">1</td>
-            <td><strong th:text="${emp.name}">-</strong><br/><small class="text-muted" th:text="${emp.email ?: ''}">-</small></td>
+            <td>
+              <a th:href="@{/admin/payroll/employee/{id}(id=${emp.id})}" class="text-decoration-none text-navy" title="View Payroll History">
+                <strong th:text="${emp.name}">-</strong>
+              </a><br/>
+              <small class="text-muted" th:text="${emp.email ?: ''}">-</small>
+            </td>
             <td th:text="${emp.designation ?: '-'}">-</td>
             <td th:text="${emp.phone ?: '-'}">-</td>
             <td class="fw-bold" th:text="'₹ ' + ${#numbers.formatDecimal(emp.monthlySalary,1,'COMMA',2,'POINT')}">-</td>
             <td><small th:text="${emp.joiningDate != null ? #temporals.format(emp.joiningDate,'dd MMM yyyy') : '-'}">-</small></td>
             <td sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_EDIT', 'PERM_HR_SALARY_PAY')">
               <div class="btn-group btn-group-sm">
-                <a th:href="@{/admin/employees/{id}/edit(id=${emp.id})}" class="btn btn-navy" 
+                <a th:href="@{/admin/employees/{id}/edit(id=${emp.id})}" class="btn btn-navy" title="Edit Employee"
                    sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_EDIT')"><i class="bi bi-pencil"></i></a>
+                <a th:href="@{/admin/payroll/config/{id}(id=${emp.id})}" class="btn btn-outline-primary" title="Payroll Config"
+                   sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_PAYROLL_RUN', 'PERM_HR_PAYROLL_VIEW')"><i class="bi bi-gear"></i></a>
                 <button class="btn btn-gold" onclick="payModal(this)" th:data-id="${emp.id}" th:data-name="${emp.name}" th:data-salary="${emp.monthlySalary}" title="Pay Salary"
                         sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_SALARY_PAY')"><i class="bi bi-cash"></i></button>
               </div>

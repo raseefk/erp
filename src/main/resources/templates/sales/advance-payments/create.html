@@ -9,12 +9,11 @@
   <div class="pb">
     <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
     <div class="mt-1">
-      <div class="d-flex align-items-center mb-4">
-        <a href="/admin/advances" class="btn btn-sm btn-light border me-3"><i class="bi bi-arrow-left"></i></a>
-        <h2 class="mb-0">Collect Advance</h2>
+      <div class="d-flex align-items-center mb-3">
+        <a href="/admin/advances" class="btn btn-sm btn-outline-secondary me-3"><i class="bi bi-arrow-left me-1"></i>Back to Advances</a>
       </div>
 
-  <div class="card border-0 shadow-sm" style="max-width: 600px;">
+  <div class="card card-levanto" style="max-width: 600px;">
     <div class="card-body p-4">
       <form th:action="@{/admin/advances/create}" method="post">
         

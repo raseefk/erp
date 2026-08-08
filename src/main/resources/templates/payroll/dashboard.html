@@ -4,7 +4,7 @@
 <body>
 <th:block th:insert="~{fragments/layout :: sidebar('payroll')}"></th:block>
 <div id="main">
-  <th:block th:insert="~{fragments/layout :: topbar('Payroll & Compliance')}"></th:block>
+  <th:block th:insert="~{fragments/layout :: topbar('Payroll &amp; Compliance')}"></th:block>
   <div class="pb">
     <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
 
@@ -13,13 +13,13 @@
       <div class="col-6 col-md-3">
         <div class="stat-card">
           <div class="stat-icon" style="background:rgba(26,58,92,.1);color:var(--navy)"><i class="bi bi-receipt-cutoff"></i></div>
-          <div><div class="stat-num" th:text="${metrics.totalRuns ?: 0}">0</div><div class="stat-lbl">Total Runs</div></div>
+          <div><div class="stat-num" th:text="${metrics != null and metrics.totalRuns != null ? metrics.totalRuns : 0}">0</div><div class="stat-lbl">Total Runs</div></div>
         </div>
       </div>
       <div class="col-6 col-md-3">
         <div class="stat-card" style="border-left-color:#d97706;">
           <div class="stat-icon" style="background:rgba(217,119,6,.1);color:#d97706;"><i class="bi bi-clock-history"></i></div>
-          <div><div class="stat-num" th:text="${metrics.pendingArrears ?: 0}">0</div><div class="stat-lbl">Pending Arrears</div></div>
+          <div><div class="stat-num" th:text="${metrics != null and metrics.pendingArrears != null ? metrics.pendingArrears : 0}">0</div><div class="stat-lbl">Pending Arrears</div></div>
         </div>
       </div>
     </div>
@@ -56,7 +56,7 @@
               <div class="col-md-5">
                 <label class="form-label fw-bold small">Year</label>
                 <input type="number" name="year" class="form-control form-control-sm"
-                       th:value="${#temporals.year(#temporals.createNow())}"/>
+                       value="2026" th:value="${currentYear ?: 2026}"/>
               </div>
               <div class="col-12">
                 <button type="submit" class="btn btn-gold btn-sm w-100">
@@ -76,53 +76,58 @@
             <a href="/admin/payroll/runs" class="btn btn-sm btn-outline-navy">View All</a>
           </div>
           <div class="card-body p-0">
-            <table class="table table-levanto mb-0">
-              <thead><tr><th>Period</th><th>Employees</th><th>Total Net</th><th>Status</th><th>Action</th></tr></thead>
-              <tbody>
-                <tr th:each="run : ${metrics.recentRuns}">
-                  <td class="fw-bold" th:text="${run.payPeriodLabel}">-</td>
-                  <td th:text="${#lists.size(run.entries)}">0</td>
-                  <td class="fw-bold text-success"
-                      th:text="${'₹' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')}">0</td>
-                  <td>
-                    <span class="badge"
-                          th:classappend="${run.status.name() == 'DISBURSED' ? 'bg-success' :
-                                           run.status.name() == 'APPROVED' ? 'bg-primary' :
-                                           run.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"
-                          th:text="${run.status}">-</span>
-                  </td>
-                  <td>
-                    <a th:href="@{/admin/payroll/runs/{id}(id=${run.id})}" class="btn btn-sm btn-outline-navy">
-                      <i class="bi bi-eye"></i>
-                    </a>
-                  </td>
-                </tr>
-                <tr th:if="${#lists.isEmpty(metrics.recentRuns)}">
-                  <td colspan="5" class="text-center py-4 text-muted">No payroll runs yet.</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table table-levanto mb-0">
+                <thead><tr><th>Period</th><th>Total Gross</th><th>Total Deductions</th><th>Total Net</th><th>Status</th><th>Action</th></tr></thead>
+                <tbody>
+                  <tr th:each="run : ${metrics != null ? metrics.recentRuns : null}" th:if="${metrics != null and metrics.recentRuns != null}">
+                    <td class="fw-bold" th:text="${run.payPeriodLabel ?: '-'}">-</td>
+                    <td th:text="${run.totalGross != null ? ('&#8377;' + #numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                    <td class="text-danger" th:text="${run.totalDeductions != null ? ('&#8377;' + #numbers.formatDecimal(run.totalDeductions, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                    <td class="fw-bold text-success"
+                        th:text="${run.totalNet != null ? ('&#8377;' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                    <td>
+                      <span class="badge"
+                            th:classappend="${run.status != null and run.status.name() == 'DISBURSED' ? 'bg-success' :
+                                             (run.status != null and run.status.name() == 'APPROVED' ? 'bg-primary' :
+                                             (run.status != null and run.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'))}"
+                            th:text="${run.status ?: '-'}">-</span>
+                    </td>
+                    <td>
+                      <a th:href="@{/admin/payroll/runs/{id}(id=${run.id})}" class="btn btn-sm btn-outline-navy" title="View Details">
+                        <i class="bi bi-eye"></i>
+                      </a>
+                    </td>
+                  </tr>
+                  <tr th:if="${metrics == null or metrics.recentRuns == null or #lists.isEmpty(metrics.recentRuns)}">
+                    <td colspan="6" class="text-center py-4 text-muted">No payroll runs yet.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
         <!-- Pending arrears -->
-        <div class="card card-levanto mt-3" th:if="${not #lists.isEmpty(pendingArrears)}">
+        <div class="card card-levanto mt-3" th:if="${pendingArrears != null and not #lists.isEmpty(pendingArrears)}">
           <div class="card-header">
             <i class="bi bi-exclamation-triangle text-warning me-2"></i>Pending Arrears
           </div>
           <div class="card-body p-0">
-            <table class="table table-levanto mb-0">
-              <thead><tr><th>Employee</th><th>Period</th><th>Amount</th><th>Reason</th></tr></thead>
-              <tbody>
-                <tr th:each="a : ${pendingArrears}">
-                  <td class="fw-bold small" th:text="${a.employee?.name}">-</td>
-                  <td class="small" th:text="${a.arrearPeriod}">-</td>
-                  <td class="fw-bold text-warning"
-                      th:text="${'₹' + #numbers.formatDecimal(a.arrearAmount, 1, 2)}">0</td>
-                  <td class="small text-muted" th:text="${a.reason ?: '—'}">-</td>
-                </tr>
-              </tbody>
-            </table>
+            <div class="table-responsive">
+              <table class="table table-levanto mb-0">
+                <thead><tr><th>Employee</th><th>Period</th><th>Amount</th><th>Reason</th></tr></thead>
+                <tbody>
+                  <tr th:each="a : ${pendingArrears}">
+                    <td class="fw-bold small" th:text="${a.employee?.name ?: '-'}">-</td>
+                    <td class="small" th:text="${a.arrearPeriod ?: '-'}">-</td>
+                    <td class="fw-bold text-warning"
+                        th:text="${a.arrearAmount != null ? ('&#8377;' + #numbers.formatDecimal(a.arrearAmount, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                    <td class="small text-muted" th:text="${a.reason ?: '—'}">-</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

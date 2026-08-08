@@ -15,7 +15,7 @@ public interface PayrollEntryRepository extends JpaRepository<PayrollEntry, Long
     @Query("SELECT e FROM PayrollEntry e JOIN FETCH e.employee WHERE e.payrollRun.id = :runId ORDER BY e.employee.name ASC")
     List<PayrollEntry> findByRunIdWithEmployee(@Param("runId") Long runId);
 
-    @Query("SELECT e FROM PayrollEntry e JOIN FETCH e.employee WHERE e.employee.id = :empId ORDER BY e.payrollRun.payYear DESC, e.payrollRun.payMonth DESC")
+    @Query("SELECT e FROM PayrollEntry e JOIN FETCH e.employee JOIN FETCH e.payrollRun WHERE e.employee.id = :empId ORDER BY e.payrollRun.payYear DESC, e.payrollRun.payMonth DESC")
     List<PayrollEntry> findByEmployeeIdOrdered(@Param("empId") Long empId);
 
     Optional<PayrollEntry> findByPayrollRunIdAndEmployeeId(Long runId, Long empId);
