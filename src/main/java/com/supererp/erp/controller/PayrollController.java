@@ -30,10 +30,11 @@ import java.util.List;
 @RequiresFeature("HR")
 public class PayrollController {
 
-    private final PayrollService     payrollService;
-    private final PayslipPdfService  payslipPdfService;
-    private final Form16PdfService   form16PdfService;
-    private final EmployeeService    employeeService;
+    private final PayrollService             payrollService;
+    private final PayslipPdfService          payslipPdfService;
+    private final Form16PdfService           form16PdfService;
+    private final EmployeeService            employeeService;
+    private final StatutoryComplianceService complianceService;
 
     // ── Dashboard ──────────────────────────────────────────────────────────────
     @GetMapping
@@ -235,6 +236,60 @@ public class PayrollController {
         try {
             int count = payrollService.processLeaveEncashments(year);
             return ResponseEntity.ok(ApiResponse.ok("Leave encashment queued for " + count + " employees."));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // ── Statutory Compliance Hub & Exports ───────────────────────────────────
+    @GetMapping("/compliance")
+    @RequiresPermission(Permissions.HR_PAYROLL_VIEW)
+    @Transactional(readOnly = true)
+    public String complianceHub(Model model) {
+        model.addAttribute("recentRuns", payrollService.getAllRuns(0, 12).getContent());
+        model.addAttribute("currentYear", LocalDate.now().getYear());
+        model.addAttribute("activePage", "payroll-compliance");
+        return "payroll/compliance";
+    }
+
+    @GetMapping("/runs/{id}/pf-ecr")
+    @RequiresPermission(Permissions.HR_PAYROLL_VIEW)
+    public ResponseEntity<byte[]> downloadPfEcr(@PathVariable Long id) {
+        try {
+            String txt = complianceService.generatePfEcrFile(id);
+            PayrollRun run = payrollService.getRunById(id);
+            String filename = "PF_ECR_" + run.getPayPeriodLabel().replace(" ", "_") + ".txt";
+            return ResponseEntity.ok()
+                .contentType(MediaType.TEXT_PLAIN)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(txt.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/runs/{id}/esi-return")
+    @RequiresPermission(Permissions.HR_PAYROLL_VIEW)
+    public ResponseEntity<byte[]> downloadEsiReturn(@PathVariable Long id) {
+        try {
+            String csv = complianceService.generateEsiReturnCsv(id);
+            PayrollRun run = payrollService.getRunById(id);
+            String filename = "ESI_Return_" + run.getPayPeriodLabel().replace(" ", "_") + ".csv";
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .body(csv.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @GetMapping("/runs/{id}/pt-summary")
+    @ResponseBody
+    @RequiresPermission(Permissions.HR_PAYROLL_VIEW)
+    public ResponseEntity<ApiResponse<?>> getPtSummary(@PathVariable Long id) {
+        try {
+            return ResponseEntity.ok(ApiResponse.ok("PT Summary retrieved", complianceService.generatePtSummary(id)));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ApiResponse.error(e.getMessage()));
         }

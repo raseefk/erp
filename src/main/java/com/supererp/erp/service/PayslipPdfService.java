@@ -122,6 +122,8 @@ public class PayslipPdfService {
         addInfoCell(t, "Designation", emp.getDesignation() != null ? emp.getDesignation() : "-");
         addInfoCell(t, "Department", emp.getDepartment() != null ? emp.getDepartment() : "-");
         addInfoCell(t, "PAN Number", emp.getPanNumber() != null ? emp.getPanNumber() : "-");
+        addInfoCell(t, "PF Number", emp.getPfNumber() != null ? emp.getPfNumber() : "-");
+        addInfoCell(t, "ESI Number", emp.getEsiNumber() != null ? emp.getEsiNumber() : "-");
         addInfoCell(t, "Days Present", String.valueOf(entry.getDaysPresent() != null ? entry.getDaysPresent() : 0));
         addInfoCell(t, "Working Days", String.valueOf(entry.getTotalWorkingDays() != null ? entry.getTotalWorkingDays() : 0));
         addInfoCell(t, "LOP Days", String.valueOf(entry.getDaysLop() != null ? entry.getDaysLop() : 0));

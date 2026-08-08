@@ -38,8 +38,10 @@ public class PayrollService {
     private final EmployeeRepository         employeeRepo;
     private final AttendanceRepository       attendanceRepo;
     private final LeaveApplicationRepository leaveRepo;
+    private final LeaveBalanceRepository     leaveBalanceRepo;
     private final HolidayRepository          holidayRepo;
     private final CompanySettingsService     settingsService;
+    private final ExpenseRepository          expenseRepo;
 
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy");
 
@@ -387,20 +389,28 @@ public class PayrollService {
         int count = 0;
         for (Employee emp : employees) {
             PayrollConfig cfg = configRepo.findByEmployeeId(emp.getId()).orElse(null);
-            if (cfg == null || cfg.getEncashableLeaveDays() == null || cfg.getEncashableLeaveDays() <= 0) continue;
+            if (cfg == null) continue;
+
+            int maxEncashableConfig = cfg.getEncashableLeaveDays() != null ? cfg.getEncashableLeaveDays() : 0;
+            int remainingCasualLeaves = leaveBalanceRepo.findByEmployeeIdAndYear(emp.getId(), year)
+                .map(LeaveBalance::getRemainingCasualLeaves)
+                .orElse(maxEncashableConfig);
+
+            int actualEncashableDays = Math.min(maxEncashableConfig, Math.max(0, remainingCasualLeaves));
+            if (actualEncashableDays <= 0) continue;
 
             BigDecimal perDay = emp.getMonthlySalary()
                 .divide(BigDecimal.valueOf(26), 4, RoundingMode.HALF_UP); // 26 working days standard
             BigDecimal encashAmount = perDay
-                .multiply(BigDecimal.valueOf(cfg.getEncashableLeaveDays()))
+                .multiply(BigDecimal.valueOf(actualEncashableDays))
                 .setScale(2, RoundingMode.HALF_UP);
 
             if (encashAmount.compareTo(BigDecimal.ZERO) > 0) {
                 createArrear(emp.getId(), "Leave Encashment " + year,
                     BigDecimal.ZERO, emp.getMonthlySalary(),
-                    encashAmount, "Annual leave encashment (" + cfg.getEncashableLeaveDays() + " days)");
+                    encashAmount, "Annual leave encashment (" + actualEncashableDays + " days)");
                 count++;
-                log.info("Leave encashment queued for {} — ₹{}", emp.getName(), encashAmount);
+                log.info("Leave encashment queued for {} — {} days — ₹{}", emp.getName(), actualEncashableDays, encashAmount);
             }
         }
         return count;
@@ -446,6 +456,21 @@ public class PayrollService {
             entries.forEach(e -> e.setDisbursed(true));
             entryRepo.saveAll(entries);
             runRepo.save(run);
+
+            // Auto-post payroll expense to Finance module
+            try {
+                Expense salaryExpense = Expense.builder()
+                    .category(com.supererp.erp.enums.ExpenseCategory.SALARY)
+                    .description("Payroll Disbursement for " + run.getPayPeriodLabel() + " (" + entries.size() + " employees)")
+                    .amount(run.getTotalGross())
+                    .expenseDate(LocalDate.now())
+                    .reference("PAYROLL-RUN-" + run.getId())
+                    .build();
+                expenseRepo.save(salaryExpense);
+                log.info("Auto-posted payroll expense of ₹{} to Finance module for run ID {}", run.getTotalGross(), runId);
+            } catch (Exception ex) {
+                log.warn("Failed to auto-post payroll expense to Finance: {}", ex.getMessage());
+            }
         }
         return sb.toString();
     }

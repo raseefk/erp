@@ -336,11 +336,11 @@
         th:if="${@rbacService.isFeatureEnabled('HR')}"
         sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_VIEW', 'PERM_HR_SALARY_VIEW', 'PERM_HR_ATTENDANCE_VIEW', 'PERM_HR_ATTENDANCE_REPORT_VIEW', 'PERM_HR_LEAVES_VIEW', 'PERM_HR_PAYROLL_VIEW')"
         data-bs-toggle="collapse" data-bs-target="#collapseHr"
-        th:attr="aria-expanded=${#lists.contains({'employees','salaries','attendance','attendance-report','leaves','payroll','payroll-runs','payroll-arrears'}, activePage) ? 'true' : 'false'}">
+        th:attr="aria-expanded=${#lists.contains({'employees','salaries','attendance','attendance-report','leaves','payroll','payroll-runs','payroll-arrears','payroll-compliance'}, activePage) ? 'true' : 'false'}">
       <span>HR</span> <i class="bi bi-chevron-down collapse-icon"></i>
     </li>
     <div class="collapse" id="collapseHr"
-         th:classappend="${#lists.contains({'employees','salaries','attendance','attendance-report','leaves','payroll','payroll-runs','payroll-arrears'}, activePage)} ? 'show' : ''">
+         th:classappend="${#lists.contains({'employees','salaries','attendance','attendance-report','leaves','payroll','payroll-runs','payroll-arrears','payroll-compliance'}, activePage)} ? 'show' : ''">
       <li th:if="${@rbacService.isMenuEnabled('MENU_EMPLOYEES')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_EMPLOYEES_VIEW')">
         <a href="/admin/employees" th:classappend="${activePage=='employees'}?' active':''">
           <i class="bi bi-person-badge"></i> Employees
@@ -354,6 +354,11 @@
       <li th:if="${@rbacService.isMenuEnabled('MENU_PAYROLL')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_PAYROLL_VIEW')">
         <a href="/admin/payroll" th:classappend="${#lists.contains({'payroll','payroll-runs','payroll-arrears'}, activePage)} ? 'active'">
           <i class="bi bi-receipt-cutoff"></i> Payroll
+        </a>
+      </li>
+      <li th:if="${@rbacService.isMenuEnabled('MENU_PAYROLL_COMPLIANCE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_PAYROLL_VIEW', 'PERM_HR_PAYROLL_COMPLIANCE')">
+        <a href="/admin/payroll/compliance" th:classappend="${activePage=='payroll-compliance'} ? 'active'">
+          <i class="bi bi-file-earmark-check"></i> Statutory Compliance
         </a>
       </li>
       <li th:if="${@rbacService.isMenuEnabled('MENU_ATTENDANCE')}" sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN', 'PERM_HR_ATTENDANCE_VIEW')">

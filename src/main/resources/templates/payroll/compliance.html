@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:insert="~{fragments/layout :: head('Statutory Compliance Hub')}"></head>
+<body>
+<th:block th:insert="~{fragments/layout :: sidebar('payroll-compliance')}"></th:block>
+<div id="main">
+  <th:block th:insert="~{fragments/layout :: topbar('Statutory Compliance Hub')}"></th:block>
+  <div class="pb">
+    <th:block th:insert="~{fragments/layout :: alerts}"></th:block>
+
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+      <div>
+        <h6 class="mb-0 fw-bold"><i class="bi bi-file-earmark-check me-2"></i>Statutory Compliance &amp; Govt Returns</h6>
+        <small class="text-muted">Export EPFO PF ECR, ESIC Monthly Returns, PT Summaries, and Form 16 / TDS Reports</small>
+      </div>
+      <a th:href="@{/admin/payroll/runs}" class="btn btn-outline-navy btn-sm"><i class="bi bi-arrow-left me-1"></i>Back to Runs</a>
+    </div>
+
+    <!-- Statutory Compliance Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-3">
+        <div class="card card-levanto h-100 border-start border-4 border-primary">
+          <div class="card-body">
+            <h6 class="fw-bold text-primary mb-1"><i class="bi bi-building me-2"></i>PF (EPFO) Compliance</h6>
+            <p class="small text-muted mb-3">12% Employee + 12% Employer EPF/EPS contribution. Export ECR text file for EPFO portal.</p>
+            <span class="badge bg-primary">EPFO ECR #~# Format</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-levanto h-100 border-start border-4 border-success">
+          <div class="card-body">
+            <h6 class="fw-bold text-success mb-1"><i class="bi bi-hospital me-2"></i>ESI (ESIC) Compliance</h6>
+            <p class="small text-muted mb-3">0.75% Employee + 3.25% Employer contribution (Gross &le; &#8377;21,000). Bulk CSV export.</p>
+            <span class="badge bg-success">ESIC Portal CSV</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-levanto h-100 border-start border-4 border-info">
+          <div class="card-body">
+            <h6 class="fw-bold text-info mb-1"><i class="bi bi-geo-alt me-2"></i>Professional Tax (PT)</h6>
+            <p class="small text-muted mb-3">Slab-wise state deduction (KA, MH, TN, AP, TS, WB). State tax summary generation.</p>
+            <span class="badge bg-info text-dark">State Slabs</span>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="card card-levanto h-100 border-start border-4 border-warning">
+          <div class="card-body">
+            <h6 class="fw-bold text-warning mb-1"><i class="bi bi-receipt me-2"></i>TDS on Salary (26QB)</h6>
+            <p class="small text-muted mb-3">Section 192 TDS deduction, Form 16 PDF generation, and 24Q Quarterly returns.</p>
+            <span class="badge bg-warning text-dark">Form 16 &amp; 24Q</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Monthly Run File Downloads -->
+    <div class="card card-levanto">
+      <div class="card-header bg-navy text-white d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold"><i class="bi bi-download me-2"></i>Monthly Statutory Returns &amp; Filing Exports</h6>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-levanto mb-0">
+            <thead>
+              <tr>
+                <th>Pay Period</th>
+                <th>Status</th>
+                <th>Total Gross</th>
+                <th>Total Deductions</th>
+                <th>Total Net</th>
+                <th>PF ECR Text File</th>
+                <th>ESI Return CSV</th>
+                <th>PT Summary</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr th:each="run : ${recentRuns}" th:if="${recentRuns != null}">
+                <td class="fw-bold" th:text="${run.payPeriodLabel ?: '-'}">-</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${run.status != null and run.status.name() == 'DISBURSED' ? 'bg-success' :
+                                         (run.status != null and run.status.name() == 'APPROVED' ? 'bg-primary' : 'bg-secondary')}"
+                        th:text="${run.status ?: '-'}">-</span>
+                </td>
+                <td th:text="${run.totalGross != null ? ('&#8377;' + #numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                <td class="text-danger" th:text="${run.totalDeductions != null ? ('&#8377;' + #numbers.formatDecimal(run.totalDeductions, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                <td class="fw-bold text-success" th:text="${run.totalNet != null ? ('&#8377;' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                <td>
+                  <a th:href="@{/admin/payroll/runs/{id}/pf-ecr(id=${run.id})}"
+                     class="btn btn-outline-primary btn-sm" title="Download EPFO ECR File">
+                    <i class="bi bi-file-earmark-arrow-down me-1"></i>PF ECR (.txt)
+                  </a>
+                </td>
+                <td>
+                  <a th:href="@{/admin/payroll/runs/{id}/esi-return(id=${run.id})}"
+                     class="btn btn-outline-success btn-sm" title="Download ESIC Return File">
+                    <i class="bi bi-file-earmark-excel me-1"></i>ESI Return (.csv)
+                  </a>
+                </td>
+                <td>
+                  <button type="button" class="btn btn-outline-info btn-sm"
+                          th:data-run-id="${run.id}"
+                          th:data-run-label="${run.payPeriodLabel}"
+                          onclick="showPtSummary(this.getAttribute('data-run-id'), this.getAttribute('data-run-label'))">
+                    <i class="bi bi-bar-chart me-1"></i>PT Summary
+                  </button>
+                </td>
+              </tr>
+              <tr th:if="${recentRuns == null or #lists.isEmpty(recentRuns)}">
+                <td colspan="8" class="text-center py-5 text-muted">No payroll runs available. Generate a run to export statutory returns.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PT Summary Modal -->
+<div class="modal fade" id="ptModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header bg-navy text-white">
+        <h6 class="modal-title fw-bold" id="ptModalTitle">PT Summary</h6>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-0">
+        <table class="table table-hover mb-0">
+          <thead><tr><th>State Code</th><th>Employee Count</th><th>Total PT Collected</th></tr></thead>
+          <tbody id="ptTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<th:block th:insert="~{fragments/layout :: scripts}"></th:block>
+<script>
+function showPtSummary(runId, label) {
+  document.getElementById('ptModalTitle').textContent = 'Professional Tax Summary — ' + (label || '');
+  const tbody = document.getElementById('ptTableBody');
+  tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3">Loading...</td></tr>';
+  const modal = new bootstrap.Modal(document.getElementById('ptModal'));
+  modal.show();
+
+  fetch('/admin/payroll/runs/' + runId + '/pt-summary')
+    .then(r => r.json())
+    .then(d => {
+      if (d.success && d.data && d.data.length > 0) {
+        tbody.innerHTML = d.data.map(item => `
+          <tr>
+            <td class="fw-bold">${item.stateCode}</td>
+            <td>${item.employeeCount}</td>
+            <td class="fw-bold text-success">&#8377;${item.totalTaxAmount.toFixed(2)}</td>
+          </tr>
+        `).join('');
+      } else {
+        tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No PT deductions recorded for this run.</td></tr>';
+      }
+    })
+    .catch(err => {
+      tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-danger">Failed to load PT summary.</td></tr>';
+    });
+}
+</script>
+</body>
+</html>

@@ -102,6 +102,7 @@ public class PermissionSeeder implements CommandLineRunner {
         upsertMenu("MENU_ATTENDANCE_REPORT", "HR", "Attendance Report", "calendar3", 4);
         upsertMenu("MENU_LEAVES", "HR", "Leaves", "calendar2-minus", 5);
         upsertMenu("MENU_PAYROLL", "HR", "Payroll", "receipt-cutoff", 6);
+        upsertMenu("MENU_PAYROLL_COMPLIANCE", "HR", "Statutory Compliance", "file-earmark-check", 7);
 
         // Finance
         upsertMenu("MENU_EXPENSES", "FINANCE", "Expenses", "wallet2", 1);
@@ -252,6 +253,7 @@ public class PermissionSeeder implements CommandLineRunner {
         if (id.startsWith("HR_ATTENDANCE_")) return "MENU_ATTENDANCE";
         if (id.startsWith("HR_LEAVES_")) return "MENU_LEAVES";
         if (id.startsWith("HR_SALARY_")) return "MENU_SALARIES";
+        if (id.equals("HR_PAYROLL_COMPLIANCE")) return "MENU_PAYROLL_COMPLIANCE";
         if (id.startsWith("HR_PAYROLL_")) return "MENU_PAYROLL";
         if (id.startsWith("HR_HOLIDAYS_")) return "MENU_HOLIDAYS";
         if (id.startsWith("FIN_EXPENSES_")) return "MENU_EXPENSES";
@@ -339,6 +341,7 @@ public class PermissionSeeder implements CommandLineRunner {
         names.put("HR_PAYROLL_APPROVE",    "Approve Payroll");
         names.put("HR_PAYROLL_DISBURSE",   "Disburse Payroll / Generate NEFT File");
         names.put("HR_PAYROLL_FORM16",     "Generate Form 16");
+        names.put("HR_PAYROLL_COMPLIANCE", "View Statutory Compliance & Exports");
         if (names.containsKey(permId)) return names.get(permId);
         // Generic fallback
         return permId.replace("_", " ").toLowerCase();

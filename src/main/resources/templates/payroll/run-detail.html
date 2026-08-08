@@ -20,7 +20,15 @@
            th:href="@{/admin/payroll/runs/{id}/neft(id=${run.id})}"
            class="btn btn-success"
            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_DISBURSE')">
-          <i class="bi bi-bank me-1"></i>Download NEFT File
+          <i class="bi bi-bank me-1"></i>NEFT File
+        </a>
+        <a th:href="@{/admin/payroll/runs/{id}/pf-ecr(id=${run.id})}"
+           class="btn btn-outline-primary" title="Download EPFO ECR Text File">
+          <i class="bi bi-file-earmark-text me-1"></i>PF ECR
+        </a>
+        <a th:href="@{/admin/payroll/runs/{id}/esi-return(id=${run.id})}"
+           class="btn btn-outline-success" title="Download ESIC Return CSV File">
+          <i class="bi bi-file-earmark-spreadsheet me-1"></i>ESI Return
         </a>
         <button th:if="${run.status.name() != 'DISBURSED' and run.status.name() != 'CANCELLED'}"
                 class="btn btn-outline-danger" onclick="cancelRun()"

@@ -109,6 +109,7 @@ public final class Permissions {
     public static final String HR_PAYROLL_APPROVE           = "HR_PAYROLL_APPROVE";
     public static final String HR_PAYROLL_DISBURSE          = "HR_PAYROLL_DISBURSE";
     public static final String HR_PAYROLL_FORM16            = "HR_PAYROLL_FORM16";
+    public static final String HR_PAYROLL_COMPLIANCE        = "HR_PAYROLL_COMPLIANCE";
 
     // ── FINANCE Feature ───────────────────────────────────────────────────────
     public static final String FINANCE_VIEW                 = "FINANCE_VIEW";

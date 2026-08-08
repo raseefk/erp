@@ -57,6 +57,12 @@ public class Employee extends TenantAwareEntity {
     @Column(length = 20)
     private String panNumber;
 
+    @Column(name = "pf_number", length = 30)
+    private String pfNumber;
+
+    @Column(name = "esi_number", length = 30)
+    private String esiNumber;
+
     @Column(length = 100)
     private String bankName;
 
