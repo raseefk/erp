@@ -14,9 +14,9 @@ import java.util.List;
  * tenants whose subscription / trial has expired.
  *
  * A tenant is deactivated when:
- *   - expiresAt is set (not null), AND
- *   - expiresAt is in the past, AND
- *   - the tenant is still marked active
+ * - expiresAt is set (not null), AND
+ * - expiresAt is in the past, AND
+ * - the tenant is still marked active
  *
  * Once deactivated, the tenant's users cannot log in and subdomain returns 403.
  * The tenant data is preserved and can be reactivated by a system admin.
@@ -30,8 +30,8 @@ public class TenantExpiryScheduler {
 
     /**
      * Runs every day at midnight UTC.
-     * Cron: second  minute  hour  day  month  weekday
-     *        0       0       0     *    *       *
+     * Cron: second minute hour day month weekday
+     * 0 0 0 * * *
      */
     @Scheduled(cron = "0 0 0 * * *")
     @Transactional
@@ -63,8 +63,8 @@ public class TenantExpiryScheduler {
         }
 
         log.info("TenantExpiryScheduler: deactivated {} expired tenant(s).", expired.size());
-        return new ExpiryCheckResult(expired.size(), 
-            "Successfully deactivated " + expired.size() + " expired tenant(s).");
+        return new ExpiryCheckResult(expired.size(),
+                "Successfully deactivated " + expired.size() + " expired tenant(s).");
     }
 
     /**
