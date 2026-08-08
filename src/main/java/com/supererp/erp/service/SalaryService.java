@@ -22,6 +22,7 @@ public class SalaryService {
     private final EmployeeSalaryRepository salaryRepo;
     private final EmployeeRepository       employeeRepo;
     private final ExpenseRepository        expenseRepo;
+    private final PayrollRunRepository     runRepo;
 
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy");
 
@@ -32,6 +33,14 @@ public class SalaryService {
         Employee emp       = employeeRepo.findById(employeeId)
             .orElseThrow(() -> new IllegalArgumentException("Employee not found: " + employeeId));
         String monthYear   = creditDate.format(MONTH_FMT);
+
+        // Check if bulk payroll for this month has already been disbursed
+        runRepo.findByPayMonthAndPayYear(creditDate.getMonthValue(), creditDate.getYear()).ifPresent(run -> {
+            if (run.getStatus() == com.supererp.erp.enums.PayrollRunStatus.DISBURSED) {
+                throw new IllegalStateException(
+                    "Bulk payroll for " + monthYear + " has already been disbursed. Individual salary cannot be double-posted.");
+            }
+        });
 
         // Prevent duplicate payment for same month
         if (salaryRepo.findByEmployeeAndSalaryMonthYear(emp, monthYear).isPresent()) {

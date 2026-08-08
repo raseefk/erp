@@ -26,34 +26,35 @@
         <div class="table-responsive">
           <table class="table table-levanto mb-0">
             <thead><tr>
-              <th>Period</th><th>Status</th><th>Employees</th>
+              <th>Period</th><th>Status</th>
               <th>Total Gross</th><th>Total Deductions</th><th>Total Net</th>
               <th>Approved By</th><th>Actions</th>
             </tr></thead>
             <tbody>
-              <tr th:each="run : ${runsPage.content}">
-                <td class="fw-bold" th:text="${run.payPeriodLabel}">-</td>
+              <tr th:each="run : ${runsPage.content}" th:if="${runsPage != null and runsPage.content != null}">
+                <td class="fw-bold" th:text="${run.payPeriodLabel ?: '-'}">-</td>
                 <td>
                   <span class="badge"
-                        th:classappend="${run.status.name() == 'DISBURSED' ? 'bg-success' :
-                                         run.status.name() == 'APPROVED' ? 'bg-primary' :
-                                         run.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'}"
-                        th:text="${run.status}">-</span>
+                        th:classappend="${run.status != null and run.status.name() == 'DISBURSED' ? 'bg-success' :
+                                         (run.status != null and run.status.name() == 'APPROVED' ? 'bg-primary' :
+                                         (run.status != null and run.status.name() == 'CANCELLED' ? 'bg-danger' : 'bg-secondary'))}"
+                        th:text="${run.status ?: '-'}">-</span>
                 </td>
-                <td th:text="${#lists.size(run.entries)}">0</td>
-                <td th:text="${'₹' + #numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')}">0</td>
-                <td class="text-danger" th:text="${'₹' + #numbers.formatDecimal(run.totalDeductions, 1, 'COMMA', 2, 'POINT')}">0</td>
-                <td class="fw-bold text-success" th:text="${'₹' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')}">0</td>
+                <td th:text="${run.totalGross != null ? ('&#8377;' + #numbers.formatDecimal(run.totalGross, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                <td class="text-danger" th:text="${run.totalDeductions != null ? ('&#8377;' + #numbers.formatDecimal(run.totalDeductions, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
+                <td class="fw-bold text-success" th:text="${run.totalNet != null ? ('&#8377;' + #numbers.formatDecimal(run.totalNet, 1, 'COMMA', 2, 'POINT')) : '&#8377;0.00'}">&#8377;0.00</td>
                 <td class="small text-muted" th:text="${run.approvedBy ?: '—'}">-</td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <a th:href="@{/admin/payroll/runs/{id}(id=${run.id})}" class="btn btn-outline-navy"><i class="bi bi-eye"></i></a>
-                    <button th:if="${run.status.name() == 'DRAFT'}" class="btn btn-outline-primary"
-                            th:onclick="|approveRun(${run.id})|"
-                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_APPROVE')">
+                    <a th:href="@{/admin/payroll/runs/{id}(id=${run.id})}" class="btn btn-outline-navy" title="View Details"><i class="bi bi-eye"></i></a>
+                    <button th:if="${run.status != null and run.status.name() == 'DRAFT'}" class="btn btn-outline-primary"
+                            th:data-run-id="${run.id}"
+                            onclick="approveRun(this.getAttribute('data-run-id'))"
+                            sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_APPROVE')"
+                            title="Approve Run">
                       <i class="bi bi-check2"></i>
                     </button>
-                    <a th:if="${run.status.name() == 'APPROVED' or run.status.name() == 'DISBURSED'}"
+                    <a th:if="${run.status != null and (run.status.name() == 'APPROVED' or run.status.name() == 'DISBURSED')}"
                        th:href="@{/admin/payroll/runs/{id}/neft(id=${run.id})}"
                        class="btn btn-outline-success" title="Download NEFT File"
                        sec:authorize="hasAnyAuthority('ROLE_SYSTEM_ADMIN','PERM_HR_PAYROLL_DISBURSE')">
@@ -62,8 +63,8 @@
                   </div>
                 </td>
               </tr>
-              <tr th:if="${runsPage.totalElements == 0}">
-                <td colspan="8" class="text-center py-5 text-muted">No payroll runs found.</td>
+              <tr th:if="${runsPage == null or runsPage.totalElements == 0}">
+                <td colspan="7" class="text-center py-5 text-muted">No payroll runs found.</td>
               </tr>
             </tbody>
           </table>
@@ -71,7 +72,7 @@
       </div>
     </div>
 
-    <nav th:if="${runsPage.totalPages > 1}" class="mt-3">
+    <nav th:if="${runsPage != null and runsPage.totalPages > 1}" class="mt-3">
       <ul class="pagination pagination-sm justify-content-center">
         <li class="page-item" th:classappend="${currentPage == 0} ? 'disabled'">
           <a class="page-link" th:href="@{/admin/payroll/runs(page=${currentPage-1})}">Prev</a>

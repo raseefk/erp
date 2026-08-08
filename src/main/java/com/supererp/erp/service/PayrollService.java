@@ -42,6 +42,7 @@ public class PayrollService {
     private final HolidayRepository          holidayRepo;
     private final CompanySettingsService     settingsService;
     private final ExpenseRepository          expenseRepo;
+    private final EmployeeSalaryRepository   employeeSalaryRepo;
 
     private static final DateTimeFormatter MONTH_FMT = DateTimeFormatter.ofPattern("MMMM yyyy");
 
@@ -438,12 +439,28 @@ public class PayrollService {
 
         final int[] seqArr = {1}; // Use array to make it mutable and effectively final
         for (PayrollEntry e : entries) {
-            if (e.getNetSalary().compareTo(BigDecimal.ZERO) <= 0) continue;
-            if (e.getAccountNumber() == null || e.getAccountNumber().isBlank()) continue;
+            if (e.getNetSalary() == null || e.getNetSalary().compareTo(BigDecimal.ZERO) <= 0) continue;
+
+            String accNum = e.getAccountNumber();
+            if (accNum == null || accNum.isBlank()) {
+                accNum = e.getEmployee() != null ? e.getEmployee().getAccountNumber() : null;
+            }
+            if (accNum == null || accNum.isBlank()) {
+                accNum = "NO_BANK_ACC_SET";
+            }
+
+            String ifsc = e.getIfscCode();
+            if (ifsc == null || ifsc.isBlank()) {
+                ifsc = e.getEmployee() != null ? e.getEmployee().getIfscCode() : "";
+            }
+            if (ifsc == null) ifsc = "";
+
+            String name = e.getEmployee() != null ? e.getEmployee().getName() : "Employee #" + e.getId();
+
             sb.append(seqArr[0]++).append(",")
-              .append(csvEscape(e.getEmployee().getName())).append(",")
-              .append(csvEscape(e.getAccountNumber())).append(",")
-              .append(csvEscape(e.getIfscCode() != null ? e.getIfscCode() : "")).append(",")
+              .append(csvEscape(name)).append(",")
+              .append(csvEscape(accNum)).append(",")
+              .append(csvEscape(ifsc)).append(",")
               .append(e.getNetSalary().setScale(2, RoundingMode.HALF_UP)).append(",")
               .append(csvEscape("Salary " + run.getPayPeriodLabel())).append("\n");
         }
@@ -457,17 +474,27 @@ public class PayrollService {
             entryRepo.saveAll(entries);
             runRepo.save(run);
 
-            // Auto-post payroll expense to Finance module
+            // Auto-post payroll expense to Finance module (deducting any individual payouts already posted)
             try {
-                Expense salaryExpense = Expense.builder()
-                    .category(com.supererp.erp.enums.ExpenseCategory.SALARY)
-                    .description("Payroll Disbursement for " + run.getPayPeriodLabel() + " (" + entries.size() + " employees)")
-                    .amount(run.getTotalGross())
-                    .expenseDate(LocalDate.now())
-                    .reference("PAYROLL-RUN-" + run.getId())
-                    .build();
-                expenseRepo.save(salaryExpense);
-                log.info("Auto-posted payroll expense of ₹{} to Finance module for run ID {}", run.getTotalGross(), runId);
+                String ref = "PAYROLL-RUN-" + run.getId();
+                if (!expenseRepo.existsByReference(ref)) {
+                    BigDecimal totalGross = run.getTotalGross() != null ? run.getTotalGross() : BigDecimal.ZERO;
+                    BigDecimal individualPaid = employeeSalaryRepo.sumAmountBySalaryMonthYear(run.getPayPeriodLabel());
+                    if (individualPaid == null) individualPaid = BigDecimal.ZERO;
+
+                    BigDecimal netExpenseToPost = totalGross.subtract(individualPaid).max(BigDecimal.ZERO);
+                    if (netExpenseToPost.compareTo(BigDecimal.ZERO) > 0) {
+                        Expense salaryExpense = Expense.builder()
+                            .category(com.supererp.erp.enums.ExpenseCategory.SALARY)
+                            .description("Payroll Disbursement for " + run.getPayPeriodLabel() + " (" + entries.size() + " employees)")
+                            .amount(netExpenseToPost)
+                            .expenseDate(LocalDate.now())
+                            .reference(ref)
+                            .build();
+                        expenseRepo.save(salaryExpense);
+                        log.info("Auto-posted payroll expense of ₹{} (net of ₹{} individual payouts) to Finance for run ID {}", netExpenseToPost, individualPaid, runId);
+                    }
+                }
             } catch (Exception ex) {
                 log.warn("Failed to auto-post payroll expense to Finance: {}", ex.getMessage());
             }

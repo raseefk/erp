@@ -33,6 +33,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT YEAR(e.expenseDate), MONTH(e.expenseDate), COALESCE(SUM(e.amount),0) FROM Expense e WHERE e.expenseDate BETWEEN :from AND :to GROUP BY YEAR(e.expenseDate), MONTH(e.expenseDate)")
     List<Object[]> sumGroupedByMonth(@Param("from") LocalDate from, @Param("to") LocalDate to);
 
+    boolean existsByReference(String reference);
+
     @Query("SELECT COALESCE(SUM(e.amount),0) FROM Expense e WHERE e.category=:cat AND e.expenseDate BETWEEN :from AND :to")
     BigDecimal sumByCategoryAndDateRange(@Param("cat") ExpenseCategory cat,
                                         @Param("from") LocalDate from, @Param("to") LocalDate to);
