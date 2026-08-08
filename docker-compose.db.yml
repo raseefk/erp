@@ -15,12 +15,12 @@ services:
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 256M
     command: >-
       postgres
-      -c shared_buffers=128MB
-      -c max_connections=30
-      -c work_mem=8MB
+      -c shared_buffers=64MB
+      -c max_connections=20
+      -c work_mem=4MB
       -c authentication_timeout=5s
     volumes:
       # PG 18+ requires mount at /var/lib/postgresql (NOT /data).

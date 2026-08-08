@@ -20,6 +20,9 @@ EXPOSE 8085
 
 ENTRYPOINT ["java", \
   "-Djava.security.egd=file:/dev/./urandom", \
+  "-Dnetworkaddress.cache.ttl=30", \
+  "-Dnetworkaddress.cache.negative.ttl=0", \
   "-XX:+UseContainerSupport", \
-  "-XX:MaxRAMPercentage=75.0", \
+  "-XX:+UseSerialGC", \
+  "-XX:MaxRAMPercentage=50.0", \
   "-jar", "app.jar"]
